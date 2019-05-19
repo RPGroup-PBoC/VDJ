@@ -1,0 +1,9 @@
+*.pdf
+*.DS_*tore
+*.png
+*.aux
+*__pycache__
+*egg*
+*.tif*
+*.pkl
+*checkpoints*
