@@ -12,7 +12,7 @@ import pandas as pd
 import pickle
 import pystan
 import tqdm
-from .stats import compute_statistics
+from .stats import compute_statistics, compute_hpd
 
 class StanModel(object):
     R"""
@@ -52,8 +52,10 @@ class StanModel(object):
             data_dict = self.data
         self.chains = chains
         self.iter = iter
+        print(f'Beginning sampling. n_iter = {iter}, chains = {chains}')
         self.samples = self.model.sampling(data_dict, 
                         chains=chains, iter=iter, **kwargs)
+        print('finished!')
         if return_df:
             self.df = self.samples.to_dataframe(diagnostics=True)
             return [self.samples, self.df]
@@ -125,7 +127,7 @@ class StanModel(object):
             par_dims = desired_pars
         
         # Iterate through each parameter and compute the aggregate properties. 
-        df = pd.DataFrame([], columns=['parameter', 'dimension', 'mean'
+        df = pd.DataFrame([], columns=['parameter', 'dimension', 'mean',
                                       'mode', 'median', 'hpd_min',
                                       'hpd_max', 'mass_fraction'])          
         for par, dim in par_dims.items():
@@ -161,9 +163,9 @@ def loadStanModel(fname, force=False):
     pkl_name = f'{rel}/stan/{sm_name}.pkl' 
     # Check if the model is precompiled
     if (os.path.exists(pkl_name)==True) and (force != True):
-        print('Found precompiled model. Loading...')
+        print('Found precompiled model.')
         model = pickle.load(open(pkl_name, 'rb'))
-        print('finished!')
+
     else:
         print('Precompiled model not found. Compiling model...')
         _path = rel + '/stan/'         

@@ -15,11 +15,14 @@
 data {
     // Dimensional information
     int<lower=1> J; // Number of replicates
-    
+    int<lower=1> N; // Total number of dwell time measurements
+    int<lower=1, upper=J> idx[N]; // ID vector for the dwell time measurements
 
     //Observables
-    vector<lower=0, upper=1>[J] f_looped; // Fraction of time in looped state
-    int<lower=0, upper=1> cut[N]; // Bernoulli trials for bead cutting
+    int<lower=0> total_frames[J]; // Total number of frames (per beads)
+    int<lower=0> looped_frames[J]; // Total number of frames in looped states 
+    int<lower=0> n_beads[J]; // Total number of beads observed per replicate 
+    int<lower=0> n_cuts[J]; // Total number of cutting events per replicate
     vector<lower=0>[N] dwell_time; // dwell times for looped states
 }
 
@@ -36,9 +39,6 @@ parameters {
     vector<lower=0>[J] r_cut_tilde;
     vector<lower=0>[J] k_unloop_tilde;
     vector<lower=0>[J] k_loop_tilde;
-
-    // Homoscedastic error
-    real<lower=0> sigma;
 }
 
 transformed parameters {
@@ -49,6 +49,9 @@ transformed parameters {
 }
 
 model {
+    // Compute the cutting probabilities for each replicate; 
+    vector[J] p_cut = r_cut_1 ./ (r_cut_1 + k_unloop_1);
+
     // Assign the prior distributions for hyper parameters
    r_cut ~ normal(0, 1);
    k_unloop ~ normal(0, 1);
@@ -60,11 +63,8 @@ model {
    k_unloop_tilde ~ normal(0, 1);
    k_loop_tilde ~ normal(0, 1);
 
-   // Other priors
-   sigma ~ normal(0, 0.01);
-
    // Evaluate the likelihoods  
-   cut[idx] ~ bernoulli(r_cut_1[idx] ./ (r_cut_1[idx] + k_unloop_1[idx]));
+   n_cuts ~ binomial(n_beads, p_cut);
    dwell_time[idx] ~ exponential(r_cut_1[idx] + k_unloop_1[idx]);
-   f_looped ~ normal(k_loop_1 ./ (r_cut_1 + k_unloop_1 + k_loop_1), sigma);
+   looped_frames ~ binomial(total_frames, (k_loop_1 ./ (r_cut_1 + k_unloop_1 + k_loop_1)));
 }

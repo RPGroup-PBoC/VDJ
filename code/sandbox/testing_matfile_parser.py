@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # %%[markdown]
-# # Testing Input/Output Methods of TPM Matfiles
+# # Developing a TPM class
 #%%
 import numpy as np
 import pandas as pd
@@ -10,13 +10,14 @@ import vdj.viz
 import vdj.bayes
 import matplotlib.pyplot as plt
 from functools import reduce
+import imp
+imp.reload(vdj.bayes)
 vdj.viz.plotting_style()
 
 # %%[markdown]
 # In this notebook, we we test the matfile input-output reading function to make
 # sure that everything is beging computed correctly
 
-cd code/sandbox
 
 #%%
 _mat = scipy.io.loadmat('../../data/analysis_280_analyzed.mat',
@@ -25,17 +26,21 @@ _mat.keys()
 # %%
 # Definitely need to define a class to do all this stuff. 
 class ProcessTPM(object):
-    def __init__(self, fname=None, matfile=None, framerate=30):
-        if (self.fname == None) & (self.matfile != None):
+    def __init__(self, fname=None, matfile=None, framerate=30, 
+                 stan_model=None):
+        if (fname == None) & (matfile != None):
             self.file = matfile
-        elif (self.fname != None) & (self.matfile == None):
-            self.file = scipy.io.loadmat(matfile)
+        elif (fname != None) & (matfile == None):
+            self.file = scipy.io.loadmat(fname)
         else:
             raise RuntimeError("Either `fname` or `matfile` must be specified, but not both!")
 
-        if self.framerate <= 0:
+        if framerate <= 0:
             raise ValueError('framerate must be greater than zero!')
+
+        # Define variables
         self.framerate = framerate # in ms/frame
+        self.stan_model = stan_model
 
         # Initialize the extracted quantities
         self.dwell = False
@@ -58,7 +63,7 @@ class ProcessTPM(object):
             # Find only the times where loopstate was observed
             dwell = rep[rep > 0]
             _df = pd.DataFrame([])
-            _df['dwell_time_ms'] = dwell / self.framerate
+            _df['dwell_time_ms'] = dwell 
             _df['replicate'] = i + 1 # indexing replicates by 1 
             dfs.append(_df)
         df = pd.concat(dfs).reset_index()
@@ -90,18 +95,20 @@ class ProcessTPM(object):
             total_time = len(rep[rep != 1])
             f_looped = np.sum(rep == 2) / total_time
             df = df.append({'fraction_looped':f_looped,
-                            'total_time_ms': total_time * self.framerate,
-                            'looped_time_ms': np.sum(rep==2) * self.framerate,
+                            'total_frames': total_time,
+                            'looped_frames': np.sum(rep==2),
                             'n_beads': n_beads,
                             'replicate': i + 1}, ignore_index=True)
  
         # Make the appropriate entries integers
         df['n_beads'] = df['n_beads'].values.astype(int)
         df['replicate'] = df['replicate'].values.astype(int)
+        df['total_frames'] = df['total_frames'].values.astype(int)
+        df['looped_frames'] = df['looped_frames'].values.astype(int)
         self.f_looped = df.reset_index() 
         return df
  
-    def cut_beads(self, bead_idx=True):
+    def cut_beads(self, bead_idx=False):
         """ 
         Generates a DataFrame of the replicates and bead id for each cutting
         event.
@@ -119,7 +126,7 @@ class ProcessTPM(object):
             # Generate a dictionary of all dwell times and bead ids for each
             # bead in the replicate 
             bead_dict = {}
-            n_beads = len(mat['ontime_comp'][0][i])
+            n_beads = np.sum(mat['ontime_comp'][0][i] > 0)
             for k, bead in enumerate(mat['ontime_comp'][0][i]):
                 if bead.sum() > 0:
                     dwells = bead[bead > 0]
@@ -142,15 +149,17 @@ class ProcessTPM(object):
         # Make the appropriate entries integers
         if bead_idx == True:
             df['bead_id'] = df['bead_id'].values.astype(int)
+            self.bead_idx = True
         else:
             df['n_beads'] = df['n_beads'].values.astype(int)
             df['n_cuts'] = df['n_cuts'].values.astype(int)
+            self.bead_idx = False
 
         df['replicate'] = df['replicate'].values.astype(int)
         self.fates = df.reset_index()
         return df
  
-    def extract_data(self, bead_idx=True):
+    def extract_data(self, bead_idx=False):
         """
         Extracts the dwell times, fraction looped, and cutting identity and
         returns a list of the three data frames
@@ -162,7 +171,7 @@ class ProcessTPM(object):
         if type(self.dwell) == bool:
             dwell = self.dwell_time()
         else:
-            dwell = self.dwell_time()
+            dwell = self.dwell
         if type(self.fates) == bool:
             fates = self.cut_beads(bead_idx=bead_idx)
         else:
@@ -174,41 +183,124 @@ class ProcessTPM(object):
     # ##########################################################################
     # INFERENCE 
     # ##########################################################################
-    def run_inference(self, model_file=None, run_ppc=False, verbose=True, 
-                     **kwargs):
+    def run_inference(self, stan_model=None, force_compile=False, iter=2000, sampler_kwargs={}):
+        """
+        Executes the model inference using provided stan model. 
+
+        Parameters
+        ----------
+        stan_model : str
+            Path to the stan model. Note that this function *does not* take the
+            model code as a string. the Stan model must be saved as a separate
+            file!
+        
+        Returns [as list]
+        -----------------
+        fit : stanfit4model object
+            Sampled model object. Executing "fit" prints out the parameter
+            details such as r_hat, diverging samples, as well as cursory
+            statistics.
+        
+        samples: pandas DataFrame
+            Tidy pandas DataFrame of sampling output. Each row is an individual
+            sample.
+        
+        stats:  pandas DataFrame
+            Tidy pandas DataFrame with summary statistics for each parameter.
+        """ 
+        if self.stan_model == None:
+            self.stan_model == stan_model
+        if (self.stan_model == None) & (stan_model == None):
+            raise RuntimeError('Stan model not given!')
+        # Determine if data has been extracted. If not, do it
+        if self.extract == False:
+            print('Data not yet defined. Extracting data from matfile...')
+            f_looped, dwell, fates = self.extract_data(bead_idx=False)
+            print('finished!')
+        else:
+            f_looped = self.f_looped
+            dwell = self.dwell
+            fates = self.fates
+        
+        # Check if the bead IDX is present for cutting fates. If so, reprocess
+        if self.bead_idx == True:
+            fates = self.cut_beads(bead_idx=False)
+
+        # Define the data dictionary
+        data_dict = {'J':dwell['replicate'].max(), 'N':len(dwell),
+                    'idx':dwell['replicate'].values, 
+                    'total_frames':f_looped['total_frames'],
+                    'looped_frames':f_looped['looped_frames'],
+                    'n_beads': fates['n_beads'], 'n_cuts':fates['n_cuts'],
+                    'dwell_time':dwell['dwell_time_ms']}
 
         # Load the specified Stan model using the vdj.bayes class
-        model = vdj.bayes.StanModel(model_file, **kwargs)
-        
-        # Define the data dictionary.
-        if self.extract == False:
-            f_looped, dwell, fates = self.extract
-        data_dict = {}
-        
-        return None
+        model = vdj.bayes.StanModel(self.stan_model, data_dict=data_dict, 
+                                    force_compile=force_compile)
+        fit, samples = model.sample(iter=iter, **sampler_kwargs)
+        stats = model.summary()
+        return [fit, samples, stats]
         
 
 #%%
-mat = ParseTPM('../../data/analysis_280_analyzed.mat')
+mat = ProcessTPM(fname='../../data/analysis_280_analyzed.mat',
+                 stan_model='../stan/hierarchical_model.stan')
+f_looped, dwell, fates = mat.extract_data()
 
+#%%
+f_looped
 # %%
-dwell = mat.dwell_time()
-cut = mat.cut_beads(bead_idx=False)
-f_looped = mat.fraction_looped()
+fit, samples, stats = mat.run_inference(force_compile=False, iter=2000, 
+                sampler_kwargs=dict(control=dict(adapt_delta=0.8)))
+                       
+# %%
+fit
 
-
-
-#%%
-out = mat.extract()
-
-p
-
-#%%
-pd.merge(out[1], out[2], on='replicate')
-
+#%% [markdown]
+# It seems like this function works pretty well. Let's now try to look at the
+# inference and see how well it agrees with the data.
 
 #%%
-pd.concat(out)
+# compute the dwell time ECDFs
+fig, ax = plt.subplots(1, 1, figsize=(6,4), dpi=125)
+dwell['ecdf'] = dwell.groupby('replicate')['dwell_time_ms'].transform(lambda x: x.rank(method='first') / len(x))
+
+# Plot the replicate distributions
+i = 0
+for g, d in dwell.groupby('replicate'):
+    if i == 0:
+        label = 'replicate'
+        i += 1
+    else:
+        label = '__nolegend__'
+
+    ax.step(d['dwell_time_ms'], d['ecdf'], lw=1, alpha=0.2, 
+            label=label, color='slategray')
+
+# Plot the pooled distribution
+x = np.sort(dwell['dwell_time_ms'].values)
+y = np.linspace(0, 1, len(x))
+ax.step(x, y, '-', lw=1, color='dodgerblue', label='pooled data')
+
+# Plot the hyperparameter CDF 
+r = vdj.stats.compute_hpd(samples['r_cut'] + samples['k_unloop'].values, 0.95)
+
+dt = np.logspace(3, 5, 500)
+cdf_low = 1 - np.exp(-r[0] * dt)
+cdf_high = 1 - np.exp(-r[1] * dt)
+ax.fill_between(dt, cdf_low, cdf_high, color='tomato', alpha=0.5)
+ax.set_xlabel('dwell time [ms]')
+ax.set_ylabel('cumulative distribution')
+ax.set_xscale('log')
+plt.tight_layout()
 
 #%%
-reduce(lambda left, right: pd.merge(left, right, on=['replicate', 'bead_id']))
+_ = plt.hist(dwell['dwell_time_ms'], bins=15, density=True)
+low = r[0] * np.exp(-r[0] * dt)
+_ = plt.plot(dt, low)
+
+#%%
+
+r
+
+#%%
