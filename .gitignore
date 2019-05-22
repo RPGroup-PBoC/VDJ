@@ -7,3 +7,4 @@
 *.tif*
 *.pkl
 *checkpoints*
+*.mat

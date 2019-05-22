@@ -4,9 +4,9 @@ from os import path
 __version__ = '0.0.01'
 
 setup(
-    name='mut',
+    name='vdj',
     version=__version__,
-    description='Python utilities used for analysis of vdj data.'
+    description='Python utilities used for analysis of vdj data.',
     license='MIT',
     classifiers=[
         'Development Status :: 0 - mega-alpha',
