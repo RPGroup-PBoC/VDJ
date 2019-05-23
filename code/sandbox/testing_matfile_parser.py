@@ -14,7 +14,6 @@ import imp
 imp.reload(vdj.bayes)
 vdj.viz.plotting_style()
 
-# %%[markdown]
 # In this notebook, we we test the matfile input-output reading function to make
 # sure that everything is beging computed correctly
 
@@ -59,13 +58,20 @@ class ProcessTPM(object):
         """
         mat = self.file
         dfs = [] # empty list to append coming data frames
-        for i, rep in enumerate(mat['ontime_comp'][0]):
+        iter = 1
+        for i, rep in enumerate(mat['loops'][0]):
             # Find only the times where loopstate was observed
             dwell = rep[rep > 0]
-            _df = pd.DataFrame([])
-            _df['dwell_time_ms'] = dwell 
-            _df['replicate'] = i + 1 # indexing replicates by 1 
-            dfs.append(_df)
+            # If there were no looped states, increment the counter and move on
+            if len(dwell) == 0:
+                dwell = np.array([0])
+                iter += 1
+            else:
+                _df = pd.DataFrame([])
+                _df['dwell_time_ms'] = dwell 
+                _df['replicate'] = iter # indexing replicates by 1 
+                iter +=1
+                dfs.append(_df)
         df = pd.concat(dfs).reset_index()
  
         # Make the appropriate entries integers
@@ -83,7 +89,7 @@ class ProcessTPM(object):
         """
         mat = self.file
         df = pd.DataFrame([])
-        for i, rep in enumerate(_mat['statetrace_comp'][0]):
+        for i, rep in enumerate(mat['statetrace_comp'][0]):
             # Determine the total length of the experiment and the number of
             # beads observed
             n_beads, total_time = np.shape(rep)
@@ -227,7 +233,7 @@ class ProcessTPM(object):
             fates = self.cut_beads(bead_idx=False)
 
         # Define the data dictionary
-        data_dict = {'J':dwell['replicate'].max(), 'N':len(dwell),
+        data_dict = {'J':int(dwell['replicate'].max()) + 1, 'N':len(dwell),
                     'idx':dwell['replicate'].values, 
                     'total_frames':f_looped['total_frames'],
                     'looped_frames':f_looped['looped_frames'],
@@ -243,19 +249,16 @@ class ProcessTPM(object):
         
 
 #%%
-mat = ProcessTPM(fname='../../data/analysis_280_analyzed.mat',
-                 stan_model='../stan/hierarchical_model.stan')
+mat = ProcessTPM(fname='../../data/analysis_280_analyzed 2.mat',
+                 stan_model='../stan/pooled_model.stan')
 f_looped, dwell, fates = mat.extract_data()
 
-#%%
-f_looped
 # %%
-fit, samples, stats = mat.run_inference(force_compile=False, iter=2000, 
-                sampler_kwargs=dict(control=dict(adapt_delta=0.8)))
-                       
-# %%
-fit
+fit, samples, stats = mat.run_inference(force_compile=False, iter=5000,
+                            sampler_kwargs=dict(control=dict(adapt_delta=0.99)))
 
+
+                       
 #%% [markdown]
 # It seems like this function works pretty well. Let's now try to look at the
 # inference and see how well it agrees with the data.
@@ -273,7 +276,7 @@ for g, d in dwell.groupby('replicate'):
         i += 1
     else:
         label = '__nolegend__'
-
+    d.sort_values('dwell_time_ms', inplace=True)
     ax.step(d['dwell_time_ms'], d['ecdf'], lw=1, alpha=0.2, 
             label=label, color='slategray')
 
@@ -285,22 +288,33 @@ ax.step(x, y, '-', lw=1, color='dodgerblue', label='pooled data')
 # Plot the hyperparameter CDF 
 r = vdj.stats.compute_hpd(samples['r_cut'] + samples['k_unloop'].values, 0.95)
 
-dt = np.logspace(3, 5, 500)
-cdf_low = 1 - np.exp(-r[0] * dt)
-cdf_high = 1 - np.exp(-r[1] * dt)
-ax.fill_between(dt, cdf_low, cdf_high, color='tomato', alpha=0.5)
+cdf_low = scipy.stats.expon(loc=0, scale=1/r[0]).cdf(x)
+cdf_high = scipy.stats.expon(loc=0, scale=1/r[1]).cdf(x)
+ax.fill_between(x, cdf_low, cdf_high, color='tomato', alpha=0.5)
 ax.set_xlabel('dwell time [ms]')
 ax.set_ylabel('cumulative distribution')
-ax.set_xscale('log')
+# ax.set_xscale('symlog', linthreshx=1E1)
 plt.tight_layout()
 
 #%%
-_ = plt.hist(dwell['dwell_time_ms'], bins=15, density=True)
-low = r[0] * np.exp(-r[0] * dt)
-_ = plt.plot(dt, low)
+_ = plt.hist(dwell['dwell_time_ms'], bins=500, density=True)
+low = r[1] * np.exp(-r[1] * x)
+high = r[0] * np.exp(-r[0] * x)
+_ = plt.fill_between(x, low, high, alpha=0.4, color='tomato',
+zorder=1000)
 
 #%%
+import corner
+_ = corner.corner(samples[['r_cut', 'k_loop', 'k_unloop']])
 
-r
+
+#%%
+rep = 9 
+cdf_low = scipy.stats.expon(loc=0, scale=1/r[0]).cdf(x)
+cdf_high = scipy.stats.expon(loc=0, scale=1/r[1]).cdf(x)
+plt.fill_between(x, cdf_low, cdf_high, color='tomato')
+_rep = dwell[dwell['replicate']==rep]
+_rep.sort_values('dwell_time_ms', inplace=True)
+plt.step(_rep['dwell_time_ms'], _rep['ecdf'])
 
 #%%

@@ -53,9 +53,9 @@ model {
     vector[J] p_cut = r_cut_1 ./ (r_cut_1 + k_unloop_1);
 
     // Assign the prior distributions for hyper parameters
-   r_cut ~ normal(0, 1);
-   k_unloop ~ normal(0, 1);
-   k_loop ~ normal(0, 1);
+   r_cut ~ normal(0, 100);
+   k_unloop ~ normal(0, 100);
+   k_loop ~ normal(0, 100);
    tau ~ normal(0, 1);
 
    // Prior definitions for low-level priors
