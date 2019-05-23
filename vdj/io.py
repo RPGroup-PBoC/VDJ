@@ -6,22 +6,8 @@ other file parsing utilities
 """
 import numpy as np
 import pandas as pd
+from .bayes import StanModel
 import os
-
-def endogenous_seqs():
-    """
-    Returns a dictionary of the sequence identity for . 
-    """
-    seqs = {'consensus': 'CACAGTGCTACAGACTGGAACAAAAACC',
-            'WT1223rss': None,
-            'DFL161':   None,
-            'DFL1613': None,
-            'V1-135': None,
-            'V9-120': None,
-            'V10-96': None,
-            'V10-95': None,
-            'V19-93': None}
-    return seqs
 
 def nucleotide_idx():
     """
@@ -29,15 +15,300 @@ def nucleotide_idx():
     """
     return {'A':0, 'C':1, 'G':2, 'T':3}
 
-class ProcessTPM(object):
-    R"""
-    Base class for processing information from a compiled TPM experiment.
+def endogenous_seqs():
     """
-    def __init__(self, file):
-        R"""
-        Parameters
-        ---------
-        file: str
-            Path to the experimental `.mat` file. 
+    Returns a dictionary of the sequence identity for the reference 12RSS
+    sequence and useful mutations. 
+    """
+    conv = nucleotide_idx()
+    _seqs = {'reference': 'CACAGTGCTACAGACTGGAACAAAAACC',
+            'V1-135':  'CACAGTGATTCAGACCCGAACAAAAACT',
+            'V9-120': 'CACAGTGATACAAATCATAACATAAACC',
+            'V10-96': 'CACAATGATATAAGTCATAACATAAACC',
+            'V19-93': 'CACAGTGATACAAATCATAACAAAAACC',
+            'V4-55': 'CACAGTGATACAGACTGGAACAAAAACC',
+            'V5-43': 'CACAGTGATGCAGACCATAGCAAAAATC',
+            'V6-15': 'CACAGTACTTCAGCCTCCTACATAAACC'}
+
+    seqs = {m: [seq, np.array([conv[a] for a in seq])] for m, seq in _seqs.items()}
+    return seqs
+
+def mutation_parser(mut_id):
+    """
+    Takes a mutation identifier and returns the sequence in both base and
+    integer representation
+
+    Parameters
+    ----------
+    mut_id: str
+        String of the mutant identifier with the region ('Hept', 'Spac', or
+        'Non') and mutation(s) such as A4T.
+    
+    Returns
+    -------
+    mut_dict: dict
+        Dictionary with the supplied mut_id, new 12RSS sequence, and integer
+        representation of the new sequence.
+    """
+    # Load the raw sequences and nt conversion id's
+    conversion = nucleotide_idx()
+    seqs, _ = endogenous_seqs()
+    ref = seqs['reference']
+
+    # Determine the region which is mutated
+    if 'hept' in mut_id.lower():
+        seq = ref[:7]
+        region = 'hept'
+    elif 'spac' in mut_id.lower():
+        seq = ref[7:19]
+        region =  'spac'
+    elif 'non' in mut_id.lower():
+        seq = ref[19:]
+        region = 'non'
+    else:
+        try:
+            new_seq = seqs[mut_id]
+            new_seq_idx = np.array([conversion[a] for a in new_seq])
+            return {'seq':new_seq, 'seq_idx':new_seq_idx}
+        except:
+            raise ValueError("Mutation ID not in proper format of 12(region)(old)(pos)(new) or name not recognized.")
+
+    # Determine the location of the mutations and insert.
+    loc = mut_id.split(region)[-1]
+    muts = [loc[i:i+3] for i in range(0, len(loc), 3)]
+    new_region = region.copy()
+    for m in muts:
+        if region[m[1]] != m[0]:
+            raise ValueError(f'Base at position {mut[1]} is not {mut[0]}! Double check the sequence.')
+        new_region[m[1]] = m[2]
+    
+    # Replace the region and compute the integer representation
+    new_seq = ref.replace(region, new_region) 
+    new_seq_idx = np.array([conversion[a] for a in new_seq]) 
+    return {'seq':new_seq, 'seq_idx':new_seq_idx}
+
+
+class ProcessTPM(object):
+    def __init__(self, fname=None, matfile=None, framerate=30, 
+                 stan_model=None):
+        if (fname == None) & (matfile != None):
+            self.file = matfile
+        elif (fname != None) & (matfile == None):
+            self.file = scipy.io.loadmat(fname)
+        else:
+            raise RuntimeError("Either `fname` or `matfile` must be specified, but not both!")
+
+        if framerate <= 0:
+            raise ValueError('framerate must be greater than zero!')
+
+        # Define variables
+        self.framerate = framerate # in ms/frame
+        self.stan_model = stan_model
+
+        # Initialize the extracted quantities
+        self.dwell = False
+        self.f_looped = False
+        self.fates = False
+
+        # Set state variable for if data is processed
+        self.extract = False
+
+    # ##########################################################################
+    # DATA EXTRACTION
+    # ##########################################################################
+    def dwell_time(self):
         """
-        return None
+        Extracts the dwell times for each replicate.
+        """
+        mat = self.file
+        dfs = [] # empty list to append coming data frames
+        iter = 1
+        for i, rep in enumerate(mat['loops'][0]):
+            # Find only the times where loopstate was observed
+            dwell = rep[rep > 0]
+            # If there were no looped states, increment the counter and move on
+            if len(dwell) == 0:
+                dwell = np.array([0])
+                iter += 1
+            else:
+                _df = pd.DataFrame([])
+                _df['dwell_time_ms'] = dwell 
+                _df['replicate'] = iter # indexing replicates by 1 
+                iter +=1
+                dfs.append(_df)
+        df = pd.concat(dfs).reset_index()
+ 
+        # Make the appropriate entries integers
+        df['replicate'] = df['replicate'].values.astype(int)
+        self.dwell = df
+        return df
+ 
+    def fraction_looped(self):
+        """
+        Computes the fraction of time the beads were in the looped state for
+        each replicate. This is defined as 
+                    Σ τ_looped
+        f_looped = ------------ 
+                    Σ τ_total
+        """
+        mat = self.file
+        df = pd.DataFrame([])
+        for i, rep in enumerate(mat['statetrace_comp'][0]):
+            # Determine the total length of the experiment and the number of
+            # beads observed
+            n_beads, total_time = np.shape(rep)
+ 
+            # Identify the looped and unlooped states. Key for these idx are 
+            # 1 = Bead stuck to glass or cut
+            # 3 = Bead in unlooped state
+            # 2 = Bead in looped state
+            total_time = len(rep[rep != 1])
+            f_looped = np.sum(rep == 2) / total_time
+            df = df.append({'fraction_looped':f_looped,
+                            'total_frames': total_time,
+                            'looped_frames': np.sum(rep==2),
+                            'n_beads': n_beads,
+                            'replicate': i + 1}, ignore_index=True)
+ 
+        # Make the appropriate entries integers
+        df['n_beads'] = df['n_beads'].values.astype(int)
+        df['replicate'] = df['replicate'].values.astype(int)
+        df['total_frames'] = df['total_frames'].values.astype(int)
+        df['looped_frames'] = df['looped_frames'].values.astype(int)
+        self.f_looped = df.reset_index() 
+        return df
+ 
+    def cut_beads(self, bead_idx=False):
+        """ 
+        Generates a DataFrame of the replicates and bead id for each cutting
+        event.
+        
+        Parameters
+        ----------
+        bead_idx: bool
+            If True, the returned dataframe has the bead identity and dwell
+            time. If False, a short dataframe with n_cuts and n_beads for each
+            replicate are returned.
+        """
+        mat = self.file
+        df = pd.DataFrame({})
+        for i, rep in enumerate(mat['pccut'][0]):
+            # Generate a dictionary of all dwell times and bead ids for each
+            # bead in the replicate 
+            bead_dict = {}
+            n_beads = np.sum(mat['ontime_comp'][0][i] > 0)
+            for k, bead in enumerate(mat['ontime_comp'][0][i]):
+                if bead.sum() > 0:
+                    dwells = bead[bead > 0]
+                    for d in dwells:
+                        bead_dict[d] = k + 1
+ 
+            # Trim the replicate to remove spurious entry of zero
+            rep = rep[0][1:]
+ 
+            # Get the bead ID and add it to the dataframe
+            if  bead_idx == True:
+                for dwell in rep:
+                    df = df.append({'cut':1, 
+                                'bead_id': bead_dict[dwell],
+                                'replicate': i + 1}, ignore_index=True)
+            else:
+                df = df.append({'n_beads':n_beads, 'n_cuts':len(rep), 
+                                'replicate': i + 1}, ignore_index=True)
+                
+        # Make the appropriate entries integers
+        if bead_idx == True:
+            df['bead_id'] = df['bead_id'].values.astype(int)
+            self.bead_idx = True
+        else:
+            df['n_beads'] = df['n_beads'].values.astype(int)
+            df['n_cuts'] = df['n_cuts'].values.astype(int)
+            self.bead_idx = False
+
+        df['replicate'] = df['replicate'].values.astype(int)
+        self.fates = df.reset_index()
+        return df
+ 
+    def extract_data(self, bead_idx=False):
+        """
+        Extracts the dwell times, fraction looped, and cutting identity and
+        returns a list of the three data frames
+        """
+        if type(self.f_looped) == bool:
+            f_looped = self.fraction_looped()
+        else:
+            f_looped = self.f_looped
+        if type(self.dwell) == bool:
+            dwell = self.dwell_time()
+        else:
+            dwell = self.dwell
+        if type(self.fates) == bool:
+            fates = self.cut_beads(bead_idx=bead_idx)
+        else:
+            fates = self.fates
+        self.extract = True
+        return [f_looped, dwell, fates]
+ 
+
+    # ##########################################################################
+    # INFERENCE 
+    # ##########################################################################
+    def run_inference(self, stan_model=None, force_compile=False, iter=2000, sampler_kwargs={}):
+        """
+        Executes the model inference using provided stan model. 
+
+        Parameters
+        ----------
+        stan_model : str
+            Path to the stan model. Note that this function *does not* take the
+            model code as a string. the Stan model must be saved as a separate
+            file!
+        
+        Returns [as list]
+        -----------------
+        fit : stanfit4model object
+            Sampled model object. Executing "fit" prints out the parameter
+            details such as r_hat, diverging samples, as well as cursory
+            statistics.
+        
+        samples: pandas DataFrame
+            Tidy pandas DataFrame of sampling output. Each row is an individual
+            sample.
+        
+        stats:  pandas DataFrame
+            Tidy pandas DataFrame with summary statistics for each parameter.
+        """ 
+        if self.stan_model == None:
+            self.stan_model == stan_model
+        if (self.stan_model == None) & (stan_model == None):
+            raise RuntimeError('Stan model not given!')
+        # Determine if data has been extracted. If not, do it
+        if self.extract == False:
+            print('Data not yet defined. Extracting data from matfile...')
+            f_looped, dwell, fates = self.extract_data(bead_idx=False)
+            print('finished!')
+        else:
+            f_looped = self.f_looped
+            dwell = self.dwell
+            fates = self.fates
+        
+        # Check if the bead IDX is present for cutting fates. If so, reprocess
+        if self.bead_idx == True:
+            fates = self.cut_beads(bead_idx=False)
+
+        # Define the data dictionary
+        data_dict = {'J':int(dwell['replicate'].max()) + 1, 'N':len(dwell),
+                    'idx':dwell['replicate'].values, 
+                    'total_frames':f_looped['total_frames'],
+                    'looped_frames':f_looped['looped_frames'],
+                    'n_beads': fates['n_beads'], 'n_cuts':fates['n_cuts'],
+                    'dwell_time':dwell['dwell_time_ms']}
+
+        # Load the specified Stan model using the vdj.bayes class
+        model = StanModel(self.stan_model, data_dict=data_dict, 
+                                    force_compile=force_compile)
+        fit, samples = model.sample(iter=iter, **sampler_kwargs)
+        stats = model.summary()
+        return [fit, samples, stats]
+ 
+
