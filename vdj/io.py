@@ -320,13 +320,12 @@ class ProcessTPM(object):
         if self.bead_idx == True:
             fates = self.cut_beads(bead_idx=False)
 
-        if self.drop_replicate != None:
-            dwell = dwell[dwell['replicate']!=self.drop_replicate]
-            fates = fates[fates['replicate']!=self.drop_replicate]
-            f_looped = f_looped[f_looped['replicate']!=self.drop_replicate]
-
+        # Find the maximum number of replicates
+        reps = np.array([len(dwell.replicate.unique()), 
+                len(f_looped.replicate.unique()),
+                len(fates.replicate.unique())])
         # Define the data dictionary
-        data_dict = {'J':len(dwell['replicate'].unique()), 'N':len(dwell),
+        data_dict = {'J':np.max(reps), 'N':len(dwell),
                     'idx':dwell['replicate'].values, 
                     'total_frames':f_looped['total_frames'],
                     'looped_frames':f_looped['looped_frames'],
@@ -338,6 +337,8 @@ class ProcessTPM(object):
                                     force_compile=force_compile)
         fit, samples = model.sample(iter=iter, **sampler_kwargs)
         stats = model.summary()
+        samples['mutant'] = self.mut_id 
+        stats['mutant'] = self.mut_id
         return [fit, samples, stats]
  
 

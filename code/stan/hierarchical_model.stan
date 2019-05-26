@@ -14,9 +14,9 @@
 
 data {
     // Dimensional information
-    int<lower=1> J; // Number of replicates
+    int<lower=1> J; // Maximum number of replicates
     int<lower=1> N; // Total number of dwell time measurements
-    int<lower=1, upper=J> idx[N]; // ID vector for the dwell time measurements
+    int<lower=1> idx[N]; // ID vector for the dwell time measurements
 
     //Observables
     int<lower=0> total_frames[J]; // Total number of frames (per beads)
