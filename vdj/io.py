@@ -7,6 +7,7 @@ other file parsing utilities
 import numpy as np
 import pandas as pd
 from .bayes import StanModel
+import scipy.io
 import os
 
 def nucleotide_idx():
@@ -25,10 +26,13 @@ def endogenous_seqs():
             'V1-135':  'CACAGTGATTCAGACCCGAACAAAAACT',
             'V9-120': 'CACAGTGATACAAATCATAACATAAACC',
             'V10-96': 'CACAATGATATAAGTCATAACATAAACC',
+            'V10-95': 'CACAATGATATAAGTCATAACATAAACC',
             'V19-93': 'CACAGTGATACAAATCATAACAAAAACC',
             'V4-55': 'CACAGTGATACAGACTGGAACAAAAACC',
             'V5-43': 'CACAGTGATGCAGACCATAGCAAAAATC',
-            'V6-15': 'CACAGTACTTCAGCCTCCTACATAAACC'}
+            'V6-15': 'CACAGTACTTCAGCCTCCTACATAAACC',
+            'DFL-161': 'CACAGTGCTATATCCATCAGCAAAAACC',
+            'DFL-1613': 'CACAGTAGTAGATCCCTTCACAAAAAGC'}
 
     seqs = {m: [seq, np.array([conv[a] for a in seq])] for m, seq in _seqs.items()}
     return seqs
@@ -52,8 +56,8 @@ def mutation_parser(mut_id):
     """
     # Load the raw sequences and nt conversion id's
     conversion = nucleotide_idx()
-    seqs, _ = endogenous_seqs()
-    ref = seqs['reference']
+    seqs = endogenous_seqs()
+    ref = seqs['reference'][0]
 
     # Determine the region which is mutated
     if 'hept' in mut_id.lower():
@@ -72,46 +76,58 @@ def mutation_parser(mut_id):
             return {'seq':new_seq, 'seq_idx':new_seq_idx}
         except:
             raise ValueError("Mutation ID not in proper format of 12(region)(old)(pos)(new) or name not recognized.")
-
+    print(len(seq))
     # Determine the location of the mutations and insert.
-    loc = mut_id.split(region)[-1]
+    loc = mut_id.lower().split(region)[-1]
     muts = [loc[i:i+3] for i in range(0, len(loc), 3)]
-    new_region = region.copy()
+    new_region = list(seq)
     for m in muts:
-        if region[m[1]] != m[0]:
-            raise ValueError(f'Base at position {mut[1]} is not {mut[0]}! Double check the sequence.')
-        new_region[m[1]] = m[2]
+        print(m, seq, seq[int(m[1]) - 1], seq[int(m[1])], m[0], seq[int(m[1]) - 1] == m[0])
+        if seq[int(m[1]) - 1] != m[0].upper():
+            raise ValueError(f'Base at position {m[1]} is not {m[0].upper()}! Double check the sequence.')
+        else:
+            new_region[int(m[1]) - 1] = m[2]
     
     # Replace the region and compute the integer representation
-    new_seq = ref.replace(region, new_region) 
+    new_seq = ref.replace(seq, ''.join(new_region).upper())
     new_seq_idx = np.array([conversion[a] for a in new_seq]) 
     return {'seq':new_seq, 'seq_idx':new_seq_idx}
 
 
 class ProcessTPM(object):
-    def __init__(self, fname=None, matfile=None, framerate=30, 
+    def __init__(self, fname=None, framerate=30, 
                  stan_model=None):
-        if (fname == None) & (matfile != None):
-            self.file = matfile
-        elif (fname != None) & (matfile == None):
-            self.file = scipy.io.loadmat(fname)
-        else:
-            raise RuntimeError("Either `fname` or `matfile` must be specified, but not both!")
-
         if framerate <= 0:
             raise ValueError('framerate must be greater than zero!')
+        if type(fname) != str:
+            raise TypeError('File must be a string')
+
+        # Load the matfile
+        self.file = scipy.io.loadmat(fname)
 
         # Define variables
-        self.framerate = framerate # in ms/frame
+        self.fps = framerate # n ms/frame
         self.stan_model = stan_model
+        self.mut_id = fname.split('/')[-1].split('_')[0]
+
+       # Generate a dictionary of dates and add to self.
+        try:
+            experiment_names = self.file['alllacnames'][0]
+            dates = {}
+            for i, nom in enumerate(experiment_names):
+                dates[i+1] = nom[0].split('_')[0]
+            self.dates = dates 
+        except KeyError:
+            self.dates = {i+1:'Date Unknown' for i in range(1000)}
+
+        # Initialize state class state variables
+        self.drop_replicate = None # If a replicate is missing
+        self.extract = False # If data has been extracted yet from matfile
 
         # Initialize the extracted quantities
         self.dwell = False
         self.f_looped = False
         self.fates = False
-
-        # Set state variable for if data is processed
-        self.extract = False
 
     # ##########################################################################
     # DATA EXTRACTION
@@ -122,24 +138,25 @@ class ProcessTPM(object):
         """
         mat = self.file
         dfs = [] # empty list to append coming data frames
-        iter = 1
+
         for i, rep in enumerate(mat['loops'][0]):
             # Find only the times where loopstate was observed
             dwell = rep[rep > 0]
+
             # If there were no looped states, increment the counter and move on
             if len(dwell) == 0:
                 dwell = np.array([0])
-                iter += 1
+                self.drop_replicate = i + 1
             else:
                 _df = pd.DataFrame([])
                 _df['dwell_time_ms'] = dwell 
-                _df['replicate'] = iter # indexing replicates by 1 
-                iter +=1
+                _df['replicate'] = i + 1 # indexing replicates by 1 
                 dfs.append(_df)
         df = pd.concat(dfs).reset_index()
  
         # Make the appropriate entries integers
-        df['replicate'] = df['replicate'].values.astype(int)
+        df['mutant'] = self.mut_id
+        df['replicate'] = df['replicate'].values
         self.dwell = df
         return df
  
@@ -171,10 +188,12 @@ class ProcessTPM(object):
                             'replicate': i + 1}, ignore_index=True)
  
         # Make the appropriate entries integers
+        df['mutant'] = self.mut_id
         df['n_beads'] = df['n_beads'].values.astype(int)
         df['replicate'] = df['replicate'].values.astype(int)
         df['total_frames'] = df['total_frames'].values.astype(int)
         df['looped_frames'] = df['looped_frames'].values.astype(int)
+
         self.f_looped = df.reset_index() 
         return df
  
@@ -213,8 +232,8 @@ class ProcessTPM(object):
                                 'bead_id': bead_dict[dwell],
                                 'replicate': i + 1}, ignore_index=True)
             else:
-                df = df.append({'n_beads':n_beads, 'n_cuts':len(rep), 
-                                'replicate': i + 1}, ignore_index=True)
+                df = df.append({'n_beads':n_beads, 'n_cuts':len(rep),
+                                'replicate': i+1}, ignore_index=True)
                 
         # Make the appropriate entries integers
         if bead_idx == True:
@@ -226,6 +245,7 @@ class ProcessTPM(object):
             self.bead_idx = False
 
         df['replicate'] = df['replicate'].values.astype(int)
+        df['mutant'] = self.mut_id
         self.fates = df.reset_index()
         return df
  
@@ -253,7 +273,8 @@ class ProcessTPM(object):
     # ##########################################################################
     # INFERENCE 
     # ##########################################################################
-    def run_inference(self, stan_model=None, force_compile=False, iter=2000, sampler_kwargs={}):
+    def run_inference(self, stan_model=None, force_compile=False, iter=2000, 
+                      sampler_kwargs={}, drop_replicate=None):
         """
         Executes the model inference using provided stan model. 
 
@@ -279,9 +300,12 @@ class ProcessTPM(object):
             Tidy pandas DataFrame with summary statistics for each parameter.
         """ 
         if self.stan_model == None:
-            self.stan_model == stan_model
-        if (self.stan_model == None) & (stan_model == None):
+            self.stan_model = stan_model
+        elif (self.stan_model == None) & (stan_model == None):
             raise RuntimeError('Stan model not given!')
+        else:
+            self.stan_model = stan_model
+
         # Determine if data has been extracted. If not, do it
         if self.extract == False:
             print('Data not yet defined. Extracting data from matfile...')
@@ -296,8 +320,13 @@ class ProcessTPM(object):
         if self.bead_idx == True:
             fates = self.cut_beads(bead_idx=False)
 
+        if self.drop_replicate != None:
+            dwell = dwell[dwell['replicate']!=self.drop_replicate]
+            fates = fates[fates['replicate']!=self.drop_replicate]
+            f_looped = f_looped[f_looped['replicate']!=self.drop_replicate]
+
         # Define the data dictionary
-        data_dict = {'J':int(dwell['replicate'].max()) + 1, 'N':len(dwell),
+        data_dict = {'J':len(dwell['replicate'].unique()), 'N':len(dwell),
                     'idx':dwell['replicate'].values, 
                     'total_frames':f_looped['total_frames'],
                     'looped_frames':f_looped['looped_frames'],

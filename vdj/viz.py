@@ -35,7 +35,7 @@ def plotting_style():
     sns.set_style('dark', rc=rc)
 
 
-def _grid_data(mutation_array, data_values):
+def generate_matrix(mutations, data_values):
     """
     Generates a grid of values the size of the 12RSS sequence
 
