@@ -24,7 +24,7 @@ for f in tqdm(files, desc='Processing .mat TPM files...'):
     # Perform the hierarchical inference.
     _, samples, stats = tpm.run_inference(
         stan_model='../stan/hierarchical_model.stan',
-        iter=5000, sampler_kwargs=dict(n_jobs=1, control=dict(adapt_delta=0.9)))
+        iter=5000, sampler_kwargs=dict(control=dict(adapt_delta=0.9)))
 
     # Append the generated dataframes to the data lists
     dwell_dfs.append(dwell)
