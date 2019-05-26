@@ -149,7 +149,7 @@ class ProcessTPM(object):
                 self.drop_replicate = i + 1
             else:
                 _df = pd.DataFrame([])
-                _df['dwell_time_ms'] = dwell 
+                _df['dwell_time_ms'] = dwell / self.fps
                 _df['replicate'] = i + 1 # indexing replicates by 1 
                 dfs.append(_df)
         df = pd.concat(dfs).reset_index()
