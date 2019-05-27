@@ -14,7 +14,7 @@ from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
 from bokeh.models.glyphs import HBar
 from bokeh.embed import components
-bokeh.plotting.output_file('./vdj_voyager.html')
+bokeh.plotting.output_file('./data_voyager.html')
 import imp
 import vdj.io
 imp.reload(vdj.io)

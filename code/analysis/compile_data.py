@@ -18,25 +18,28 @@ files = glob.glob('../../data/*.mat')
 dwell_dfs, f_looped_dfs, fates_dfs = [], [], []
 samples_dfs, stats_dfs = [], []
 for f in tqdm(files, desc='Processing .mat TPM files...'):
+    
     # Load and extract data
     tpm = vdj.io.ProcessTPM(f)
     f_looped, dwell, fates = tpm.extract_data()
 
-    # Perform the hierarchical inference.
-    _, samples, stats = tpm.run_inference(
+    if 'DFL1613' not in f:
+        # Perform the hierarchical inference.
+        _, samples, stats = tpm.run_inference(
         stan_model='../stan/hierarchical_model.stan',
         iter=5000, sampler_kwargs=dict(control=dict(adapt_delta=0.9)))
+
+        # Append the inference data
+        samples_dfs.append(samples)
+        stats_dfs.append(stats)
+
 
     # Append the generated dataframes to the data lists
     dwell_dfs.append(dwell)
     f_looped_dfs.append(f_looped)
     fates_dfs.append(fates)
 
-    # Append the inference data
-    samples_dfs.append(samples)
-    stats_dfs.append(stats)
-
-# Concatenate the data and save to CSVs
+   # Concatenate the data and save to CSVs
 dwell = pd.concat(dwell_dfs)
 dwell.to_csv('../../data/compiled_dwell_times.csv', index=False)
 f_looped = pd.concat(f_looped_dfs)
@@ -47,3 +50,9 @@ samples = pd.concat(samples_dfs)
 samples.to_csv('../../data/compiled_inference_samples.csv', index=False)
 stats = pd.concat(stats_dfs)
 stats.to_csv('../../data/compiled_inference_statistics.csv', index=False)
+
+
+
+
+
+
