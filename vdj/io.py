@@ -327,7 +327,16 @@ class ProcessTPM(object):
             f_looped = self.f_looped
             dwell = self.dwell
             fates = self.fates
+       
+        # Define the replicate identities for sampling
+        _id = f_looped.groupby('replicate').ngroup() + 1
+        rep_conversion = {r: i for r, i in zip(f_looped['replicate'].values, _id)}
         
+        for r, id in rep_conversion.items():
+            f_looped.loc[f_looped['replicate']==r, 'idx'] = id
+            dwell.loc[dwell['replicate']==r, 'idx'] = id
+            fates.loc[fates['replicate']==r, 'idx'] = id
+            
         # Check if the bead IDX is present for cutting fates. If so, reprocess
         if self.bead_idx == True:
             fates = self.cut_beads(bead_idx=False)
@@ -336,9 +345,10 @@ class ProcessTPM(object):
         reps = np.array([len(dwell.replicate.unique()), 
                 len(f_looped.replicate.unique()),
                 len(fates.replicate.unique())])
+        
         # Define the data dictionary
         data_dict = {'J':np.max(reps), 'N':len(dwell),
-                    'idx':dwell['replicate'].values, 
+                    'idx':dwell['idx'].values.astype(int), 
                     'total_frames':f_looped['total_frames'],
                     'looped_frames':f_looped['looped_frames'],
                     'n_beads': fates['n_beads'], 'n_cuts':fates['n_cuts'],

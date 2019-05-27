@@ -10,6 +10,7 @@ import vdj.io
 import glob
 import imp
 imp.reload(vdj.io)
+
 # Glob the file names of all .mat files in data
 files = glob.glob('../../data/*.mat')
 
