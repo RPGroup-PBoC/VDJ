@@ -23,16 +23,19 @@ def endogenous_seqs():
     """
     conv = nucleotide_idx()
     _seqs = {'reference': 'CACAGTGCTACAGACTGGAACAAAAACC',
+            'WT12rss': 'CACAGTGCTACAGACTGGAACAAAAACC',
             'V1-135':  'CACAGTGATTCAGACCCGAACAAAAACT',
             'V9-120': 'CACAGTGATACAAATCATAACATAAACC',
+            'V8-18': 'CACAGAGCTTCAGCTGCCTACACAAACC',
+            'V6-17': 'CACAGTGCTTCAGCCTCCTACACAAACC',
             'V10-96': 'CACAATGATATAAGTCATAACATAAACC',
             'V10-95': 'CACAATGATATAAGTCATAACATAAACC',
             'V19-93': 'CACAGTGATACAAATCATAACAAAAACC',
             'V4-55': 'CACAGTGATACAGACTGGAACAAAAACC',
             'V5-43': 'CACAGTGATGCAGACCATAGCAAAAATC',
             'V6-15': 'CACAGTACTTCAGCCTCCTACATAAACC',
-            'DFL-161': 'CACAGTGCTATATCCATCAGCAAAAACC',
-            'DFL-1613': 'CACAGTAGTAGATCCCTTCACAAAAAGC'}
+            'DFL161': 'CACAGTGCTATATCCATCAGCAAAAACC',
+            'DFL1613': 'CACAGTAGTAGATCCCTTCACAAAAAGC'}
 
     seqs = {m: [seq, np.array([conv[a] for a in seq])] for m, seq in _seqs.items()}
     return seqs
@@ -72,22 +75,31 @@ def mutation_parser(mut_id):
     else:
         try:
             new_seq = seqs[mut_id]
-            new_seq_idx = np.array([conversion[a] for a in new_seq])
-            return {'seq':new_seq, 'seq_idx':new_seq_idx}
+            return {'seq':new_seq[0], 'seq_idx':new_seq[1]}
         except:
             raise ValueError("Mutation ID not in proper format of 12(region)(old)(pos)(new) or name not recognized.")
-    print(len(seq))
-    # Determine the location of the mutations and insert.
-    loc = mut_id.lower().split(region)[-1]
-    muts = [loc[i:i+3] for i in range(0, len(loc), 3)]
+            
+    # Force the string to uppercae
+    loc = mut_id.lower().split(region)[-1].upper()
+
+    # Get the indices of base positions
+    base_id = np.array([i for i, b in enumerate(list(loc)) if b in 'ATCG']).astype(int)
+
+    # Split the indices into pairs
+    if (len(base_id) / 2) == 1:
+        muts = [loc]
+    else:
+        inds = [(start, end) for start, end in zip(base_id[::2], base_id[1::2])]
+        muts = [loc[ind[0]:ind[1] + 1] for ind in inds]
+
     new_region = list(seq)
     for m in muts:
-        print(m, seq, seq[int(m[1]) - 1], seq[int(m[1])], m[0], seq[int(m[1]) - 1] == m[0])
-        if seq[int(m[1]) - 1] != m[0].upper():
+        pos = int(m[1:-1])
+        if seq[pos - 1] != m[0].upper():
             raise ValueError(f'Base at position {m[1]} is not {m[0].upper()}! Double check the sequence.')
         else:
-            new_region[int(m[1]) - 1] = m[2]
-    
+            new_region[int(m[1]) - 1] = m[-1]
+
     # Replace the region and compute the integer representation
     new_seq = ref.replace(seq, ''.join(new_region).upper())
     new_seq_idx = np.array([conversion[a] for a in new_seq]) 
