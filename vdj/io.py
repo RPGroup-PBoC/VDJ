@@ -121,6 +121,7 @@ class ProcessTPM(object):
         self.fps = framerate # n ms/frame
         self.stan_model = stan_model
         self.mut_id = fname.split('/')[-1].split('_')[0]
+        self.seq = mutation_parser(self.mut_id)['seq']
 
        # Generate a dictionary of dates and add to self.
         try:
@@ -131,6 +132,8 @@ class ProcessTPM(object):
             self.dates = dates 
         except KeyError:
             self.dates = {i+1:'Date Unknown' for i in range(1000)}
+        
+       
 
         # Initialize state class state variables
         self.drop_replicate = None # If a replicate is missing
@@ -161,7 +164,7 @@ class ProcessTPM(object):
                 self.drop_replicate = i + 1
             else:
                 _df = pd.DataFrame([])
-                _df['dwell_time_ms'] = dwell / self.fps
+                _df['dwell_time_s'] = dwell / self.fps
                 _df['replicate'] = i + 1 # indexing replicates by 1 
                 dfs.append(_df)
         df = pd.concat(dfs).reset_index()

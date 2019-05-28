@@ -18,22 +18,13 @@
 data {
     // Dimension specification
     int<lower=1> N; // total number of dwell times;
-    int<lower=1> J; // Number of replicates, used for portability of helper code 
 
    // Data sets
-   int<lower=0> n_beads[J]; // Total number of beads 
-   int<lower=0> n_cuts[J]; // Number of cut beads
-   int<lower=0> total_frames[J]; // Total number of frames
-   int<lower=0> looped_frames[J];
+   int<lower=0> n_beads; // Total number of beads 
+   int<lower=0> n_cuts; // Number of cut beads
+   int<lower=0> total_frames; // Total number of frames
+   int<lower=0> looped_frames;
    vector<lower=0>[N] dwell_time;
-}
-
-transformed data {
-    // Remove replicate information
-    int<lower=0> n_beads_reps = sum(n_beads);
-    int<lower=0> n_cut_reps = sum(n_cuts);
-    int<lower=0> total_frames_reps = sum(total_frames);
-    int<lower=0> looped_frames_reps = sum(looped_frames); 
 }
 
 parameters {
@@ -44,12 +35,18 @@ parameters {
 
 model {
     // Define the prior distributions
-    r_cut ~ normal(0, 100);
-    k_loop ~ normal(0, 100);
-    k_unloop ~ normal(0, 100);
+    r_cut ~ normal(0, 1);
+    k_loop ~ normal(0, 1);
+    k_unloop ~ normal(0, 1);
 
     // Define the likelihoods. 
     dwell_time ~ exponential(r_cut + k_unloop);
-    n_cut_reps ~ binomial(n_beads_reps, (r_cut / (r_cut + k_unloop))); 
-    looped_frames_reps ~ binomial(total_frames_reps, (k_loop / (r_cut + k_loop + k_unloop)));
+    n_cuts ~ binomial(n_beads, (r_cut / (r_cut + k_unloop))); 
+    looped_frames ~ binomial(total_frames, (k_loop / (r_cut + k_loop + k_unloop)));
+}
+
+generated quantities {
+    real p_loop = k_loop / (k_loop + k_unloop);
+    real p_cut = r_cut / (r_cut + k_unloop);
+    real f_loop = k_loop / (k_loop + k_unloop + r_cut);
 }

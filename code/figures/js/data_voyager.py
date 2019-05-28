@@ -9,16 +9,17 @@ from bokeh.themes import Theme
 import bokeh.io
 import bokeh.plotting
 from bokeh import events
-from bokeh.models import ColumnDataSource, Div, CustomJS, CDSView, GroupFilter 
+from bokeh.models import ColumnDataSource, Div, LinearAxis, CustomJS, CDSView, Grid, GroupFilter, Band
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
-from bokeh.models.glyphs import HBar
 from bokeh.embed import components
-bokeh.plotting.output_file('./data_voyager.html')
-import imp
 import vdj.io
-imp.reload(vdj.io)
+import vdj.stats
+import scipy.stats
 
+# ##############################################################################
+# DATA LOADING / TRANSFORMATION
+# ##############################################################################
 # Load the datasets
 dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
 dwell_times = dwell_times[dwell_times['mutant'] != 'analysis']
@@ -27,10 +28,61 @@ f_looped = f_looped[f_looped['mutant'] != 'analysis']
 fates = pd.read_csv('../../../data/compiled_cutting_events.csv')
 fates = fates[fates['mutant'] != 'analysis']
 
-# Instantiate the dropdown menu
-selector = Select(title='Mutant', value='WT12rss', 
-                  options=list(dwell_times.mutant.unique()))
+# Load the sampling information
+samples = pd.read_csv('../../../data/pooled_model_samples.csv')
+stats = pd.read_csv('../../../data/pooled_model_summary.csv')
 
+# Compute cdf for the dwell time distributions for each mutant
+dwell_cdfs = []
+for g, d in samples.groupby(['mutant']):
+    dwell_m = dwell_times[dwell_times['mutant']==m]['dwell_time_s'].values
+    time_range = np.linspace(np.min(dwell_m), np.max(dwell_m), 500)
+    cred_region = np.zeros((2, len(time_range)))
+    for i, t in enumerate(time_range):
+        r = d['r_cut'] + d['k_unloop'].values
+        cdf =  scipy.stats.expon(loc=0, scale=1/r).pdf(t)
+        cred_region[:, i] = vdj.stats.compute_hpd(cdf, 0.95)
+
+    # Generate the dataframe
+    df = pd.DataFrame([])
+    df['time'] = time_range
+    df['left'] = df['time'] - 1 
+    df['right'] = df['time'] + 1 
+    df['hpd_min'] = cred_region[0, :] / cred_region[0, 0]
+    df['hpd_max'] = cred_region[1, :] / cred_region[1, 0]
+    df['mutant'] = g
+    dwell_cdfs.append(df)
+dwell_cdfs = pd.concat(dwell_cdfs)
+
+# Compute the statistics for the cutting probability and looping time
+pcut_df = pd.DataFrame([])
+floop_df = pd.DataFrame([])
+for g, d in samples.groupby(['mutant']):
+    ind = np.argmax(d['lp__'].values)
+    # Compute p_loop
+    _p_cut = d['r_cut'].values /\
+                (d['r_cut'].values + d['k_unloop'].values)
+    _floop = d['k_loop'].values /\
+                (d['r_cut'].values + d['k_unloop'].values +\
+                 d['k_loop'].values) 
+    mean_pcut = np.mean(_p_cut)
+    median_pcut = np.median(_p_cut) 
+    mode_pcut = _p_cut[ind]
+    hpd_min, hpd_max = vdj.stats.compute_hpd(_p_cut, 0.95)
+    pcut_df = pcut_df.append({'mean':mean_pcut, 'median':median_pcut, 
+                            'mode':mode_pcut, 'hpd_min':hpd_min, 
+                            'hpd_max':hpd_max, 'mutant':g}, ignore_index=True)
+    mean_floop = np.mean(_floop)
+    median_floop = np.median(_floop) 
+    mode_floop = _floop[ind]
+    hpd_min, hpd_max = vdj.stats.compute_hpd(_floop, 0.95)
+    floop_df = floop_df.append({'mean':mean_floop, 'median':median_floop, 
+                            'mode':mode_floop, 'hpd_min':hpd_min, 
+                            'hpd_max':hpd_max, 'mutant':g}, ignore_index=True)
+
+# ##############################################################################
+#  COMPUTING POOLED AND REPLICATE PROPERTIES 
+# ##############################################################################
 #Get the sequences and define the colors for all mutants
 ref = vdj.io.endogenous_seqs()['reference'][0]
 seq_dfs = []
@@ -57,32 +109,38 @@ seq_df = pd.concat(seq_dfs)
 pooled_dwell_times= []
 for g, d in dwell_times.groupby('mutant'):
     # Compute the pooled ecdf
-    x = np.sort(d['dwell_time_ms'])
-    y = np.linspace(0, 1, len(d))
+    # x = np.sort(d['dwell_time_s'])
+    # y = np.linspace(0, 1, len(d))
+    hist, bins = np.histogram(d['dwell_time_s'], bins=100)
+    hist = hist / hist.max()
     df = pd.DataFrame([])
-    df['pooled_dwell_time'] = x
-    df['ecdf'] = y
+    df['pooled_dwell_time'] = bins[:-1]
+    df['ecdf'] = hist 
     df['mutant'] = g
     pooled_dwell_times.append(df)
+pooled_dwell = pd.concat(pooled_dwell_times)
 
 # Compute the replicate ecdfs
 rep_dwell_times = []
 for g, d in dwell_times.groupby(['mutant', 'replicate']):
-    x  = np.sort(d['dwell_time_ms'])
-    y = np.linspace(0, 1, len(d))
+    # x  = np.sort(d['dwell_time_s'])
+    # y = np.linspace(0, 1, len(d))
+    hist, bins = np.histogram(d['dwell_time_s'], bins=100)
+    hist = hist / hist.sum()
     df = pd.DataFrame([])
-    df['dwell'] = x
-    df['ecdf'] = y
+    df['dwell'] = bins[:-1]
+    df['ecdf'] = hist 
     df['mutant'] = g[0] 
     df['replicate'] = g[1]
     rep_dwell_times.append(df)
+rep_dwell = pd.concat(rep_dwell_times)
 
 # Compute the total bead counts for that particular mutant
 pooled_fates = pd.DataFrame([])
 for g, d in fates.groupby(['mutant']):
     pooled_fates = pooled_fates.append({'fate':'cut','value':d['n_cuts'].values.sum(),
                         'mutant':g}, ignore_index=True)
-    pooled_fates = pooled_fates.append({'fate':'uncut','value':d['n_beads'].values.sum() -\
+    pooled_fates = pooled_fates.append({'fate':'unlooped','value':d['n_beads'].values.sum() -\
                         d['n_cuts'].values.sum(), 'mutant':g},
                         ignore_index=True)
 
@@ -111,87 +169,157 @@ for g, d in fates.groupby(['mutant', 'replicate']):
     rep_cut_prob = rep_cut_prob.append(val, ignore_index=True)
 rep_cut_prob.dropna(inplace=True)
 
-
 # Compute the fractional time in looped state for all data.
 floop_pooled = f_looped.groupby(['mutant'])['fraction_looped'].agg(('mean', 'sem')).reset_index()
 floop_pooled['y'] = 0
 floop_rep = f_looped.groupby(['mutant', 'replicate'])['fraction_looped'].agg(('mean', 'sem')).reset_index()
 floop_rep['y'] = np.random.normal(0, 0.01, len(floop_rep))
 
-# Concatenate the dwell time distribution dataframes and generate CDS
-rep_dwell = pd.concat(rep_dwell_times)
-pooled_dwell = pd.concat(pooled_dwell_times)
-rep_source = ColumnDataSource(rep_dwell)
-pooled_source = ColumnDataSource(pooled_dwell)
-fate_source = ColumnDataSource(pooled_fates)
-pcut_source = ColumnDataSource(cut_prob)
-rep_pcut_source = ColumnDataSource(rep_cut_prob)
-floop_pooled_source = ColumnDataSource(floop_pooled)
-floop_rep_source = ColumnDataSource(floop_rep)
-seq_source = ColumnDataSource(seq_df)
+# %%
+# ##############################################################################
+# FIGURE SOURCE AND VIEW DEFINITIONS
+# ##############################################################################
+bokeh.plotting.output_file('./data_voyager.html')
+
+# Instantiate the dropdown menu
+selector = Select(title='Mutant', value='WT12rss', 
+                  options=list(dwell_times.mutant.unique()))
 
 # Define the filter for mutant selection
 filter = GroupFilter(column_name="mutant", group="WT12rss")
 
-# Assign the views
+
+##################### Generate the sources #####################################
+
+# Dwell times
+rep_source = ColumnDataSource(rep_dwell)
+pooled_source = ColumnDataSource(pooled_dwell)
+
+# Modeled dwell times
+dwell_cdf_source = ColumnDataSource(dwell_cdfs)
+
+# Bead fate
+fate_source = ColumnDataSource(pooled_fates)
+
+# Cutting probabilities
+pcut_source = ColumnDataSource(cut_prob)
+rep_pcut_source = ColumnDataSource(rep_cut_prob)
+
+# Modeled cutting probabily
+pcut_model_source = ColumnDataSource(pcut_df)
+
+# Looping fraction
+floop_pooled_source = ColumnDataSource(floop_pooled)
+floop_rep_source = ColumnDataSource(floop_rep)
+
+# Modeled looping fraction
+floop_model_source = ColumnDataSource(floop_df)
+
+# Sequences
+seq_source = ColumnDataSource(seq_df)
+
+
+######################## Assign Data Views #####################################
+
+# Dwell times
 pooled_view = CDSView(source=pooled_source, filters=[filter])
 rep_view = CDSView(source=rep_source, filters=[filter])
-fate_view = CDSView(source=fate_source, filters=[filter] )
+
+# Modelled dwell times
+dwell_cdf_view = CDSView(source=dwell_cdf_source, filters=[filter])
+
+# Bead Fates
+fate_view = CDSView(source=fate_source, filters=[filter])
+
+# Cutting probabilities
 pcut_view = CDSView(source=pcut_source, filters=[filter])
 rep_pcut_view = CDSView(source=rep_pcut_source, filters=[filter])
+
+# Modeled p_cut view
+pcut_model_view = CDSView(source=pcut_model_source, filters=[filter])
+
+# Looping Fraction
 floop_view = CDSView(source=floop_pooled_source, filters=[filter])
 floop_rep_view = CDSView(source=floop_rep_source, filters=[filter])
+
+# Modeled floop view
+floop_model_view = CDSView(source=floop_model_source, filters=[filter])
+
+# Sequence display
 seq_view = CDSView(source=seq_source, filters=[filter])
 
+# ##############################################################################
+#  Js CALLBACK DEFINITION
+# ##############################################################################
 
 # Define the callback args and callback code
 cb_args = {'pv':pooled_view, 'rv':rep_view, 'fv':fate_view, 'pcv':pcut_view, 
            'rpcv':rep_pcut_view, 'flv':floop_view, 'flrv':floop_rep_view,
-           'seqv':seq_view,
+           'seqv':seq_view, 'cdfv':dwell_cdf_view, 'cflv':floop_model_view,
+           'cpcv': pcut_model_view,
           'sel':selector, 'filter':filter,
           'ps':pooled_source, 'rs':rep_source, 'fs':fate_source, 
           'pcs':pcut_source, 'rpcs':rep_pcut_source, 'fls':floop_pooled_source,
-          'flrs':floop_rep_source, 'seqs':seq_source}
+          'flrs':floop_rep_source, 'seqs':seq_source, 'cdfs':dwell_cdf_source,
+          'cfls': floop_model_source, 'cpcs':pcut_model_source}
 dwell_cb = CustomJS(args=cb_args, 
     code="""
     var mut = sel.value
     filter.group = mut;
-    pv.filters[0] = filter;
-    seqv.filters[0] = filter;
-    rv.filters[0] = filter;
-    fv.filters[0] = filter;
-    pcv.filters[0] = filter;
-    rpcv.filters[0] = filter;
-    flv.filters[0] = filter;
-    flrv.filters[0] = filter;
-    fls.data.view = pv;
-    seqs.data.view = pv;
-    flrs.data.view = pv;
-    ps.data.view = pv;
-    pcs.data.view = pv;
-    rpcs.data.view = pv;
-    rs.data.view = rv;
-    fs.data.view = fv;
-    fls.data.view = fv;
-    flrs.data.view = fv;
-    rs.change.emit();
-    ps.change.emit();
-    pcs.change.emit();
-    rpcs.change.emit();
-    fs.change.emit();
-    fls.change.emit();
-    flrs.change.emit();
-    seqs.change.emit();
+
+    // Define the filters
+    pv.filters[0] = filter; // Pooled dwell times
+    rv.filters[0] = filter; //  Replicate dwell times
+    seqv.filters[0] = filter; // Sequences
+    fv.filters[0] = filter;  // Bead fates
+    pcv.filters[0] = filter; // Pooled cutting probability 
+    rpcv.filters[0] = filter; // Replicate cutting probabily
+    flv.filters[0] = filter; // Pooled looping fraction
+    flrv.filters[0] = filter; // replicate looping fraction
+    cdfv.filters[0] = filter; // Modeled dwell time
+    cflv.filters[0] = filter; // Modeled looping fraction
+    cpcv.filters[0] = filter; // Modeled cutting probability
+    
+    // Update the view on the data
+    seqs.data.view = seqs; // Sequence source
+    fls.data.view = fv; // Pooled looping fraction source 
+    flrs.data.view = fv; // Replicate looping fraction source
+    ps.data.view = pv; // Pooled dwell time source
+    rs.data.view = rv; // Replicate dwell time source
+    pcs.data.view = pv; // Pooled cutting probability source
+    rpcs.data.view = pv; // Replicate cutting probability source
+    fs.data.view = fv; // Bead fate source
+    cdfs.data.view = cdfv; // Modeled dwell times
+    cfls.data.view = cflv; // Modeled looping fraction
+    cpcs.data.view = cpcv; // modeled cutting probability
+
+    // Push changes to the plot 
+    rs.change.emit(); // Replicate dwell times
+    ps.change.emit(); // Pooled dwell times
+    pcs.change.emit(); // Pooled cutting probabilities
+    rpcs.change.emit(); // Replicate cutting probabilities
+    fs.change.emit(); // Bead fates
+    fls.change.emit(); // Pooled looping fraction
+    flrs.change.emit(); // Replicate looping fraction
+    seqs.change.emit(); // Sequence display
+    cdfs.change.emit(); // Modeled dwell times
+    cfls.change.emit(); // Modeled looping fraction
+    cpcs.change.emit(); // Modeled cutting probability
 """)
 
+# ##############################################################################
+# DEFINE THE FIGURE CANVAS
+# ##############################################################################
 # Dwell time figure canvas
 dwell_ax = bokeh.plotting.figure(width=800, height=400, 
-                           x_axis_label='dwell time [ms]',
+                           x_axis_label='dwell time [s]',
                            y_axis_label='cumulative distribution',
                            title=f'paired complex dwell time',
-                           x_range=[np.min(dwell_times['dwell_time_ms']), 
-                                    np.max(dwell_times['dwell_time_ms'])])
-_fates = ['uncut', 'cut']
+                           x_range=[np.min(dwell_times['dwell_time_s']), 
+                                    np.max(dwell_times['dwell_time_s'])],
+                           x_axis_type='log')
+
+_fates = ['unlooped', 'cut']
 
 # Cutting fraction canvas
 cut_ax = bokeh.plotting.figure(width=200, height=150, 
@@ -201,7 +329,7 @@ cut_ax = bokeh.plotting.figure(width=200, height=150,
 # Cutting Probability Canvas
 pcut_ax = bokeh.plotting.figure(width=300, height=150, x_range=[-0.1, 1.1],
                                x_axis_label='probability', y_range=[-0.1, 0.1],
-                title=f'empirical cutting probability')
+                title=f'cutting probability')
 pcut_ax.yaxis.visible = False
 
 # Looping Fraction Canvas
@@ -218,12 +346,20 @@ glyph = bokeh.models.glyphs.Text(x='x', y='y', text='sequence', text_color='colo
         text_font_size='28px', text_font='Courier')
 seq.add_glyph(seq_source, glyph, view=seq_view)
 
+# ##############################################################################
+# PLOTTING
+# ##############################################################################
 # Plot the dwell time distributions
-dwell_ax.circle(x=[], y=[], line_width=2, color='slategrey', legend='replicate')
-dwell_ax.circle(x='dwell', y='ecdf', source=rep_source, view=rep_view,
-        size=5, alpha=0.75, color='slategrey')
+# dwell_ax.circle(x=[], y=[], line_width=2, color='slategrey', legend='replicate')
+# dwell_ax.circle(x='dwell', y='ecdf', source=rep_source, view=rep_view,
+#         size=5, alpha=0.75, color='slategrey')
 dwell_ax.step(x='pooled_dwell_time', y='ecdf', source=pooled_source, view=pooled_view,
         legend='pooled data', line_width=2, color='dodgerblue')
+    
+dwell_ax.quad(top='hpd_max', bottom='hpd_min', left='left', 
+            right='right', color='tomato', alpha=0.5,
+            source=dwell_cdf_source,
+            view=dwell_cdf_view, legend='fit')
 
 # Plot the cutting idx
 cut_ax.segment(x0=0, x1='value', y0='fate',  y1='fate', line_width=2, color='dodgerblue',
@@ -234,24 +370,36 @@ cut_ax.circle(x='value', y='fate', source=fate_source, view=fate_view, size=10,
 # Plot the cutting probabilities
 pcut_ax.circle(x='p_cut', y='y', source=rep_pcut_source, color='slategrey',
                 view=rep_pcut_view, size=4)
-
-pcut_ax.segment(x0='low', x1='high', y0='y', y1='y', source=pcut_source, 
-                color='dodgerblue', line_width=1, view=pcut_view)
-pcut_ax.circle(x='p_cut', y='y', source=pcut_source, line_color='dodgerblue',
+pcut_ax.circle(x='p_cut', y=0.05, source=pcut_source, line_color='dodgerblue',
                 view=pcut_view, fill_color='white', size=8, line_width=2)
+
+# Plot the modeled cutting probabilities
+pcut_ax.square(x='median', y=-0.05, source=pcut_model_source, view=pcut_model_view,
+               fill_color='white', size=8, line_color='tomato')
+pcut_ax.segment(x0='hpd_min', x1='hpd_max', y0=-0.05, y1=-0.05,
+               source=pcut_model_source, line_width=2, color='tomato',
+               view=pcut_model_view)
 
 # Plot the fractional looped time
 floop_ax.circle(x='mean', y='y', source=floop_rep_source, view=floop_rep_view,
                 color='slategrey', size=4)
-floop_ax.circle(x='mean', y='y', source=floop_pooled_source, view=floop_view,
-                fill_color='white', line_color='dodgerblue', line_width=2, size=10)
+floop_ax.circle(x='mean', y=0.05, source=floop_pooled_source, view=floop_view,
+                fill_color='white', line_color='dodgerblue', line_width=2,
+                size=10)
+                
+# Modeled looping fraction
+floop_ax.square(x='median', y=-0.05, source=floop_model_source, view=floop_model_view,
+               fill_color='white', size=8, line_color='tomato')
+floop_ax.segment(x0='hpd_min', x1='hpd_max', y0=-0.05, y1=-0.05,
+               source=floop_model_source, line_width=2, color='tomato',
+               view=floop_model_view)
+
 
 selector.js_on_change("value",dwell_cb)
 dwell_ax.legend.location = 'bottom_right'
 layout = bokeh.layouts.gridplot([[selector], [seq],
                                 [dwell_ax],
                                 [cut_ax, pcut_ax, floop_ax]])
-
 
 # #############################################################################
 #  THEME DETAILS
@@ -293,5 +441,6 @@ theme_json = {'attrs':
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
 bokeh.io.save(layout)
+
 
 
