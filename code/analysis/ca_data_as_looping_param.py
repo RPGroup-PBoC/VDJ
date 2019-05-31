@@ -288,8 +288,8 @@ mg_df = mg_samples.to_dataframe()
 k1 = tworate_df['k[1]'].mean()
 k2 = tworate_df['k[2]'].mean()
 pdf = k1 * np.exp(-k1 * (dwell_range - 21)) + k2 * np.exp(-k2 * (dwell_range - 21))
-plt.plot(dwell_range , pdf)
-hist, bins = np.histogram(dwell_ca.dwell_time_s, bins=50)
+plt.plot(dwell_range , pdf, color='tomato', lw=2)
+
 
 plt.hist(dwell_ca.dwell_time_s - 21, bins=50, density=True, color='dodgerblue', lw=0)
 # plt.xscale('log')
