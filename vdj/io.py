@@ -98,12 +98,12 @@ def mutation_parser(mut_id):
         if seq[pos - 1] != m[0].upper():
             raise ValueError(f'Base at position {m[1]} is not {m[0].upper()}! Double check the sequence.')
         else:
-            new_region[int(m[1]) - 1] = m[-1]
+            new_region[pos - 1] = m[-1]
 
     # Replace the region and compute the integer representation
     new_seq = ref.replace(seq, ''.join(new_region).upper())
     new_seq_idx = np.array([conversion[a] for a in new_seq]) 
-    return {'seq':new_seq, 'seq_idx':new_seq_idx}
+    return {'seq':new_seq, 'seq_idx':new_seq_idx, 'n_muts':len(muts)}
 
 
 class ProcessTPM(object):
@@ -192,7 +192,8 @@ class ProcessTPM(object):
             # Determine the total length of the experiment and the number of
             # beads observed
             n_beads, total_time = np.shape(rep)
- 
+            _dwells = mat['loops'][0][i]
+            n_loops = len(_dwells[_dwells > 0])
             # Identify the looped and unlooped states. Key for these idx are 
             # 1 = Bead stuck to glass or cut
             # 3 = Bead in unlooped state
@@ -203,6 +204,7 @@ class ProcessTPM(object):
                             'total_frames': total_time,
                             'looped_frames': np.sum(rep==2),
                             'n_beads': n_beads,
+                            'n_loops': n_loops,
                             'replicate': i + 1}, ignore_index=True)
  
         # Make the appropriate entries integers
@@ -211,6 +213,8 @@ class ProcessTPM(object):
         df['replicate'] = df['replicate'].values.astype(int)
         df['total_frames'] = df['total_frames'].values.astype(int)
         df['looped_frames'] = df['looped_frames'].values.astype(int)
+        df['n_loops'] = df['n_loops'].values.astype(int)
+
         df['date'] = self.dates[i]
         self.f_looped = df.reset_index() 
         return df

@@ -54,12 +54,12 @@ transformed parameters {
 
 model {
     // Define the hyperpriors
-    log_ploop ~ normal(0, 1);
+    log_ploop ~ normal(0, 3);
     tau ~ normal(0, 1);
 
     // Define the low-level priors
-    log_ploop_1_tilde ~ normal(0, 0.1);
-    log_ploop_2_tilde ~ normal(0, 0.1);
+    log_ploop_1_tilde ~ normal(0, 1);
+    log_ploop_2_tilde ~ normal(0, 1);
 
     // Define the likelihood
     looped_frames ~ binomial(total_frames, ploop_2[rep_idx]);

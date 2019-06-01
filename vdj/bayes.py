@@ -52,10 +52,8 @@ class StanModel(object):
             data_dict = self.data
         self.chains = chains
         self.iter = iter
-        print(f'Beginning sampling. n_iter = {iter}, chains = {chains}')
         self.samples = self.model.sampling(data_dict, 
                         chains=chains, iter=iter, **kwargs)
-        print('finished!')
         if return_df:
             self.df = self.samples.to_dataframe(diagnostics=True)
             return [self.samples, self.df]
