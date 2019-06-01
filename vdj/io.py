@@ -132,8 +132,10 @@ class ProcessTPM(object):
             self.dates = dates 
         except KeyError:
             self.dates = {i+1:'Date Unknown' for i in range(1000)}
-        
-       
+
+        # Add extra "dates unknown"
+        for i in range(1000):
+            self.dates[i + np.max(list(self.dates.keys()))] = 'Date Unknown'
 
         # Initialize state class state variables
         self.drop_replicate = None # If a replicate is missing
@@ -172,6 +174,7 @@ class ProcessTPM(object):
         # Make the appropriate entries integers
         df['mutant'] = self.mut_id
         df['replicate'] = df['replicate'].values
+        df['date'] = self.dates[i]
         self.dwell = df
         return df
  
@@ -208,7 +211,7 @@ class ProcessTPM(object):
         df['replicate'] = df['replicate'].values.astype(int)
         df['total_frames'] = df['total_frames'].values.astype(int)
         df['looped_frames'] = df['looped_frames'].values.astype(int)
-
+        df['date'] = self.dates[i]
         self.f_looped = df.reset_index() 
         return df
  
@@ -261,6 +264,7 @@ class ProcessTPM(object):
 
         df['replicate'] = df['replicate'].values.astype(int)
         df['mutant'] = self.mut_id
+        df['date'] = self.dates[i]
         self.fates = df.reset_index()
         return df
  

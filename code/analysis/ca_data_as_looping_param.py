@@ -10,8 +10,6 @@ import vdj.viz
 import glob
 vdj.viz.plotting_style()
 
-
-
 # %%
 # Load th data
 files = glob.glob('../../data/12SpacG11T*.mat')

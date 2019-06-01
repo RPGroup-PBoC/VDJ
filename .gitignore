@@ -8,3 +8,4 @@
 *.pkl
 *checkpoints*
 *.mat
+data/*samples.csv
