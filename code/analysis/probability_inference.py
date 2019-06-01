@@ -216,7 +216,7 @@ cut_hover = bokeh.models.HoverTool(renderers=[cut_vals],
 loop_hover = bokeh.models.HoverTool(renderers=[loop_vals], 
         tooltips=[('mutant', '@mutant'), ('mean', '@mean'), 
                   ('median', '@median'), ('mode','@mode'), 
-                  ('minium 95% CR', '@hpd_min'), 
+                  ('minimum 95% CR', '@hpd_min'), 
                   ('maximum 95% CR', '@hpd_max'),
                   ('change in probability', '@relative_prob')])
 
