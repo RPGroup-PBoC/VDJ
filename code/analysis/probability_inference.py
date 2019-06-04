@@ -24,9 +24,11 @@ f_looped = pd.read_csv('../../data/compiled_looping_fraction.csv')
 n_cuts = pd.read_csv('../../data/compiled_cutting_events.csv')
 #%%
 # Load the hierarchical stan model. 
-pcut_model = vdj.bayes.StanModel('../stan/hierarchical_cutting_probability.stan') 
-ploop_model = vdj.bayes.StanModel('../stan/hierarchical_looping_fraction.stan',
-                                  force_compile=True) 
+pcut_model = vdj.bayes.StanModel('../stan/hierarchical_cutting_probability.stan',
+                                force_compile=True)
+
+ploop_model = vdj.bayes.StanModel('../stan/hierarchical_looping_fraction.stan')
+
 #%%
 pcut_samples = []
 pcut_stats = []
@@ -49,7 +51,7 @@ for g, d in tqdm.tqdm(n_cuts.groupby(['mutant']), desc='Inferring cut probabilit
     
     # Sample and compute properties
     fit, _samples = pcut_model.sample(data_dict)
-    summary = pcut_model.summary(parnames=['pcut']) 
+    summary = pcut_model.summary(parnames=['pcut', 'pcut[1]', 'pcut[2]']) 
 
     # Add identifiers
     _samples['mutant'] = g
@@ -79,8 +81,9 @@ for g, d in tqdm.tqdm(f_looped.groupby(['mutant']), desc='Inferring looping frac
 
     # Assign the data dictionary
     data_dict = {'J':d['day_idx'].max(), 'M':d['rep_idx'].max(), 
-                 'N':len(d), 'day_idx':d['day_idx'], 'rep_idx':d['rep_idx'],
-                 'total_frames':d['total_frames'], 'looped_frames':d['looped_frames']}
+                 'N':len(d), 'day_idx':d['day_idx'], 
+                 'rep_idx':d['rep_idx'], 'total_frames':d['total_frames'], 
+                 'looped_frames':d['looped_frames']}
     
     # Sample and compute properties
     fit, _samples = ploop_model.sample(data_dict)
@@ -101,6 +104,27 @@ for g, d in tqdm.tqdm(f_looped.groupby(['mutant']), desc='Inferring looping frac
 
 #%%
 pcut_stats = pd.concat(pcut_stats)
+pcut_stats
+
+
+# %% 
+# Pooled model for cutting probability inference 
+model = vdj.bayes.StanModel('../stan/pooled_cutting_probability.stan')
+
+# %%
+dfs = []
+for g, d in tqdm.tqdm(n_cuts.groupby('mutant')):
+        d = d[d['n_beads'] > 0 ]
+        data_dict = {'N':len(d), 'n_cuts':d['n_cuts'], 'n_loops':d['n_beads']}
+        _ = model.sample(data_dict, control=dict(adapt_delta=0.9))
+        stats = model.summary(parnames=['pcut'])
+        # Get the sequence and positional information
+        stats['mutant'] = g
+        dfs.append(stats)
+pooled_stats = pd.concat(dfs)
+pooled_stats.to_csv('../../data/pooled_cutting_probability_summary.csv', index=False)
+
+# %%
 pcut_samples = pd.concat(pcut_samples)
 ploop_stats = pd.concat(ploop_stats)
 ploop_samples = pd.concat(ploop_samples)

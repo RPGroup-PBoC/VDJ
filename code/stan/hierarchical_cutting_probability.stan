@@ -60,12 +60,12 @@ transformed parameters {
 
 model {
     // Define the hyperpriors
-    log_pcut ~ normal(0, 1);
-    tau ~ normal(0, 1);
+    log_pcut ~ normal(0, 4);
+    tau ~ normal(0, 0.01);
 
     // Define the low-level priors
-    log_pcut_1_tilde ~ normal(0, 1);
-    log_pcut_2_tilde ~ normal(0, 1);
+    log_pcut_1_tilde ~ normal(0, 0.5);
+    log_pcut_2_tilde ~ normal(0, 0.5);
 
     // Define the likelihood
     n_cuts ~ binomial(n_loops, pcut_2[rep_idx]);
