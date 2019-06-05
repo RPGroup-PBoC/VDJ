@@ -97,7 +97,7 @@ cut_hover = bokeh.models.HoverTool(renderers=[cut_vals],
 # highlight the regions
 cut_ax.add_tools(cut_hover)
 # loop_ax.add_tools(loop_hover)
-layout = bokeh.layouts.column(cut_ax, loop_ax)
+# layout = bokeh.layouts.column(cut_ax, loop_ax)
 # bokeh.io.show(layout)
 # bokeh.io.output_file('./delta_p_cut.html')
 # bokeh.io.save(layout)

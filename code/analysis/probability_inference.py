@@ -109,13 +109,13 @@ pcut_stats
 
 # %% 
 # Pooled model for cutting probability inference 
-model = vdj.bayes.StanModel('../stan/pooled_cutting_probability.stan')
+model = vdj.bayes.StanModel('../stan/pooled_cutting_probability.stan', force_compile=True)
 
 # %%
 dfs = []
 for g, d in tqdm.tqdm(n_cuts.groupby('mutant')):
         d = d[d['n_beads'] > 0 ]
-        data_dict = {'N':len(d), 'n_cuts':d['n_cuts'], 'n_loops':d['n_beads']}
+        data_dict = {'N':len(d), 'n_cuts':d['n_cuts'].sum(), 'n_loops':d['n_beads'].sum()}
         _ = model.sample(data_dict, control=dict(adapt_delta=0.9))
         stats = model.summary(parnames=['pcut'])
         # Get the sequence and positional information

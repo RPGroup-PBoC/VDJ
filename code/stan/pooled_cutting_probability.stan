@@ -12,9 +12,8 @@
 * ------------------------------------------------------------------------------
 */
 data {
-    int<lower=1> N; // Numbr of measurements
-    int<lower=0> n_cuts[N]; // Number of cut beads
-    int<lower=1> n_loops[N]; // Number of observed looped states
+    int<lower=0> n_cuts; // Number of cut beads
+    int<lower=1> n_loops; // Number of observed looped states
 }
 
 parameters {

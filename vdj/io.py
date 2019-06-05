@@ -14,7 +14,7 @@ def nucleotide_idx():
     """
     Returns the dictionary linking base identity to an integer
     """
-    return {'A':0, 'C':1, 'G':2, 'T':3}
+    return {'A':0, 'C':1, 'G':2, 'T':3, 0:'A', 1:'C', 2:'G', 3:'T'}
 
 def endogenous_seqs():
     """
@@ -37,7 +37,11 @@ def endogenous_seqs():
             'DFL161': 'CACAGTGCTATATCCATCAGCAAAAACC',
             'DFL1613': 'CACAGTAGTAGATCCCTTCACAAAAAGC'}
 
-    seqs = {m: [seq, np.array([conv[a] for a in seq])] for m, seq in _seqs.items()}
+    # Add the integer conversions
+    ref_seq = _seqs['reference']
+    seqs = {m: [seq, np.array([conv[a] for a in seq]),  
+        np.sum(np.array(list(ref_seq)) != np.array(list(seq)))] for m, seq in _seqs.items()}
+
     return seqs
 
 def mutation_parser(mut_id):
@@ -75,7 +79,7 @@ def mutation_parser(mut_id):
     else:
         try:
             new_seq = seqs[mut_id]
-            return {'seq':new_seq[0], 'seq_idx':new_seq[1]}
+            return {'seq':new_seq[0], 'seq_idx':new_seq[1], 'n_muts':new_seq[2]}
         except:
             raise ValueError("Mutation ID not in proper format of 12(region)(old)(pos)(new) or name not recognized.")
             
@@ -160,16 +164,45 @@ class ProcessTPM(object):
             # Find only the times where loopstate was observed
             dwell = rep[rep > 0]
 
+            # Isolate the cut dwell times for the replicate 
+            cuts = mat['pccut'][0][i]
+            cuts = cuts[cuts > 0]
+            
             # If there were no looped states, increment the counter and move on
+            _dfs = []
             if len(dwell) == 0:
                 dwell = np.array([0])
-                self.drop_replicate = i + 1
+                cut = np.array([0])
             else:
-                _df = pd.DataFrame([])
-                _df['dwell_time_s'] = dwell / self.fps
-                _df['replicate'] = i + 1 # indexing replicates by 1 
-                dfs.append(_df)
-        df = pd.concat(dfs).reset_index()
+                # Find out which dwell times lead to a cutting event
+                if len(cuts) == 0:
+                    _df = pd.DataFrame([])
+                    _df['dwell_time_s'] = dwell / self.fps
+                    _df['cut'] = 0
+                    _df['replicate'] = i + 1
+                    _dfs.append(_df)
+                else:
+                    cut_dwells = dwell[cuts==dwell]
+                    unloop_dwells = dwell[cuts!=dwell]
+                    self.cut_dwells = cut_dwells
+                    self.unloop_dwells = unloop_dwells
+
+
+                    for c in cut_dwells:
+                        _df = pd.DataFrame([])
+                        _df['dwell_time_s'] = c / self.fps, 
+                        _df['cut']  = 1
+                        _df['replicate'] = i + 1
+                        _dfs.append(_df)
+                    if len(unloop_dwells) > 0:
+                        for u in unloop_dwells:
+                            _df = pd.DataFrame([])
+                            _df['dwell_time_s'] = u / self.fps
+                            _df['cut'] = 0
+                            _df['replicate'] = i + 1
+                            _dfs.append(_df)
+                dfs.append(pd.concat(_dfs, sort=False))
+        df = pd.concat(dfs, sort=False).reset_index()
  
         # Make the appropriate entries integers
         df['mutant'] = self.mut_id
@@ -291,87 +324,5 @@ class ProcessTPM(object):
             fates = self.fates
         self.extract = True
         return [f_looped, dwell, fates]
- 
-
-    # ##########################################################################
-    # INFERENCE 
-    # ##########################################################################
-    def run_inference(self, stan_model=None, force_compile=False, iter=2000, 
-                      sampler_kwargs={}, drop_replicate=None):
-        """
-        Executes the model inference using provided stan model. 
-
-        Parameters
-        ----------
-        stan_model : str
-            Path to the stan model. Note that this function *does not* take the
-            model code as a string. the Stan model must be saved as a separate
-            file!
-        
-        Returns [as list]
-        -----------------
-        fit : stanfit4model object
-            Sampled model object. Executing "fit" prints out the parameter
-            details such as r_hat, diverging samples, as well as cursory
-            statistics.
-        
-        samples: pandas DataFrame
-            Tidy pandas DataFrame of sampling output. Each row is an individual
-            sample.
-        
-        stats:  pandas DataFrame
-            Tidy pandas DataFrame with summary statistics for each parameter.
-        """ 
-        if self.stan_model == None:
-            self.stan_model = stan_model
-        elif (self.stan_model == None) & (stan_model == None):
-            raise RuntimeError('Stan model not given!')
-        else:
-            self.stan_model = stan_model
-
-        # Determine if data has been extracted. If not, do it
-        if self.extract == False:
-            print('Data not yet defined. Extracting data from matfile...')
-            f_looped, dwell, fates = self.extract_data(bead_idx=False)
-            print('finished!')
-        else:
-            f_looped = self.f_looped
-            dwell = self.dwell
-            fates = self.fates
-       
-        # Define the replicate identities for sampling
-        _id = f_looped.groupby('replicate').ngroup() + 1
-        rep_conversion = {r: i for r, i in zip(f_looped['replicate'].values, _id)}
-        
-        for r, id in rep_conversion.items():
-            f_looped.loc[f_looped['replicate']==r, 'idx'] = id
-            dwell.loc[dwell['replicate']==r, 'idx'] = id
-            fates.loc[fates['replicate']==r, 'idx'] = id
-            
-        # Check if the bead IDX is present for cutting fates. If so, reprocess
-        if self.bead_idx == True:
-            fates = self.cut_beads(bead_idx=False)
-
-        # Find the maximum number of replicates
-        reps = np.array([len(dwell.replicate.unique()), 
-                len(f_looped.replicate.unique()),
-                len(fates.replicate.unique())])
-        
-        # Define the data dictionary
-        data_dict = {'J':np.max(reps), 'N':len(dwell),
-                    'idx':dwell['idx'].values.astype(int), 
-                    'total_frames':f_looped['total_frames'],
-                    'looped_frames':f_looped['looped_frames'],
-                    'n_beads': fates['n_beads'], 'n_cuts':fates['n_cuts'],
-                    'dwell_time':dwell['dwell_time_ms']}
-
-        # Load the specified Stan model using the vdj.bayes class
-        model = StanModel(self.stan_model, data_dict=data_dict, 
-                                    force_compile=force_compile)
-        fit, samples = model.sample(iter=iter, **sampler_kwargs)
-        stats = model.summary()
-        samples['mutant'] = self.mut_id 
-        stats['mutant'] = self.mut_id
-        return [fit, samples, stats]
  
 
