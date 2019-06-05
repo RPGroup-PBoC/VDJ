@@ -14,7 +14,9 @@ data.head()
 
 #%% 
 # Go through each mutant and compute the pooled probability
-ref = vdj.io.endogenous_seqs()['reference'][1]
+ref = vdj.io.endogenous_seqs()['reference']
+ref_seq = ref[0]
+ref = ref[1]
 nt_idx = vdj.io.nucleotide_idx()
 dfs = []
 for g, d in data.groupby(['mutant']):
@@ -67,15 +69,13 @@ cut_ax = bokeh.plotting.figure(width=700, height=200, x_axis_label='wild-type se
                             # y_range=[-1, 4], title='looping probability relative to wild type')
 # cut_ax.harea(0, 7, 4, color='red')
 # Set the tick labels
-for ax in [cut_ax]:
-    ax.xaxis.ticker = np.arange(1, 29)
-    ax.yaxis.ticker = [0, 1, 2, 3]
-    ax.xaxis.major_label_overrides = {str(i):a for i, a in zip(np.arange(1, 29), list(ref_seq[0]))}
-    ax.yaxis.major_label_overrides = {v:str(i) for i, v in nt_idx.items()} 
-    ax.x(x, y, size=7, fill_color='lightgrey', line_color='black', 
-          line_width=0.25, alpha=0.5)
 
-    # ax.square(np.arange(1, 29), ref_seq[1], size=10, fill_color='white', line_color='tomato')
+cut_ax.xaxis.ticker = np.arange(1, 29)
+cut_ax.yaxis.ticker = [0, 1, 2, 3]
+cut_ax.xaxis.major_label_overrides = {str(i):a for i, a in zip(np.arange(1, 29), list(ref_seq))}
+cut_ax.yaxis.major_label_overrides = {'0':'A', '1':'C', '2':'G', '3':'T'} 
+cut_ax.x(x, y, size=7, fill_color='lightgrey', line_color='black', 
+          line_width=0.25, alpha=0.5)
 
 cut_vals = cut_ax.circle(x='x', y='y', size='size', line_width=0.5,  fill_color=colors, 
         line_color='black', source=point_muts)
@@ -87,7 +87,7 @@ cut_hover = bokeh.models.HoverTool(renderers=[cut_vals],
         tooltips=[('mutant', '@mutant'), ('median', '@median'), 
                   ('mean', '@mean'), ('mode', '@mode'), 
                   ('change in probability', '@relative_prob')])
-# loop_hover = bokeh.models.HoverTool(renderers=[loop_vals], 
+#loop_hover = bokeh.models.HoverTool(renderers=[loop_vals], 
 #         tooltips=[('mutant', '@mutant'), ('mean', '@mean'), 
 #                   ('median', '@median'), ('mode','@mode'), 
 #                   ('minium 95% CR', '@hpd_min'), 
@@ -97,7 +97,7 @@ cut_hover = bokeh.models.HoverTool(renderers=[cut_vals],
 # highlight the regions
 cut_ax.add_tools(cut_hover)
 # loop_ax.add_tools(loop_hover)
-# layout = bokeh.layouts.column(cut_ax, loop_ax)
+# layout = bokeh.layouts.column([cut_ax])
 # bokeh.io.show(layout)
 # bokeh.io.output_file('./delta_p_cut.html')
 # bokeh.io.save(layout)
