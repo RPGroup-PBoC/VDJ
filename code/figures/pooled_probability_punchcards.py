@@ -42,7 +42,7 @@ df = pd.concat(dfs)
 # Compute the relative change in p_cut
 ref_pcut = df[df['mutant']=='WT12rss']['median'].values[0]
 df['relative_prob'] = df['median'] - ref_pcut
-df['size'] = 10 / np.abs(df['hpd_min'] - df['hpd_max']) 
+df['size'] = 5 / np.abs(df['hpd_min'] - df['hpd_max']) 
 # Isolate the point mutants
 point_muts = df[df['n_muts']==1]
 

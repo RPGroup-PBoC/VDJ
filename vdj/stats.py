@@ -103,3 +103,22 @@ def compute_mean_sem(df):
     # Assemble the new pandas series and return.
     samp_dict = {'mean': mean_fc, 'sem': sem_fc}
     return pd.Series(samp_dict)
+
+
+def compute_percentiles(cdf, dep_var):
+    """
+    Computes the bounds of the percentiles (95%, 75%, 25%, 5%) of a supplied 
+    cumultive distribution given a dependent variable. It also returns the median.
+    """
+    percs = [95, 75, 25, 5]
+    bounds = {}
+    for p in percs:
+        # Determine the upper and lower and upper bounds of the given percentile
+        upper = dep_var[np.argmin(np.abs(cdf - (p + (100 - p)/ 200)))]
+        lower = dep_var[np.argmin(np.abs(cdf  - (100 - p) / 200))]
+        bounds[p/100] = [lower, upper]
+
+    # FInd the median
+    bounds['median'] = dep_var[np.argmin(np.abs(cdf - 0.5))]
+    return bounds
+

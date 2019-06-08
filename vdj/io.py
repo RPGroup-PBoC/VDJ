@@ -158,8 +158,7 @@ class ProcessTPM(object):
         Extracts the dwell times for each replicate.
         """
         mat = self.file
-        dfs = [] # empty list to append coming data frames
-
+        df = pd.DataFrame([])
         for i, rep in enumerate(mat['loops'][0]):
             # Find only the times where loopstate was observed
             dwell = rep[rep > 0]
@@ -169,45 +168,35 @@ class ProcessTPM(object):
             cuts = cuts[cuts > 0]
             
             # If there were no looped states, increment the counter and move on
-            _dfs = []
-            if len(dwell) == 0:
-                dwell = np.array([0])
-                cut = np.array([0])
-            else:
+            if len(dwell) != 0:
                 # Find out which dwell times lead to a cutting event
                 if len(cuts) == 0:
-                    _df = pd.DataFrame([])
-                    _df['dwell_time_s'] = dwell / self.fps
-                    _df['cut'] = 0
-                    _df['replicate'] = i + 1
-                    _dfs.append(_df)
+                    for d in dwell:
+                        df = df.append({'dwell_time_min': d,
+                                    'cut': 0, 'replicate': i + 1}, ignore_index=True)
                 else:
                     cut_dwells = dwell[cuts==dwell]
                     unloop_dwells = dwell[cuts!=dwell]
                     self.cut_dwells = cut_dwells
                     self.unloop_dwells = unloop_dwells
 
-
                     for c in cut_dwells:
-                        _df = pd.DataFrame([])
-                        _df['dwell_time_s'] = c / self.fps, 
-                        _df['cut']  = 1
-                        _df['replicate'] = i + 1
-                        _dfs.append(_df)
+                        df = df.append({'dwell_time_min': c,
+                                          'cut': 1, 'replicate': i+1}, ignore_index=True)
                     if len(unloop_dwells) > 0:
                         for u in unloop_dwells:
-                            _df = pd.DataFrame([])
-                            _df['dwell_time_s'] = u / self.fps
-                            _df['cut'] = 0
-                            _df['replicate'] = i + 1
-                            _dfs.append(_df)
-                dfs.append(pd.concat(_dfs, sort=False))
-        df = pd.concat(dfs, sort=False).reset_index()
- 
-        # Make the appropriate entries integers
+                            if type(u) == np.ndarray:
+                                for _u in u:
+                                    df = df.append({'dwell_time_min': _u,
+                                            'cut': 0, 'replicate': i + 1}, ignore_index=True)
+                                else: 
+                                     df = df.append({'dwell_time_min': _u,
+                                            'cut': 0, 'replicate': i + 1}, ignore_index=True)
+
+       # Make the appropriate entries integers
         df['mutant'] = self.mut_id
-        df['replicate'] = df['replicate'].values
         df['date'] = self.dates[i]
+        df['dwell_time_min'] = df['dwell_time_min'] / (self.fps * 60)
         self.dwell = df
         return df
  
