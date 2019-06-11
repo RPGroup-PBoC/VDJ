@@ -114,7 +114,7 @@ def compute_percentiles(cdf, dep_var):
     bounds = {}
     for p in percs:
         # Determine the upper and lower and upper bounds of the given percentile
-        upper = dep_var[np.argmin(np.abs(cdf - (p + (100 - p)/ 200)))]
+        upper = dep_var[np.argmin(np.abs(cdf - (p + ((100 - p)/ 2))/100))]
         lower = dep_var[np.argmin(np.abs(cdf  - (100 - p) / 200))]
         bounds[p/100] = [lower, upper]
 

@@ -20,11 +20,10 @@ def cutting_rate_log_likelihood(tau, t_cut, t_unloop):
         t_unloop = np.array([0])
     else:
         n_unloop = len(t_unloop)
-    return np.sum(-n_cuts * np.log(tau) - (n_cuts * t_cut.mean() +\
-                                     n_unloop * t_unloop.mean()))
+    return -n_cuts * np.log(tau) - (n_cuts * t_cut.mean() + n_unloop * t_unloop.mean())/tau
 
 def cutting_rate_log_prior(tau, alpha=0.86, beta=9.03):
-    return st.invgamma(alpha, scale=beta, loc=0).logpdf(tau).sum()
+    return st.halfnorm(0, 100).logpdf(tau)
 
 def cutting_rate_log_posterior(tau, t_cut, t_unloop, **kwargs):
     log_like = cutting_rate_log_likelihood(tau, t_cut, t_unloop)

@@ -172,7 +172,7 @@ class ProcessTPM(object):
                 # Find out which dwell times lead to a cutting event
                 if len(cuts) == 0:
                     for d in dwell:
-                        df = df.append({'dwell_time_min': d,
+                        df = df.append({'dwell_time_sec': d,
                                     'cut': 0, 'replicate': i + 1}, ignore_index=True)
                 else:
                     cut_dwells = dwell[cuts==dwell]
@@ -181,22 +181,22 @@ class ProcessTPM(object):
                     self.unloop_dwells = unloop_dwells
 
                     for c in cut_dwells:
-                        df = df.append({'dwell_time_min': c,
+                        df = df.append({'dwell_time_sec': c,
                                           'cut': 1, 'replicate': i+1}, ignore_index=True)
                     if len(unloop_dwells) > 0:
                         for u in unloop_dwells:
                             if type(u) == np.ndarray:
                                 for _u in u:
-                                    df = df.append({'dwell_time_min': _u,
+                                    df = df.append({'dwell_time_sec': _u,
                                             'cut': 0, 'replicate': i + 1}, ignore_index=True)
                                 else: 
-                                     df = df.append({'dwell_time_min': _u,
+                                     df = df.append({'dwell_time_sec': _u,
                                             'cut': 0, 'replicate': i + 1}, ignore_index=True)
 
        # Make the appropriate entries integers
         df['mutant'] = self.mut_id
         df['date'] = self.dates[i]
-        df['dwell_time_min'] = df['dwell_time_min'] / (self.fps * 60)
+        df['dwell_time_sec'] = df['dwell_time_sec'] / (self.fps * 60)
         self.dwell = df
         return df
  
