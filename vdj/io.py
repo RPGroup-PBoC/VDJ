@@ -158,47 +158,34 @@ class ProcessTPM(object):
         Extracts the dwell times for each replicate.
         """
         mat = self.file
-        df = pd.DataFrame([])
-        for i, rep in enumerate(mat['loops'][0]):
+        dfs = []
+        n_total_loops = 0
+        cut_events = []
+        dwells = []
+        reps = []
+        n_cut_tot = 0
+        for i, rep in enumerate(mat['loops'][0]):  
             # Find only the times where loopstate was observed
             dwell = rep[rep > 0]
+            _df = pd.DataFrame(np.array([dwell, np.zeros_like(dwell)]).T, 
+                                columns=['dwell_time_min', 'cut']) 
 
             # Isolate the cut dwell times for the replicate 
             cuts = mat['pccut'][0][i]
             cuts = cuts[cuts > 0]
-            
-            # If there were no looped states, increment the counter and move on
-            if len(dwell) != 0:
-                # Find out which dwell times lead to a cutting event
-                if len(cuts) == 0:
-                    for d in dwell:
-                        df = df.append({'dwell_time_sec': d,
-                                    'cut': 0, 'replicate': i + 1}, ignore_index=True)
-                else:
-                    cut_dwells = dwell[cuts==dwell]
-                    unloop_dwells = dwell[cuts!=dwell]
-                    self.cut_dwells = cut_dwells
-                    self.unloop_dwells = unloop_dwells
+            for c in cuts:
+                _df.loc[_df['dwell_time_min'] == c, 'cut'] = 1
+            _df['replicate'] = i + 1
+            dfs.append(_df)
 
-                    for c in cut_dwells:
-                        df = df.append({'dwell_time_sec': c,
-                                          'cut': 1, 'replicate': i+1}, ignore_index=True)
-                    if len(unloop_dwells) > 0:
-                        for u in unloop_dwells:
-                            if type(u) == np.ndarray:
-                                for _u in u:
-                                    df = df.append({'dwell_time_sec': _u,
-                                            'cut': 0, 'replicate': i + 1}, ignore_index=True)
-                                else: 
-                                     df = df.append({'dwell_time_sec': _u,
-                                            'cut': 0, 'replicate': i + 1}, ignore_index=True)
-
-       # Make the appropriate entries integers
+        # Make the appropriate entries integers
+        df = pd.concat(dfs)
         df['mutant'] = self.mut_id
         df['date'] = self.dates[i]
-        df['dwell_time_sec'] = df['dwell_time_sec'] / (self.fps * 60)
+        df['dwell_time_min'] = df['dwell_time_min'] / (self.fps * 60)
         self.dwell = df
         return df
+        
  
     def fraction_looped(self):
         """
@@ -254,7 +241,7 @@ class ProcessTPM(object):
             replicate are returned.
         """
         mat = self.file
-        df = pd.DataFrame({})
+        df = pd.DataFrame().from_dict({})
         for i, rep in enumerate(mat['pccut'][0]):
             # Generate a dictionary of all dwell times and bead ids for each
             # bead in the replicate 

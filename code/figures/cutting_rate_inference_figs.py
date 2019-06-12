@@ -20,7 +20,8 @@ stats = pd.read_csv('../../data/cutting_rate_analytic_summary.csv')
 # Subsample the posteriors
 # posteriors = posteriors[posteriors['tau'] < 1200]
 
-# Consider only the  single mutants
+# %%
+# Consider only the single mutants
 points = stats[(stats['n_muts']<=1)].copy()
 
 # Load the reference sequence and define the x, y positions of the base changes
@@ -41,14 +42,14 @@ for m in points['mutant'].unique():
     points.loc[points['mutant']==m, 'x'] = x
     points.loc[points['mutant']==m, 'y'] = y + 1
     points.loc[points['mutant']==m, 'base'] = mut['seq'][ind]
-    points.loc[points['mutant']==m, 'size'] = 10 
+    points.loc[points['mutant']==m, 'size'] = np.log10(100/_m['width'])
 
 
 # Compute the CDFS for each
 cdf_dfs = []
 for g, d in data.groupby(['mutant']):
         _d = d[d['cut']==1]
-        x = np.sort(_d['dwell_time_sec'])
+        x = np.sort(_d['dwell_time_min'] - 0.35)
         y = np.arange(1, len(_d) + 1) / len(_d)
         _df = pd.DataFrame(np.array([x, y]).T, columns=['x', 'y'])
         _df['mutant'] = g
@@ -92,13 +93,13 @@ rel_rate_ax = bokeh.plotting.figure(width=canvas_width, height=200,
                                x_range=[1, 29], y_range=[1, 4],
                                x_axis_label='reference sequence',
                                y_axis_label='mutation')
-dist_ax = bokeh.plotting.figure(width=canvas_width, height=200, x_range=[1, 400],
-                               x_axis_label='τ [sec/cut]',
+dist_ax = bokeh.plotting.figure(width=canvas_width, height=200, x_range=[1, 60],
+                               x_axis_label='τ [min/cut]',
                                y_axis_label='probability')
 
 # Plot the  punch cards
 rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=stats_source, 
-                line_color='black', size='size', hover_fill_color='tomato')
+                line_color='black', size=20, hover_fill_color='tomato')
 
 
 # Plot the unexplored mutations
@@ -111,7 +112,7 @@ for _x in range(1, 29):
 rate_ax.x(x=x, y=y, color='grey', alpha=0.5, size=8)
 
 # Plot the wild-type values
-_wt = stats[stats['mutant']=='WT12rss']
+_wt = stats[stats['mutant']=='12SpacG11T']
 wt = pd.DataFrame([])
 wt['x'] = np.arange(1, 29)
 wt['y'] = ref_idx + 1
@@ -121,20 +122,27 @@ wt['95_high'] = _wt['95_high'].values[0]
 wt['median'] = _wt['median'].values[0]
 wt['size'] = 30 * np.log10(500 / _wt['width'])
 wt_rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=wt, 
-            line_color='tomato', size='size') 
+            line_color='tomato', size=20) 
 
 
 #  Pot the wild-type dwell times
-_wt_dwell = cdf_df[cdf_df['mutant']=='WT12rss']
+_wt_dwell = cdf_df[cdf_df['mutant']=='12SpacG11T']
 dwell_ax.step(x='x', y='y', line_width=1, color='blue', source=_wt_dwell)
 dwell_ax.circle(x='x', y='y', line_width=1, line_color='blue', source=_wt_dwell,
                 fill_color='white')
 
 # Plot the theoretical cdf
-time = np.linspace(0, 20, 100)
-wt_tau = stats[stats['mutant']=='WT12rss']['median']
-theo_cdf = 1 - np.exp(-(time)/wt_tau.values[0])
+time = np.linspace(0, 50, 100)
+wt_tau = stats[stats['mutant']=='12SpacG11T']['median']
+theo_cdf = 1 - np.exp(-(time - 0.35)/wt_tau.values[0])
 dwell_ax.step(time, theo_cdf, line_width=3, color='blue', alpha=0.5)
+cut = data[(data['mutant']=='12SpacG11T') & (data['cut']==1)]['dwell_time_min']
+
+
+
+
+
+
 bokeh.io.show(dwell_ax)
 
 # %%
@@ -161,29 +169,27 @@ cb = bokeh.models.CustomJS(args=dict(mut_source=stats_source, post_source=post_s
          """)
 
 rate_hover = bokeh.models.HoverTool(renderers=[rate_vals], 
-        tooltips=[('mutant', '@mutant'), ('median τ [sec/cut]', '@median'), 
+        tooltips=[('mutant', '@mutant'), ('median τ [min/cut]', '@median'), 
                   ('maximum 95% CR [min/cut]', '@95_high'), 
-                  ('minimum 95% CR [min/cut]', '@95_low')], callback=cb)
+                  ('minimum 95% CR [min/cut]', '@95_low'),
+                  ('# loops', '@n_loops')], callback=cb)
 
 
 rate_hover.callback = cb
 wt_rate_hover = bokeh.models.HoverTool(renderers=[wt_rate_vals], 
         tooltips=[('mutant', '@mutant'), ('median τ [min/cut]', '@median'), 
                   ('maximum 95% CR [min/cut]', '@95_high'), 
-                  ('minimum 95% CR [min/cut]', '@95_low')])
+                  ('minimum 95% CR [min/cut]', '@95_low'),
+                  ('# loops', '@n_loops')])
 rate_ax.add_tools(rate_hover)
 rate_ax.add_tools(wt_rate_hover)
 
-
-
-
 # Define the layout
-
-col = bokeh.layouts.column(dwell_ax, rate_ax, dist_ax)
-
+col = bokeh.layouts.column(rate_ax, dist_ax)
 bokeh.io.show(col)
+bokeh.io.save(col, './cutting_rate.html')
 
+#%%
 
-# bokeh.io.save(col, './test.html')
 
 #%%
