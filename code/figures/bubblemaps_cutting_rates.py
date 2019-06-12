@@ -43,7 +43,7 @@ for g, d in points.groupby(['mutant']):
     points.loc[points['mutant']==g, 'mutation'] = nt_idx[base] 
 
     # Compute the size of the bubble based on 1/log10of the width
-    size = 7 * (d['median'] / (d['width'] / 2)) + 11 
+    size = 500 * (d['median'] / (d['width'])) 
     points.loc[points['mutant']==g, 'rate_size'] = size
 
     # Compute the difference to the wild-type value
@@ -109,8 +109,11 @@ ax[0].legend(title=r'$-$ decreasing confidence $\rightarrow$', ncol=3, bbox_to_a
 wt_post = posteriors[posteriors['mutant']=='WT12rss']
 ax[1].plot(wt_post['tau'], wt_post['posterior_pdf'], '--', lw=2, color='k', label='wild-type')
 
-
-
+_colors = [blues(rate_norm(m)) for m in points['median'].values]
+rate_vals = ax[0].scatter(list(points['position'].values + 1), list(points['mutation'] + 1), marker='.', s=points['rate_size'].values.astype(int), color=_colors,
+edgecolor='k', linewidth=0.75, alpha=0.75)
+       
+               
 for i in range(len(points)):
     p = points.iloc[i]
     if p['mutant'] in ['12HeptG5A', '12SpacT9G', '12SpacG11T']:
@@ -121,15 +124,12 @@ for i in range(len(points)):
         ax[1].fill_between(dist['tau'], dist['posterior_pdf'], 
                    color=blues(rate_norm(p['median'])), alpha=0.35)
 
-    ax[0].plot(p['position']+1, p['mutation'] + 1, '.', ms=p['rate_size'], color=blues(rate_norm(p['median'])),
-               markeredgecolor='black', markeredgewidth=1)
-    # ax[-1].plot(p['position']+1, p['mutation'] + 1, '.', ms=p['rate_size'], color=puor(diff_norm(p['relative_diff'] - 1)),
-            #    markeredgecolor='black', markeredgewidth=1)
-
     ax[1].legend(loc='upper right', fontsize=12)
-
-plt.tight_layout()
-plt.savefig('./cutting_rates.pdf', bbox_inches='tight')
+a = fig.add_axes([0.92, 0.5, 0.02, 0.35])
+fig.colorbar(rate_vals, cax=a)
+# plt.tight_layout()
+plt.subplots_adjust(right=0.9)
+# plt.savefig('./cutting_rates.pdf', bbox_inches='tight')
 #%%
 
 

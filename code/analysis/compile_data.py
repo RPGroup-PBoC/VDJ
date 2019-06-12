@@ -21,17 +21,18 @@ for f in tqdm(files, desc='Processing .mat TPM files...'):
     
     # Load and extract data
     tpm = vdj.io.ProcessTPM(f)
-    f_looped, dwell, fates = tpm.extract_data()
+    f_looped, dwell, fates = tpm.dwell_time()
 
+    # Add divalent salt information
+    if '_Ca_' not in f.split('/')[-1]:
+        salt = 'Mg'
+    else:
+        salt = 'Ca'
+    dwell['salt'] = salt
     # Append the generated dataframes to the data lists
     dwell_dfs.append(dwell)
-    f_looped_dfs.append(f_looped)
-    fates_dfs.append(fates)
 
 # Concatenate the data and save to CSVs
 dwell = pd.concat(dwell_dfs)
 dwell.to_csv('../../data/compiled_dwell_times.csv', index=False)
-f_looped = pd.concat(f_looped_dfs)
-f_looped.to_csv('../../data/compiled_looping_fraction.csv', index=False)
-fates = pd.concat(fates_dfs)
-fates.to_csv('../../data/compiled_cutting_events.csv', index=False)
+
