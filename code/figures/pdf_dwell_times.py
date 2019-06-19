@@ -66,14 +66,16 @@ t_min = 21/60
 cdf_min =  1 - np.exp(-(time_range - t_min)/single_ca['hpd_min'].values[0])
 cdf_max =  1 - np.exp(-(time_range - t_min)/single_ca['hpd_max'].values[0])
 plt.figure(dpi=100)
-plt.step(ca_x, ca_y, label='data')
+plt.step(ca_x, ca_y, label='data', color='#429447')
 # plt.plot(time_range, cdf, color='tomato', label='single exponential')
 plt.fill_between(time_range, cdf_min, cdf_max, alpha=0.5, color='tomato',
                 label='single exponential')
 
 plt.ylim([0, 1.1])
 plt.title('Calcium')
-plt.legend(loc='lower right')
+plt.legend(loc='lower right',fontsize=12)
+plt.savefig('12SpacG11T_ca_ecdf_posterior.pdf',
+            facecolor='white')
 #%%
 time_range =np.linspace(0, 50, 500)
 mg_x, mg_y = np.sort(mg['dwell_time_min']), np.arange(0, len(mg), 1) / len(mg)
@@ -92,13 +94,17 @@ denom = theta * np.exp(-t_min/tau1) + (1 - theta) * np.exp(-t_min / tau2)
 
 dcdf = 1 - (numer / denom) 
 fig = plt.figure(dpi=100)
-plt.step(mg_x, mg_y, label='data')
+plt.step(mg_x, mg_y, label='ECDF', color='#753F98')
 # plt.plot(time_range, cdf, color='tomato', label='single exponential')
-plt.fill_between(time_range, cdf_min, cdf_max, color='tomato', label='single exponential', alpha=0.5)
-plt.plot(time_range, dcdf, label='sum of exp', color='dodgerblue')
+plt.fill_between(time_range, cdf_min, cdf_max, color='tomato', 
+                label=r'$\frac{1}{\tau}e^{-(t-t_{min})/\tau}$ pdf', alpha=0.5)
+plt.plot(time_range, dcdf, 
+        label=r'$\approx\frac{p}{\tau_1}e^{-t/\tau_1} + \frac{(1-p)}{\tau_2}e^{-t/\tau_2}$ pdf', 
+        color='dodgerblue')
 plt.ylim([0, 1.1])
 plt.title('Magnesium')
-plt.legend(loc='lower right')
-
+plt.legend(loc='lower right',fontsize=12)
+plt.savefig('12SpacG11T_mg_ecdf_single_double_exp_posterior.pdf', 
+            facecolor='white')
 
 #%%
