@@ -9,10 +9,11 @@ from tqdm import tqdm
 import vdj.io
 import glob
 import imp
+import re
 imp.reload(vdj.io)
 
 # Glob the file names of all .mat files in data
-files = glob.glob('../../data/*.mat')
+files = glob.glob('../../data/mat_files/*.mat')
 
 # Instantiate the empty lists to store dataframes
 dwell_dfs, f_looped_dfs, fates_dfs = [], [], []
@@ -21,7 +22,7 @@ for f in tqdm(files, desc='Processing .mat TPM files...'):
     
     # Load and extract data
     tpm = vdj.io.ProcessTPM(f)
-    f_looped, dwell, fates = tpm.dwell_time()
+    dwell = tpm.dwell_time()
 
     # Add divalent salt information
     if '_Ca_' not in f.split('/')[-1]:
@@ -29,6 +30,14 @@ for f in tqdm(files, desc='Processing .mat TPM files...'):
     else:
         salt = 'Ca'
     dwell['salt'] = salt
+
+    # Add HMGB1 concentration information
+    if '_HMGB1_' not in f.split('/')[-1]:
+        hmgb1 = 80
+    else:
+        hmgb1 = int(f.split('_')[2][:-2])
+    dwell['hmgb1'] = hmgb1
+
     # Append the generated dataframes to the data lists
     dwell_dfs.append(dwell)
 
