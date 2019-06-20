@@ -11,6 +11,7 @@ import bokeh.transform
 import scipy.stats
 import vdj.io
 bokeh.io.output_notebook()
+vdj.viz.plotting_style()
 
 # Load the statistics
 data = pd.read_csv('../../data/compiled_dwell_times.csv')
