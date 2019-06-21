@@ -6,6 +6,8 @@ Module for calling standard plotting functions and setting the styles.
 import matplotlib.pyplot as plt
 import seaborn as sns
 from . import io
+from bokeh.io import curdoc
+from bokeh.themes import Theme
 
 def plotting_style():
     """
@@ -33,6 +35,27 @@ def plotting_style():
     plt.rc('text.latex', preamble=r'\usepackage{sfmath}')
     plt.rc('mathtext', fontset='stixsans', sf='sans')
     sns.set_style('dark', rc=rc)
+
+def plotting_style_bokeh():
+    """
+    Sets bokeh plotting style to the publication default. It returns a list
+    of the preferred colors.
+    """
+    curdoc().theme = Theme(json={'attrs' : {
+        
+        # apply defaults to Figure properties
+        'Figure': {
+            'toolbar_location': None,
+            'outline_line_color': None,
+            'min_border_right': 10,
+        },
+
+        # apply defaults to Axis properties
+        'Axis': {
+            'major_tick_in': None,
+            'minor_tick_in': None,
+        }
+    }})
 
 
 def generate_matrix(mutations, data_values):

@@ -11,7 +11,7 @@ import bokeh.transform
 import scipy.stats
 import vdj.io
 bokeh.io.output_notebook()
-vdj.viz.plotting_style()
+vdj.viz.plotting_style_bokeh()
 
 # Load the statistics
 data = pd.read_csv('../../data/compiled_dwell_times.csv')
@@ -44,7 +44,8 @@ for m in points['mutant'].unique():
     points.loc[points['mutant']==m, 'y'] = y + 1
     points.loc[points['mutant']==m, 'base'] = mut['seq'][ind]
     points.loc[points['mutant']==m, 'size'] = np.log10(100/_m['width'])
-
+wt = points[points['mutant']=='WT12rss']['median']
+points['relative_tau'] = points['median'] / wt.values[0]
 
 # Compute the CDFS for each
 cdf_dfs = []
@@ -73,11 +74,11 @@ post_display = bokeh.models.ColumnDataSource({'x':[],
 
 
 # %%
-greens = bokeh.palettes.Blues9
-tau = stats['median']
-rate_colors = bokeh.transform.linear_cmap(palette=greens, 
+rdbu = bokeh.palettes.RdBu9
+tau = points['relative_tau']
+rate_colors = bokeh.transform.log_cmap(palette=rdbu, 
         low = tau.min(), high=tau.max(), 
-        low_color=greens[0], high_color=greens[-1],
+        low_color=rdbu[0], high_color=rdbu[-1],
         field_name='median')
 
 # %%
@@ -87,7 +88,7 @@ dwell_ax = bokeh.plotting.figure(width=canvas_width, height=400,
                                 x_axis_label='dwell time [s]',
                                 y_axis_label='cumulative distribution')
 rate_ax = bokeh.plotting.figure(width=canvas_width, height=200, 
-                               x_range=[0, 29], y_range=[0,5],
+                               x_range=[0, 28.5], y_range=[0,4.5],
                                x_axis_label='reference sequence', 
                                y_axis_label='mutation')
 rel_rate_ax = bokeh.plotting.figure(width=canvas_width, height=200,
@@ -95,7 +96,7 @@ rel_rate_ax = bokeh.plotting.figure(width=canvas_width, height=200,
                                x_axis_label='reference sequence',
                                y_axis_label='mutation')
 dist_ax = bokeh.plotting.figure(width=canvas_width, height=200, x_range=[1, 60],
-                               x_axis_label='τ [min/cut]',
+                               x_axis_label='τ [min/unloop]',
                                y_axis_label='probability')
 
 # Plot the  punch cards
@@ -126,7 +127,7 @@ wt_rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=wt,
             line_color='tomato', size=20) 
 
 
-#  Pot the wild-type dwell times
+# Plot the wild-type dwell times
 _wt_dwell = cdf_df[cdf_df['mutant']=='12SpacG11T']
 dwell_ax.step(x='x', y='y', line_width=1, color='blue', source=_wt_dwell)
 dwell_ax.circle(x='x', y='y', line_width=1, line_color='blue', source=_wt_dwell,
@@ -151,8 +152,38 @@ bokeh.io.show(dwell_ax)
 wt_samps = posteriors[posteriors['mutant']=='WT12rss']
 dist_ax.line(x='tau', y='posterior_pdf', line_width=1, color='blue', legend='wild type', source=wt_samps)
 
-dist_ax.line(x='x', y='y', color='tomato', line_width=2, source=post_display)
+dist_ax.line(x='x', y='y', color='tomato', legend='legend', line_width=2, source=post_display)
 
+#%%
+from bokeh.io import curdoc
+from bokeh.themes import Theme
+
+curdoc().theme = Theme(json={'attrs': {
+
+        # apply defaults to Figure properties
+        'Figure': {
+                'toolbar_location': None,
+                'outline_line_color': None,
+                'min_border_right': 10,
+                'background_fill_color': '#f5e3b3',
+        },
+
+        # apply defaults to Axis properties
+        'Axis': {
+                'major_tick_in': None,
+                'minor_tick_in': None,
+                'minor_tick_out': None,
+                'axis_line_color': '#000000',
+                'major_tick_line_color': '#000000',
+                'axis_label_text_font_size': "14pt",
+                'major_label_text_font_size': "12pt",
+        },
+
+        # apply defaults to Legend properties
+        'Legend': {
+                'background_fill_alpha': 0.8,
+        }
+}})
 # %%
 # Add hover tool
 cb = bokeh.models.CustomJS(args=dict(mut_source=stats_source, post_source=post_source, 
@@ -184,13 +215,14 @@ wt_rate_hover = bokeh.models.HoverTool(renderers=[wt_rate_vals],
                   ('# loops', '@n_loops')])
 rate_ax.add_tools(rate_hover)
 rate_ax.add_tools(wt_rate_hover)
+rate_ax.yaxis.ticker = [1, 2, 3, 4]
+rate_ax.yaxis.major_label_overrides = {1:'A', 2:'C', 3:'G', 4:'T'}
+rate_ax.xaxis.ticker = np.arange(1, 29, 1)
+rate_ax.xaxis.major_label_overrides = {i+1:b for i, b in enumerate(list(ref[0]))}
 
 # Define the layout
 col = bokeh.layouts.column(rate_ax, dist_ax)
 bokeh.io.show(col)
-bokeh.io.save(col, './unlooping_rate.html')
-
-#%%
-
+#bokeh.io.save(col, './unlooping_rate.html')
 
 #%%
