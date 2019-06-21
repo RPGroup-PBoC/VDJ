@@ -46,6 +46,7 @@ for m in points['mutant'].unique():
     points.loc[points['mutant']==m, 'size'] = np.log10(100/_m['width'])
 wt = points[points['mutant']=='WT12rss']['median']
 points['relative_tau'] = points['median'] / wt.values[0]
+stats['relative_tau'] = stats['median'] / wt.values[0]
 
 # Compute the CDFS for each
 cdf_dfs = []
@@ -74,8 +75,8 @@ post_display = bokeh.models.ColumnDataSource({'x':[],
 
 
 # %%
-rdbu = bokeh.palettes.RdBu9
-tau = points['relative_tau']
+rdbu = bokeh.palettes.RdBu5
+tau = stats['relative_tau']
 rate_colors = bokeh.transform.log_cmap(palette=rdbu, 
         low = tau.min(), high=tau.max(), 
         low_color=rdbu[0], high_color=rdbu[-1],
@@ -124,7 +125,7 @@ wt['95_high'] = _wt['95_high'].values[0]
 wt['median'] = _wt['median'].values[0]
 wt['size'] = 30 * np.log10(500 / _wt['width'])
 wt_rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=wt, 
-            line_color='white', size=20) 
+            line_color='#0099CD', size=20) 
 
 
 # Plot the wild-type dwell times
