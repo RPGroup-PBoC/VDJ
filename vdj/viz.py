@@ -54,17 +54,26 @@ def plotting_style_bokeh():
         # apply defaults to Axis properties
         'Axis': {
                 'major_tick_in': None,
+                'major_tick_out': 3,
                 'minor_tick_in': None,
                 'minor_tick_out': None,
-                'axis_line_color': '#000000',
+                'axis_line_color': None,
                 'major_tick_line_color': '#000000',
                 'axis_label_text_font_size': "14pt",
                 'major_label_text_font_size': "12pt",
         },
 
+        # apply properties to Grid
+        'Grid': {
+                'visible': False,
+                'grid_line_color': '#FFFFFF',
+                'grid_line_alpha': 0.75
+        },
+
         # apply defaults to Legend properties
         'Legend': {
-                'background_fill_alpha': 0.8,
+                'background_fill_alpha': 0,
+                'background_fill_color': '#FFEDCE'
         }
     }})
 

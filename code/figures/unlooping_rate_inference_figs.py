@@ -124,20 +124,20 @@ wt['95_high'] = _wt['95_high'].values[0]
 wt['median'] = _wt['median'].values[0]
 wt['size'] = 30 * np.log10(500 / _wt['width'])
 wt_rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=wt, 
-            line_color='tomato', size=20) 
+            line_color='white', size=20) 
 
 
 # Plot the wild-type dwell times
 _wt_dwell = cdf_df[cdf_df['mutant']=='12SpacG11T']
-dwell_ax.step(x='x', y='y', line_width=1, color='blue', source=_wt_dwell)
-dwell_ax.circle(x='x', y='y', line_width=1, line_color='blue', source=_wt_dwell,
+dwell_ax.step(x='x', y='y', line_width=1, color='#0099CD', source=_wt_dwell)
+dwell_ax.circle(x='x', y='y', line_width=1, line_color='#0099CD', source=_wt_dwell,
                 fill_color='white')
 
 # Plot the theoretical cdf
 time = np.linspace(0, 50, 100)
 wt_tau = stats[stats['mutant']=='12SpacG11T']['median']
 theo_cdf = 1 - np.exp(-(time - 0.35)/wt_tau.values[0])
-dwell_ax.step(time, theo_cdf, line_width=3, color='blue', alpha=0.5)
+dwell_ax.step(time, theo_cdf, line_width=3, color='#0099CD', alpha=0.5)
 unloop = data[(data['mutant']=='12SpacG11T') & (data['cut']==0)]['dwell_time_min']
 
 
@@ -150,40 +150,10 @@ bokeh.io.show(dwell_ax)
 # %%
 # Bin and show the distribution for the wild-type
 wt_samps = posteriors[posteriors['mutant']=='WT12rss']
-dist_ax.line(x='tau', y='posterior_pdf', line_width=1, color='blue', legend='wild type', source=wt_samps)
+dist_ax.line(x='tau', y='posterior_pdf', line_width=1, color='#0099CD', legend='wild type', source=wt_samps)
 
-dist_ax.line(x='x', y='y', color='tomato', legend='legend', line_width=2, source=post_display)
+dist_ax.line(x='x', y='y', color='#D43124', legend='legend', line_width=2, source=post_display)
 
-#%%
-from bokeh.io import curdoc
-from bokeh.themes import Theme
-
-curdoc().theme = Theme(json={'attrs': {
-
-        # apply defaults to Figure properties
-        'Figure': {
-                'toolbar_location': None,
-                'outline_line_color': None,
-                'min_border_right': 10,
-                'background_fill_color': '#f5e3b3',
-        },
-
-        # apply defaults to Axis properties
-        'Axis': {
-                'major_tick_in': None,
-                'minor_tick_in': None,
-                'minor_tick_out': None,
-                'axis_line_color': '#000000',
-                'major_tick_line_color': '#000000',
-                'axis_label_text_font_size': "14pt",
-                'major_label_text_font_size': "12pt",
-        },
-
-        # apply defaults to Legend properties
-        'Legend': {
-                'background_fill_alpha': 0.8,
-        }
-}})
 # %%
 # Add hover tool
 cb = bokeh.models.CustomJS(args=dict(mut_source=stats_source, post_source=post_source, 
@@ -223,6 +193,6 @@ rate_ax.xaxis.major_label_overrides = {i+1:b for i, b in enumerate(list(ref[0]))
 # Define the layout
 col = bokeh.layouts.column(rate_ax, dist_ax)
 bokeh.io.show(col)
-#bokeh.io.save(col, './unlooping_rate.html')
+bokeh.io.save(col, './unlooping_rate.html')
 
 #%%
