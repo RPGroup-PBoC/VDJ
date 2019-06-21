@@ -77,10 +77,11 @@ post_display = bokeh.models.ColumnDataSource({'x':[],
 # %%
 rdbu = bokeh.palettes.RdBu5
 tau = stats['relative_tau']
+median_tau = (tau.max() - tau.min()) / 2
 rate_colors = bokeh.transform.log_cmap(palette=rdbu, 
-        low = tau.min(), high=tau.max(), 
+        low = tau.min() - median_tau, high=tau.max() - median_tau, 
         low_color=rdbu[0], high_color=rdbu[-1],
-        field_name='median')
+        field_name='relative_tau')
 
 # %%
 # Set up the figures
@@ -115,7 +116,7 @@ for _x in range(1, 29):
 rate_ax.x(x=x, y=y, color='grey', alpha=0.5, size=8)
 
 # Plot the wild-type values
-_wt = stats[stats['mutant']=='12SpacG11T']
+_wt = stats[stats['mutant']=='12WTrss']
 wt = pd.DataFrame([])
 wt['x'] = np.arange(1, 29)
 wt['y'] = ref_idx + 1
@@ -123,6 +124,7 @@ wt['mutant'] = 'WT'
 wt['95_low'] = _wt['95_low'].values[0] 
 wt['95_high'] = _wt['95_high'].values[0]
 wt['median'] = _wt['median'].values[0]
+wt['relative_tau'] = 1
 wt['size'] = 30 * np.log10(500 / _wt['width'])
 wt_rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=wt, 
             line_color='#0099CD', size=20) 
@@ -148,7 +150,7 @@ unloop = data[(data['mutant']=='12SpacG11T') & (data['cut']==0)]['dwell_time_min
 
 bokeh.io.show(dwell_ax)
 
-# %%
+|# %%
 # Bin and show the distribution for the wild-type
 wt_samps = posteriors[posteriors['mutant']=='WT12rss']
 dist_ax.line(x='tau', y='posterior_pdf', line_width=1, color='#0099CD', legend='wild type', source=wt_samps)
