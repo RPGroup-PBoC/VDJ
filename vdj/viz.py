@@ -41,22 +41,32 @@ def plotting_style_bokeh():
     Sets bokeh plotting style to the publication default. It returns a list
     of the preferred colors.
     """
-    curdoc().theme = Theme(json={'attrs' : {
-        
+    curdoc().theme = Theme(json={'attrs': {
+
         # apply defaults to Figure properties
         'Figure': {
-            'toolbar_location': None,
-            'outline_line_color': None,
-            'min_border_right': 10,
+                'toolbar_location': None,
+                'outline_line_color': None,
+                'min_border_right': 10,
+                'background_fill_color': '#f5e3b3',
         },
 
         # apply defaults to Axis properties
         'Axis': {
-            'major_tick_in': None,
-            'minor_tick_in': None,
+                'major_tick_in': None,
+                'minor_tick_in': None,
+                'minor_tick_out': None,
+                'axis_line_color': '#000000',
+                'major_tick_line_color': '#000000',
+                'axis_label_text_font_size': "14pt",
+                'major_label_text_font_size': "12pt",
+        },
+
+        # apply defaults to Legend properties
+        'Legend': {
+                'background_fill_alpha': 0.8,
         }
     }})
-
 
 def generate_matrix(mutations, data_values):
     """
