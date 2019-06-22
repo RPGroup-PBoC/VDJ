@@ -45,8 +45,8 @@ for m in points['mutant'].unique():
     points.loc[points['mutant']==m, 'base'] = mut['seq'][ind]
     points.loc[points['mutant']==m, 'size'] = np.log10(100/_m['width'])
 wt = points[points['mutant']=='WT12rss']['median']
-points['relative_tau'] = points['median'] / wt.values[0]
-stats['relative_tau'] = stats['median'] / wt.values[0]
+points['relative_tau'] = np.log(points['median'] / wt.values[0])
+stats['relative_tau'] = np.log(stats['median'] / wt.values[0])
 
 # Compute the CDFS for each
 cdf_dfs = []
@@ -75,11 +75,10 @@ post_display = bokeh.models.ColumnDataSource({'x':[],
 
 
 # %%
-rdbu = bokeh.palettes.RdBu5
+rdbu = bokeh.palettes.RdBu9
 tau = stats['relative_tau']
-median_tau = (tau.max() - tau.min()) / 2
-rate_colors = bokeh.transform.log_cmap(palette=rdbu, 
-        low = tau.min() - median_tau, high=tau.max() - median_tau, 
+rate_colors = bokeh.transform.linear_cmap(palette=rdbu, 
+        low = - tau.max(), high= tau.max(), 
         low_color=rdbu[0], high_color=rdbu[-1],
         field_name='relative_tau')
 
@@ -116,41 +115,36 @@ for _x in range(1, 29):
 rate_ax.x(x=x, y=y, color='grey', alpha=0.5, size=8)
 
 # Plot the wild-type values
-_wt = stats[stats['mutant']=='12WTrss']
+_wt = stats[stats['mutant']=='WT12rss']
 wt = pd.DataFrame([])
 wt['x'] = np.arange(1, 29)
 wt['y'] = ref_idx + 1
-wt['mutant'] = 'WT'
+wt['mutant'] = 'WT12rss'
 wt['95_low'] = _wt['95_low'].values[0] 
 wt['95_high'] = _wt['95_high'].values[0]
 wt['median'] = _wt['median'].values[0]
-wt['relative_tau'] = 1
+wt['relative_tau'] = _wt['relative_tau'].values[0]
 wt['size'] = 30 * np.log10(500 / _wt['width'])
 wt_rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=wt, 
             line_color='#0099CD', size=20) 
 
 
 # Plot the wild-type dwell times
-_wt_dwell = cdf_df[cdf_df['mutant']=='12SpacG11T']
+_wt_dwell = cdf_df[cdf_df['mutant']=='WT12rss']
 dwell_ax.step(x='x', y='y', line_width=1, color='#0099CD', source=_wt_dwell)
 dwell_ax.circle(x='x', y='y', line_width=1, line_color='#0099CD', source=_wt_dwell,
                 fill_color='white')
 
 # Plot the theoretical cdf
 time = np.linspace(0, 50, 100)
-wt_tau = stats[stats['mutant']=='12SpacG11T']['median']
+wt_tau = stats[stats['mutant']=='WT12rss']['median']
 theo_cdf = 1 - np.exp(-(time - 0.35)/wt_tau.values[0])
 dwell_ax.step(time, theo_cdf, line_width=3, color='#0099CD', alpha=0.5)
-unloop = data[(data['mutant']=='12SpacG11T') & (data['cut']==0)]['dwell_time_min']
+unloop = data[(data['mutant']=='WT12rss') & (data['cut']==0)]['dwell_time_min']
 
+#bokeh.io.show(dwell_ax)
 
-
-
-
-
-bokeh.io.show(dwell_ax)
-
-|# %%
+# %%
 # Bin and show the distribution for the wild-type
 wt_samps = posteriors[posteriors['mutant']=='WT12rss']
 dist_ax.line(x='tau', y='posterior_pdf', line_width=1, color='#0099CD', legend='wild type', source=wt_samps)
@@ -199,3 +193,7 @@ bokeh.io.show(col)
 bokeh.io.save(col, './unlooping_rate.html')
 
 #%%
+"""
+190622 - Current thoughts: should we make the color (red v blue) have five levels
+of gradation? Red says slower unlooping, blue says faster unlooping. Dark colors
+say significant. Light colors say slightly overlapping.
