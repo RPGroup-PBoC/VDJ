@@ -57,13 +57,47 @@ plt.legend(loc='lower right')
 plt.title('HMGB1 Titration (Bootstrapping)')
 #plt.savefig('hmgb1_titration_bootstrap.pdf', facecolor='w')
 #%%
+# Plot ECDFs with 95% credible region CDFs
+t_min = 21/60
+time = np.linspace(0, 60, 1000)
+cdf = pd.DataFrame()
+_cdf = pd.DataFrame()
+for g, d in summary_data.groupby('hmgb1'):
+    _cdf['95_low'] = 1 - np.exp(- (time - t_min) / d['95_low'].values[0])
+    _cdf['95_high'] = 1 - np.exp(- (time - t_min) / d['95_high'].values[0])
+    _cdf['median'] = 1 - np.exp(- (time - t_min) / d['median'].values[0])
+    _cdf['hmgb1'] = g
+
+    cdf = cdf.append(_cdf)
+
 plt.figure(dpi=100)
 plt.step(x_40, y_40, label='40 nM, %i loops' %len(dwell_40), color='#429447')
+plt.fill_between(time, cdf[cdf['hmgb1']==40]['95_low'], 
+                cdf[cdf['hmgb1']==40]['95_high'], color='#429447', alpha=0.5)
 plt.step(x_80, y_80, label='80 nM, %i loops' %len(dwell_80), color='#753F98')
+plt.fill_between(time, cdf[cdf['hmgb1']==80]['95_low'], 
+                cdf[cdf['hmgb1']==80]['95_high'], color='#753F98', alpha=0.5)
 plt.step(x_160, y_160, label='160 nM, %i loops' %len(dwell_160), color='#D43124')
+plt.fill_between(time, cdf[cdf['hmgb1']==160]['95_low'], 
+                cdf[cdf['hmgb1']==160]['95_high'], color='#D43124', alpha=0.5)
 plt.xlabel('time (min)')
 plt.ylabel('empirical CDF')
 plt.title('HMGB1 Titration (Calcium)')
 plt.legend()
-#plt.savefig('hmgb1_titration_raw_dwells.pdf', facecolor='w')
+plt.savefig('hmgb1_titration_most_cred_dwells.pdf', facecolor='w')
+#%%
+plt.figure(dpi=100)
+plt.xlim((0, 20))
+plt.plot(posterior_data[posterior_data['hmgb1']==40]['tau'],
+        posterior_data[posterior_data['hmgb1']==40]['posterior_pdf'], 
+        label='40 nM', color='#429447')
+plt.plot(posterior_data[posterior_data['hmgb1']==80]['tau'],
+        posterior_data[posterior_data['hmgb1']==80]['posterior_pdf'], 
+        label='80 nM', color='#753F98')
+plt.plot(posterior_data[posterior_data['hmgb1']==160]['tau'],
+        posterior_data[posterior_data['hmgb1']==160]['posterior_pdf'], 
+        label='160 nM', color='#D43124')
+plt.legend()
+plt.xlabel(r'$\tau$ (min)', fontsize=12)
+plt.ylabel('probability (unnormalized)', fontsize=12)
 #%%
