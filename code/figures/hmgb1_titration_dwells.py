@@ -10,6 +10,8 @@ vdj.viz.plotting_style()
 
 # Load dwell time data
 dwell_data = pd.read_csv('../../data/compiled_dwell_times.csv')
+posterior_data = pd.read_csv('../../data/hmgb1_unlooping_rate_posteriors.csv')
+summary_data = pd.read_csv('../../data/hmgb1_unlooping_rate_analytic_summary.csv')
 
 # Pull out 12SpacG11T data
 hmgb1_titration_data = dwell_data[(dwell_data['mutant']=='12SpacG11T') & (dwell_data['salt']=='Ca')]
@@ -53,7 +55,7 @@ plt.xlabel('time (min)')
 plt.ylabel('bootstrapped ECDFs')
 plt.legend(loc='lower right')
 plt.title('HMGB1 Titration (Bootstrapping)')
-plt.savefig('hmgb1_titration_bootstrap.pdf', facecolor='w')
+#plt.savefig('hmgb1_titration_bootstrap.pdf', facecolor='w')
 #%%
 plt.figure(dpi=100)
 plt.step(x_40, y_40, label='40 nM, %i loops' %len(dwell_40), color='#429447')
@@ -63,5 +65,5 @@ plt.xlabel('time (min)')
 plt.ylabel('empirical CDF')
 plt.title('HMGB1 Titration (Calcium)')
 plt.legend()
-plt.savefig('hmgb1_titration_raw_dwells.pdf', facecolor='w')
+#plt.savefig('hmgb1_titration_raw_dwells.pdf', facecolor='w')
 #%%
