@@ -98,6 +98,7 @@ plt.plot(posterior_data[posterior_data['hmgb1']==160]['tau'],
         posterior_data[posterior_data['hmgb1']==160]['posterior_pdf'], 
         label='160 nM', color='#D43124')
 plt.legend()
-plt.xlabel(r'$\tau$ (min)', fontsize=12)
+plt.xlabel(r'$\tau_{unloop}$ (min)', fontsize=12)
 plt.ylabel('probability (unnormalized)', fontsize=12)
+plt.savefig('hmgb1_titration_posteriors.pdf', facecolor='white')
 #%%
