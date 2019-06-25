@@ -61,7 +61,7 @@ for g, d in data.groupby('mutant'):
     _post['mutant'] = g
     _post['seq'] = seq['seq']
     _post['n_muts'] = seq['n_muts']
-    _post['posterior_pdf'] /= _post['posterior_pdf'].max()
+#    _post['posterior_pdf'] /= _post['posterior_pdf'].max()
     post_dfs.append(_post)
 post_df = pd.concat(post_dfs)
 
@@ -69,3 +69,5 @@ post_df = pd.concat(post_dfs)
 # Save things to disk
 post_df.to_csv('../../data/unlooping_rate_posteriors.csv', index=False)
 stat_df.to_csv('../../data/unlooping_rate_analytic_summary.csv', index=False)
+
+#%%

@@ -5,6 +5,7 @@ import pandas as pd
 import bokeh.io
 import bokeh.plotting
 import bokeh.models
+from bokeh.models.glyphs import Patch
 import bokeh.layouts
 import bokeh.colors
 import bokeh.transform
@@ -96,9 +97,10 @@ rel_rate_ax = bokeh.plotting.figure(width=canvas_width, height=200,
                                x_range=[1, 29], y_range=[1, 4],
                                x_axis_label='reference sequence',
                                y_axis_label='mutation')
-dist_ax = bokeh.plotting.figure(width=canvas_width, height=200, x_range=[1, 60],
+dist_ax = bokeh.plotting.figure(width=canvas_width, height=200, 
+                               x_range=[1, 60], y_range=[0, 0.065],
                                x_axis_label='τ [min/unloop]',
-                               y_axis_label='probability')
+                               y_axis_label='posterior')
 
 # Plot the  punch cards
 rate_vals = rate_ax.circle(x='x', y='y', fill_color=rate_colors, source=stats_source, 
@@ -147,10 +149,14 @@ unloop = data[(data['mutant']=='WT12rss') & (data['cut']==0)]['dwell_time_min']
 # %%
 # Bin and show the distribution for the wild-type
 wt_samps = posteriors[posteriors['mutant']=='WT12rss']
-dist_ax.line(x='tau', y='posterior_pdf', line_width=1, color='#0099CD', legend='wild type', source=wt_samps)
+dist_ax.line(x='tau', y='posterior_pdf', line_width=2, color='#0099CD', legend='wild type', source=wt_samps)
+wt_datasource = bokeh.models.ColumnDataSource(dict(x=wt_samps['tau'].values, y=wt_samps['posterior_pdf'].values))
+wt_area = Patch(x='x', y='y', fill_color='#73cae6', line_alpha=0)
+dist_ax.add_glyph(wt_datasource, wt_area)
 
 dist_ax.line(x='x', y='y', color='#D43124', legend='legend', line_width=2, source=post_display)
-
+mut_area = Patch(x='x', y='y', fill_color='#eb9188', fill_alpha=0.1, line_alpha=0)
+dist_ax.add_glyph(post_display, mut_area)
 # %%
 # Add hover tool
 cb = bokeh.models.CustomJS(args=dict(mut_source=stats_source, post_source=post_source, 
