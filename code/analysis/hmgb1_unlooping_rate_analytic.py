@@ -63,7 +63,7 @@ for g, d in data.groupby('hmgb1'):
     _post['seq'] = seq['seq']
     _post['n_muts'] = seq['n_muts']
     _post['hmgb1'] = g
-    _post['posterior_pdf'] /= _post['posterior_pdf'].max()
+#    _post['posterior_pdf'] /= _post['posterior_pdf'].max()
     post_dfs.append(_post)
 post_df = pd.concat(post_dfs)
 

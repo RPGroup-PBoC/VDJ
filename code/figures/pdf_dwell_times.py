@@ -66,7 +66,7 @@ t_min = 21/60
 cdf_min =  1 - np.exp(-(time_range - t_min)/single_ca['hpd_min'].values[0])
 cdf_max =  1 - np.exp(-(time_range - t_min)/single_ca['hpd_max'].values[0])
 plt.figure(dpi=100)
-plt.step(ca_x, ca_y, label='data', color='#429447')
+plt.step(ca_x, ca_y, label='data, 80 nM HMGB1', color='#753F98')
 # plt.plot(time_range, cdf, color='tomato', label='single exponential')
 plt.fill_between(time_range, cdf_min, cdf_max, alpha=0.5, color='tomato',
                 label='single exponential')
