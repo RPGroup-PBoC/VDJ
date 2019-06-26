@@ -149,6 +149,7 @@ class ProcessTPM(object):
         self.dwell = False
         self.f_looped = False
         self.fates = False
+        self.events = False
 
     # ##########################################################################
     # DATA EXTRACTION
@@ -280,6 +281,29 @@ class ProcessTPM(object):
         df['date'] = self.dates[i]
         self.fates = df.reset_index()
         return df
+
+    def loop_events(self):
+        """
+        Computes the number of observed loops per bead.
+        """
+        mat = self.file
+
+        # Extract the list of experiments with bead id and number of loops
+        loop_events = mat['ontime_comp'][0]
+        dfs =  []
+        for i, exp in enumerate(loop_events):
+            # Do the parsing to find the number of loops
+            loops = np.sum(exp > 0, axis=1)        
+            _df = pd.DataFrame(np.array([loops, np.arange(0, len(loops))]).T, 
+                               columns=['n_loops', 'bead_idx'])
+            _df['replicate'] = i + 1
+            dfs.append(_df)
+        loops = pd.concat(dfs)
+        loops['mutant'] = self.mut_id
+        loops['date'] = self.dates[i]
+        self.events = loops.reset_index()
+        return loops
+
  
     def extract_data(self, bead_idx=False):
         """
@@ -298,7 +322,11 @@ class ProcessTPM(object):
             fates = self.cut_beads(bead_idx=bead_idx)
         else:
             fates = self.fates
+        if type(self.events) == bool:
+            events = self.loop_events()
+        else:
+            events = self.events
         self.extract = True
-        return [f_looped, dwell, fates]
+        return [f_looped, dwell, fates, events]
  
 

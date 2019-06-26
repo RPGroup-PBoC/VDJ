@@ -9,39 +9,45 @@ from tqdm import tqdm
 import vdj.io
 import glob
 import imp
-import re
 imp.reload(vdj.io)
 
 # Glob the file names of all .mat files in data
-files = glob.glob('../../data/mat_files/*.mat')
+files = glob.glob('../../data/*.mat')
 
 # Instantiate the empty lists to store dataframes
-dwell_dfs, f_looped_dfs, fates_dfs = [], [], []
-samples_dfs, stats_dfs = [], []
+dwell_dfs, f_looped_dfs, fates_dfs, events_dfs = [], [], [], []
+dfs = [f_looped_dfs, dwell_dfs, fates_dfs, events_dfs]
 for f in tqdm(files, desc='Processing .mat TPM files...'):
     
     # Load and extract data
     tpm = vdj.io.ProcessTPM(f)
-    dwell = tpm.dwell_time()
+    out = tpm.extract_data()
 
     # Add divalent salt information
     if '_Ca_' not in f.split('/')[-1]:
         salt = 'Mg'
     else:
         salt = 'Ca'
-    dwell['salt'] = salt
+    for d in out:
+        d['salt'] = salt
 
     # Add HMGB1 concentration information
     if '_HMGB1_' not in f.split('/')[-1]:
         hmgb1 = 80
     else:
         hmgb1 = int(f.split('_')[2][:-2])
-    dwell['hmgb1'] = hmgb1
+    for d in out:
+        d['hmgb1'] = hmgb1
 
     # Append the generated dataframes to the data lists
-    dwell_dfs.append(dwell)
+    for i, d in enumerate(dfs):
+        d.append(out[i])
 
 # Concatenate the data and save to CSVs
-dwell = pd.concat(dwell_dfs)
-dwell.to_csv('../../data/compiled_dwell_times.csv', index=False)
+fnames = ['compiled_looping_fraction.csv', 'compiled_dwell_times.csv',
+         'compiled_bead_fates.csv', 'compiled_looping_events.csv']
+for file, d in zip(fnames, dfs):
+    df = pd.concat(d)
+    df.to_csv(f'../../data/{file}', index=False)
+
 
