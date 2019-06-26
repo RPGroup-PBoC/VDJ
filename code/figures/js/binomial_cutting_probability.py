@@ -93,9 +93,9 @@ cb = bokeh.models.CustomJS(args=dict(mut_source=muts, post_source=muts_post,
 
 
 #%%
-tooltips = [('Mutant', '@mutant'), ('# Beads', '@n_beads'), ('# Cuts', '@n_cuts'),
+tooltips = [('Mutant', '@mutant'), ('# Loops', '@n_beads'), ('# Cuts', '@n_cuts'),
             ('cutting probability', '@mode'), ('standard deviation', '@std'),
-            ('change from wild-type', '@diff')]
+            ('change from reference', '@diff')]
 
 # Set up the figure canvas
 prob_ax = bokeh.plotting.figure(width=600, height=200, 
@@ -158,7 +158,7 @@ for p in [prob_ax, diff_ax]:
     p.xaxis.major_label_overrides = {i+1:b for i, b in enumerate(list(ref_seq))}
 
 col = bokeh.layouts.column(prob_ax, diff_ax, post_ax)
-# bokeh.io.show(col)
+bokeh.io.show(col)
 bokeh.io.save(col, './cutting_prob.html')
 #%%
 
