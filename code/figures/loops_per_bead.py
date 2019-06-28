@@ -54,12 +54,12 @@ shift = {'A':-0.25, 'T':0.15, 'C':-0.15, 'G':0.25}
 
 for g, d in points.groupby(['base']):
     ax[1].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=1, 
-                ms=3, linestyle='none', label=g, zorder=order)
+                ms=3, linestyle='none', label=g)
     ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=1, label='__nolegend__')
 
 for g, d in points.groupby(['base']):
     ax[0].plot(d['pos'] + shift[g] + 1, d['loops_per_bead'], marker='o', color=colors[g], lw=1, 
-                ms=3, linestyle='none', label=g, zorder=order)
+                ms=3, linestyle='none', label=g)
     ax[0].vlines(d['pos'] + shift[g] + 1, 0, d['loops_per_bead'], color=colors[g], lw=1, label='__nolegend__')
 
 ax[0].hlines(wt_val, 0, 29, linestyle=':', color='k', label='WT')
