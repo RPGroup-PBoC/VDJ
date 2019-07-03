@@ -149,13 +149,11 @@ unloop = data[(data['mutant']=='WT12rss') & (data['cut']==0)]['dwell_time_min']
 # %%
 # Bin and show the distribution for the wild-type
 wt_samps = posteriors[posteriors['mutant']=='WT12rss']
-dist_ax.line(x='tau', y='posterior_pdf', line_width=2, color='#0099CD', legend='wild type', source=wt_samps)
 wt_datasource = bokeh.models.ColumnDataSource(dict(x=wt_samps['tau'].values, y=wt_samps['posterior_pdf'].values))
-wt_area = Patch(x='x', y='y', fill_color='#73cae6', line_alpha=0)
+wt_area = Patch(x='x', y='y', fill_color='#73cae6', line_color='#0099CD')
 dist_ax.add_glyph(wt_datasource, wt_area)
 
-dist_ax.line(x='x', y='y', color='#D43124', legend='legend', line_width=2, source=post_display)
-mut_area = Patch(x='x', y='y', fill_color='#eb9188', fill_alpha=0.1, line_alpha=0)
+mut_area = Patch(x='x', y='y', fill_color='#eb9188', fill_alpha=0.5, line_color='#D43124')
 dist_ax.add_glyph(post_display, mut_area)
 # %%
 # Add hover tool
