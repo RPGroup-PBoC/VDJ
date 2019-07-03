@@ -12,7 +12,7 @@ import imp
 imp.reload(vdj.io)
 
 # Glob the file names of all .mat files in data
-files = glob.glob('../../data/*.mat')
+files = glob.glob('../../data/mat_files/*.mat')
 
 # Instantiate the empty lists to store dataframes
 dwell_dfs, f_looped_dfs, fates_dfs, events_dfs = [], [], [], []

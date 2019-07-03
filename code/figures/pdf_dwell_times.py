@@ -108,3 +108,6 @@ plt.savefig('12SpacG11T_mg_ecdf_single_double_exp_posterior.pdf',
             facecolor='white')
 
 #%%
+
+
+#%%
