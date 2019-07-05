@@ -236,7 +236,7 @@ for p in [prob_ax, diff_ax]:
     p.xaxis.major_label_overrides = {i+1:b for i, b in enumerate(list(ref_seq))}
 
 row = bokeh.layouts.row(post_ax, dist_ax)
-col = bokeh.layouts.column(prob_ax, diff_ax, row)
+col = bokeh.layouts.column(diff_ax, row)
 bokeh.io.show(col)
 bokeh.io.save(col, './cutting_prob.html')
 #%%
