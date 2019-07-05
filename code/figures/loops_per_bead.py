@@ -60,7 +60,7 @@ for g, d in points.groupby(['base']):
 
 _ = ax.set_xticks(np.arange(1, 29))
 _ = ax.set_xticklabels(list(ref_seq))
-ax.set_xlim([0, 29])
+ax.set_xlim([0.5, 28.5])
 
 ax.legend(fontsize=8, ncol=5)
 ax.set_xlabel('reference sequence')
