@@ -47,38 +47,30 @@ points = counts[counts['n_muts'] == 1].copy()
 
 #%%
 bar_width = 0.75
-fig, ax = plt.subplots(2, 1, figsize=(7, 4))
+fig, ax = plt.subplots(1, 1, figsize=(7, 4))
 
 colors = {'A':'tomato', 'T':'dodgerblue', 'C':'grey', 'G':'purple'}
 shift = {'A':-0.25, 'T':0.15, 'C':-0.15, 'G':0.25}
-
+ax.add_patch(plt.Rectangle((7.5,-0.35), 12.0, 0.04, facecolor='gray',
+            clip_on=False, alpha=0.4, linewidth=0))
 for g, d in points.groupby(['base']):
-    ax[1].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=1, 
+    ax.plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=1, 
                 ms=3, linestyle='none', label=g)
-    ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=1, label='__nolegend__')
+    ax.vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=1, label='__nolegend__')
 
-for g, d in points.groupby(['base']):
-    ax[0].plot(d['pos'] + shift[g] + 1, d['loops_per_bead'], marker='o', color=colors[g], lw=1, 
-                ms=3, linestyle='none', label=g)
-    ax[0].vlines(d['pos'] + shift[g] + 1, 0, d['loops_per_bead'], color=colors[g], lw=1, label='__nolegend__')
+_ = ax.set_xticks(np.arange(1, 29))
+_ = ax.set_xticklabels(list(ref_seq))
+ax.set_xlim([0, 29])
 
-ax[0].hlines(wt_val, 0, 29, linestyle=':', color='k', label='WT')
-for a in ax:
-    _ = a.set_xticks(np.arange(1, 29))
-    _ = a.set_xticklabels(list(ref_seq))
-    a.set_xlim([0, 29])
-    a.legend(fontsize=8, ncol=5)
-    a.set_xlabel('reference sequence')
-ax[1].hlines(0, 0, 29, color='k', linestyle=':')
-ax[1].set_ylim([-0.3, 0.3])
-ax[0].set_ylim([-0.01, 0.6])
-ax[1].set_ylabel('change in\nloop frequency')
-ax[0].set_ylabel('loop frequency')
+ax.legend(fontsize=8, ncol=5)
+ax.set_xlabel('reference sequence')
+ax.hlines(0, 0, 29, color='k', linestyle=':')
+ax.set_ylim([-0.3, 0.3])
+ax.set_ylabel('change in\nloop frequency')
 for i in range(1, 29, 2):
-    ax[0].vlines(i, -0.4, 0.8, color='w', linewidth=12, zorder=-1)
-    ax[1].vlines(i, -0.4, 0.8, color='w', linewidth=12, zorder=-1)
+    ax.vlines(i, -0.4, 0.8, color='w', linewidth=12, zorder=-1)
 
-plt.savefig('./loop_frequency_stickplot.pdf')
+plt.savefig('./loop_frequency_stickplot_highlight_spacer.pdf', facecolor='white')
 #%%
 
 
