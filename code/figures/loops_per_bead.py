@@ -50,7 +50,7 @@ bar_width = 0.75
 fig, ax = plt.subplots(1, 1, figsize=(7, 4))
 
 colors = {'A':'tomato', 'T':'dodgerblue', 'C':'grey', 'G':'purple'}
-shift = {'A':-0.25, 'T':0.15, 'C':-0.15, 'G':0.25}
+shift = {'A':-0.2, 'T':0.1, 'C':-0.1, 'G':0.2}
 ax.add_patch(plt.Rectangle((7.5,-0.35), 12.0, 0.04, facecolor='gray',
             clip_on=False, alpha=0.4, linewidth=0))
 for g, d in points.groupby(['base']):
