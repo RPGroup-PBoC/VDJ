@@ -50,7 +50,7 @@ points = counts[counts['n_muts'] == 1].copy()
 bar_width = 0.75
 fig, ax = plt.subplots(1, 1, figsize=(7, 4))
 
-colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#36C200', 'G':'#5919FF'}
+colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
 shift = {'A':-0.26, 'T':0.26, 'C':-0.13, 'G':0.13}
 
 for g, d in points.groupby(['base']):
