@@ -157,13 +157,6 @@ tooltips = [('Mutant', '@mutant'), ('# Loops', '@n_beads'), ('# Cuts', '@n_cuts'
             ('change from reference', '@diff')]
 
 # Set up the figure canvas
-prob_ax = bokeh.plotting.figure(width=700, height=200, 
-                          x_axis_label='reference sequence',
-                          y_axis_label='mutation',
-                          x_range=[0, 29],
-                          y_range=[0, 5],
-                          title='cutting probability',
-                          tools=[])
 diff_ax = bokeh.plotting.figure(width=700, height=200, 
                           x_axis_label='reference sequence',
                           y_axis_label='mutation',
@@ -177,7 +170,7 @@ post_ax = bokeh.plotting.figure(width=350, height=300, x_axis_label='cutting pro
                                 y_range=[0, 0.08])
 dist_ax = bokeh.plotting.figure(width=350, height=300,
                           x_axis_label='paired-complex dwell time [min]',
-                                y_axis_label='probability', 
+                                y_axis_label='number of loops', 
                                 title='dwell time distributions')
 
 
@@ -198,26 +191,19 @@ dist_ax.quad(bottom='bottom', top='top', left='left', right='right',
 
 
 # Plot the mutants
-prob_vals = prob_ax.circle(x='x', y='y', size='size', source=muts, fill_color=prob_cmap)
 diff_vals = diff_ax.circle(x='x', y='y', size='size', source=muts, fill_color=diff_cmap)
 
 # Plot the wild-type value
-prob_ax.triangle(x='x', y='y', size='size', source=_wt, fill_color=prob_cmap,
-              line_color='tomato', line_width=1.5, alpha=0.5)
 diff_ax.triangle(x='x', y='y', size='size', source=_wt, fill_color=diff_cmap,
               line_color='dodgerblue', line_width=1.5, alpha=0.5)
 
 # Plot the unexplored mutations
-prob_ax.x(x=xs, y=ys, color='gray', alpha=0.5, size=8)
 diff_ax.x(x=xs, y=ys, color='gray', alpha=0.5, size=8)
 
-prob_hover = HoverTool(renderers= [prob_vals],
-            tooltips=tooltips, callback=cb)
 diff_hover = HoverTool(renderers= [diff_vals],
             tooltips=tooltips, callback=cb)
-prob_hover.callback=cb
+
 diff_hover.callback=cb
-prob_ax.add_tools(prob_hover)
 diff_ax.add_tools(diff_hover)
 
 # Plot the wild-type posterior pdf
@@ -229,11 +215,10 @@ post_ax.patch(x='probability', y='posterior', color='dodgerblue', source=wt_post
 # Plot the mutant posterior pdf
 post_ax.line(x='x', y='y', color='tomato',  legend='legend', source=display, line_width=2)
 post_ax.patch(x='x', y='y', color='tomato', source=display, alpha=0.5, line_width=2)
-for p in [prob_ax, diff_ax]:
-    p.yaxis.ticker = [1, 2, 3, 4]
-    p.yaxis.major_label_overrides = {1:'A', 2:'C', 3:'G', 4:'T'}
-    p.xaxis.ticker = np.arange(1, 29, 1)
-    p.xaxis.major_label_overrides = {i+1:b for i, b in enumerate(list(ref_seq))}
+diff_ax.yaxis.ticker = [1, 2, 3, 4]
+diff_ax.yaxis.major_label_overrides = {1:'A', 2:'C', 3:'G', 4:'T'}
+diff_ax.xaxis.ticker = np.arange(1, 29, 1)
+diff_ax.xaxis.major_label_overrides = {i+1:b for i, b in enumerate(list(ref_seq))}
 
 row = bokeh.layouts.row(post_ax, dist_ax)
 col = bokeh.layouts.column(diff_ax, row)
