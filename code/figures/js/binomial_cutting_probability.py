@@ -24,8 +24,8 @@ dwell = pd.read_csv('../../../data/compiled_dwell_times.csv')
 dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
 
 # Isoate only the point mutants for now
-point = data[(data['n_muts'] == 1.0) & (data['mutant'] != 'V4-55')].copy()
-point_posts = posts[(posts['n_muts'] == 1.0) & (posts['mutant'] != 'V4-55')].copy()
+point = data[data['n_muts'] == 1.0].copy()
+point_posts = posts[posts['n_muts'] == 1.0].copy()
 
 # Get the wild-type sequence information to generate the bubble plot
 seqs = vdj.io.endogenous_seqs()

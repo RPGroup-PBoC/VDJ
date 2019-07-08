@@ -23,58 +23,53 @@ posts = posts[(posts['hmgb1'] == 80) & (posts['salt']=='Mg')]
 dwell = pd.read_csv('../../../data/compiled_dwell_times.csv')
 dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
 
+# Rename some of the mutant names to correct endogenous names
+endog_names = {'WT12rss' : 'V4-57-1 (ref)',
+                'DFL161' : 'DFL 16.1-5\'',
+                'DFL1613' : 'DFL 16.1-3\'',
+                '12SpacC1A' : 'V4-55'}
+
 # Isolate only the point mutants for now
-endog = data[~data['mutant'].str.startswith('12')].copy()
-endog_posts = posts[~posts['mutant'].str.startswith('12')].copy()
+endog = data[(~data['mutant'].str.startswith('12')) | (data['mutant']=='12SpacC1A')].copy()
+endog_posts = posts[(~posts['mutant'].str.startswith('12')) | (data['mutant']=='12SpacC1A')].copy()
 
-endog['mutant'][44] = 'DFL 16.1-5\''
-endog_posts['mutant'][44] = 'DFL 16.1-5\''
+endog = endog.replace({'mutant' : endog_names})
+endog_posts = endog_posts.replace({'mutant' : endog_names})
 
-endog['mutant'][45] = 'DFL 16.1-3\''
-endog_posts['mutant'][45] = 'DFL 16.1-3\''
-
-endog_ordering_y = {'DFL 16.1-3\'' : 13.0,
-                    'DFL 16.1-5\'' : 12.0,
-                    'V1-135' : 11.0,
-                    'V9-120' : 10.0,
-                    'V10-96' : 9.0,
-                    'V10-95' : 8.0,
-                    'V19-93' : 7.0,
-                    'WT12rss' : 6.0,
-                    'V4-55' : 5.0,
-                    'V5-43' : 4.0,
-                    'V8-18' : 3.0,
-                    'V6-17' : 2.0,
-                    'V6-15' : 1.0
+endog_ordering_y = {'DFL 16.1-3\'' : 11.0,
+                    'DFL 16.1-5\'' : 10.0,
+                    'V1-135' : 9.0,
+                    'V9-120' : 8.0,
+                    'V10-96' : 7.0,
+                    'V19-93' : 6.0,
+                    'V4-57-1 (ref)' : 5.0,
+                    'V4-55' : 4.0,
+                    'V5-43' : 3.0,
+                    'V8-18' : 2.0,
+                    'V6-17' : 1.0,
+                    'V6-15' : 0.0
                     }
 #%%
 
-# Get the wild-type sequence information to generate the bubble plot
-seqs = vdj.io.endogenous_seqs()
-ref_seq = seqs['WT12rss'][0]
-ref_idx = seqs['WT12rss'][1]
-
-# Insert the x and y locations for the point mutants
+# Insert the y locations for the point mutants
 for g, d in endog.groupby('mutant'):
-    seq = vdj.io.mutation_parser(g)
-    seq_idx = seq['seq_idx']
-    loc = np.argmax(seq_idx != ref_idx)
-    val = seq_idx[loc]
-    endog.loc[endog['mutant']==g, 'x'] = loc + 1
+    val = endog_ordering_y[g]
     endog.loc[endog['mutant']==g, 'y'] = val + 1
-    dwell.loc[dwell['mutant']==g, 'n_muts'] = seq['n_muts']
 
-dwell = dwell[dwell['n_muts']==1]
+#%%
+dwell = dwell[(~dwell['mutant'].str.startswith('12')) | (dwell['mutant']=='12SpacC1A')]
+dwell = dwell.replace({'mutant' : endog_names})
+data = data.replace({'mutant' : endog_names})
 # Figure out the cutting probability of the wildtype
-wt_prob = data[data['mutant']=='WT12rss']['mode'].values[0]
+wt_prob = data[data['mutant']=='V4-57-1 (ref)']['mode'].values[0]
 endog['diff'] = endog['mode'].values - wt_prob
 endog['size'] =  8 + (endog['n_beads'] / 25)
 
 # Define the wild-type data set
-wt_data = data[data['mutant']=='WT12rss']
+wt_data = data[data['mutant']=='V4-57-1 (ref)']
 size = 8 + (wt_data['n_beads'].values[0] / 25)
 _wt = pd.DataFrame(np.array([np.arange(len(ref_idx)) + 1, ref_idx + 1]).T, 
-                    columns=['x', 'y'])
+                    columns=['y'])
 _wt['mode'] = wt_prob
 _wt['size'] = size
 _wt['diff'] = 0 
@@ -82,13 +77,6 @@ _wt['mutant'] = 'V4-57-1 (ref)'
 _wt['n_beads'] = wt_data['n_beads'].values[0]
 _wt['n_cuts'] = wt_data['n_cuts'].values[0]
 _wt['std'] = wt_data['std'].values[0]
-# Determine where to plot the x's for unexplored mutations
-xs, ys = [], []
-for i in range(1, 29):
-    for j in range(1, 5):
-        if (len(endog[(endog['x']==i) & (endog['y']==j)]) == 0) & (ref_idx[i - 1] != j - 1):
-            xs.append(i)
-            ys.append(j)
 
 
 # Set the colors 
@@ -182,8 +170,7 @@ tooltips = [('Mutant', '@mutant'), ('# Loops', '@n_beads'), ('# Cuts', '@n_cuts'
 diff_ax = bokeh.plotting.figure(width=700, height=200, 
                           x_axis_label='reference sequence',
                           y_axis_label='mutation',
-                          x_range=[0, 29],
-                          y_range=[0, 5],
+                          y_range=[0, len(endog_ordering_y)],
                           title='change in cutting probability', 
                           tools=[])
 post_ax = bokeh.plotting.figure(width=350, height=300, x_axis_label='cutting probability',

@@ -18,8 +18,8 @@ data = pd.read_csv('../../data/compiled_bead_fates.csv')
 mut_info = {m:vdj.io.mutation_parser(m) for m in data['mutant'].unique()}
 
 # Compute the pooled statistics
-pooled = data.groupby(['mutant', 'date', 'salt', 'hmgb1']).agg(('sum')).reset_index()
-pooled = pooled[['mutant', 'salt', 'date', 'hmgb1', 'n_beads', 'n_cuts']]
+pooled = data.groupby(['mutant', 'salt', 'hmgb1']).agg(('sum')).reset_index()
+pooled = pooled[['mutant', 'salt', 'hmgb1', 'n_beads', 'n_cuts']]
 pooled['mode'] = pooled['n_cuts'].values / pooled['n_beads']
 pooled['std'] = (pooled['n_cuts'].values * (pooled['n_beads'] -\
                  pooled['n_cuts'])) / pooled['n_beads'].values**3
