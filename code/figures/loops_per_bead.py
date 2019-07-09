@@ -81,12 +81,21 @@ ax.vlines(0.5, -0.4, 0.4, color='#f5e3b3', linewidth=4, zorder=0)
 plt.savefig('./loop_frequency_stickplot.pdf', facecolor='white')
 #%%
 # Obtain information on endogenous sequences
-endog = counts[(~counts['mutant'].str.startswith('12')) | (counts['mutant']=='12SpacC1A')].copy()
+data = pd.read_csv('../../data/pooled_cutting_probability.csv')
+data = data[(data['hmgb1'] == 80) & (data['salt']=='Mg')]
+
+# Rename some of the mutant names to correct endogenous names
 endog_names = {'WT12rss' : 'V4-57-1 (ref)',
                 '12SpacC1A' : 'V4-55',
                 'DFL161' : 'DFL 16.1-5\'',
                 'DFL1613' : 'DFL 16.1-3\''}
+
+# Isolate only the point mutants for now
+endog = data[(~data['mutant'].str.startswith('12')) | (data['mutant']=='12SpacC1A')].copy()
+endog_counts = counts[(~counts['mutant'].str.startswith('12')) | (counts['mutant']=='12SpacC1A')].copy()
+
 endog = endog.replace({'mutant' : endog_names})
+endog_counts = endog_counts.replace({'mutant' : endog_names})
 
 endog_ordering_y = {'V6-15' : 0.0,
                     'V6-17' : 1.0,
@@ -102,22 +111,59 @@ endog_ordering_y = {'V6-15' : 0.0,
                     'DFL 16.1-3\'' : 11.0,
                     }
 
-fig, ax = plt.subplots(1, 1, figsize=(3, 6))
+fig, ax = plt.subplots(1, 2, figsize=(6, 6))
 
-for mut, mut_info in endog.groupby('mutant'):
-    ax.plot(mut_info['rel_diff'], endog_ordering_y[mut], marker='o',
-            color='#38C2F2', ms=4.5, linestyle='None')
-    ax.hlines(endog_ordering_y[mut], 0, mut_info['rel_diff'],  color='#38C2F2',
+for mut, mut_info in endog_counts.groupby('mutant'):
+    if mut_info['rel_diff'].values[0] < 0:
+        ax[0].plot(mut_info['rel_diff'], endog_ordering_y[mut], marker='o',
+                color='#E10C00', ms=4.5, linestyle='None')
+        ax[0].hlines(endog_ordering_y[mut], 0, mut_info['rel_diff'],  color='#E10C00',
+                linewidth=2, label='__nolegend__')
+    elif mut_info['rel_diff'].values[0] > 0:
+        ax[0].plot(mut_info['rel_diff'], endog_ordering_y[mut], marker='o',
+                color='#38C2F2', ms=4.5, linestyle='None')
+        ax[0].hlines(endog_ordering_y[mut], 0, mut_info['rel_diff'],  color='#38C2F2',
+                linewidth=2, label='__nolegend__')
+    else:
+        ax[0].plot(mut_info['rel_diff'], endog_ordering_y[mut], marker='o',
+                color='k', ms=4.5, linestyle='None')
+        ax[0].hlines(endog_ordering_y[mut], 0, mut_info['rel_diff'],  color='k',
                 linewidth=2, label='__nolegend__')
 
-_ = ax.set_yticks(np.arange(0, 12))
-_ = ax.set_yticklabels(list(endog_ordering_y), fontsize=12)
-ax.set_xlim([-0.25, 0.25])
-ax.set_ylim([-0.5, 11.5])
+ref = endog[endog['mutant']=='V4-57-1 (ref)']
+ref_mode = ref['mode'].values[0]
 
-ax.set_xlabel('change in\nloop frequency', fontsize=14)
-ax.vlines(0, 0, len(endog_ordering_y), color='k', linestyle=':', zorder=-1)
+for mut, mut_info in endog.groupby('mutant'):
+    if mut_info['mode'].values[0] - ref_mode < 0:
+        ax[1].plot(mut_info['mode'] - ref_mode, endog_ordering_y[mut], marker='o',
+                color='#E10C00', ms=4.5, linestyle='None')
+        ax[1].hlines(endog_ordering_y[mut], 0, mut_info['mode'] - ref_mode,  color='#E10C00',
+                linewidth=2, label='__nolegend__')
+    elif mut_info['mode'].values[0] - ref_mode > 0:
+        ax[1].plot(mut_info['mode'] - ref_mode, endog_ordering_y[mut], marker='o',
+                color='#38C2F2', ms=4.5, linestyle='None')
+        ax[1].hlines(endog_ordering_y[mut], 0, mut_info['mode'] - ref_mode,  color='#38C2F2',
+                linewidth=2, label='__nolegend__')
+    else:
+        ax[1].plot(mut_info['mode'] - ref_mode, endog_ordering_y[mut], marker='o',
+                color='k', ms=4.5, linestyle='None')
+        ax[1].hlines(endog_ordering_y[mut], 0, mut_info['mode'] - ref_mode,  color='k',
+                linewidth=2, label='__nolegend__')
 
-plt.savefig('./looping_frequency_stickplot_endog.pdf', facecolor='white', bbox_inches='tight')
+for a in ax:
+        _ = a.set_yticks(np.arange(0, 12))
+        a.set_ylim([-0.5, 11.5])
+        a.vlines(0, 0, len(endog_ordering_y), color='k', linestyle=':', zorder=-1)
+        for i in range(0, 12, 2):
+                a.axhspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-2)
+
+_ = ax[0].set_yticklabels(list(endog_ordering_y), fontsize=12)
+_ = ax[1].set_yticklabels([])
+ax[0].set_xlim([-0.25, 0.25])
+
+ax[0].set_xlabel('change in\nloop frequency', fontsize=14)
+ax[1].set_xlabel('change in cut\nprobability', fontsize=14)
+
+plt.savefig('./endog_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
 #%%
