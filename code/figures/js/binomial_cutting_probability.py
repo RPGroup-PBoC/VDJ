@@ -12,7 +12,11 @@ import bokeh.transform
 import vdj.io
 import vdj.viz
 vdj.viz.plotting_style_bokeh()
-bokeh.io.output_notebook(resources=INLINE)
+bokeh.io.output_notebook()
+import imp
+imp.reload(vdj.io)
+
+# %%
 
 #%%
 # Load the summarized data and the posteriors
@@ -23,26 +27,26 @@ posts = posts[(posts['hmgb1'] == 80) & (posts['salt']=='Mg')]
 dwell = pd.read_csv('../../../data/compiled_dwell_times.csv')
 dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
 
-# Isoate only the point mutants for now
-point = data[data['n_muts'] == 1.0].copy()
-point_posts = posts[posts['n_muts'] == 1.0].copy()
-
 # Get the wild-type sequence information to generate the bubble plot
 seqs = vdj.io.endogenous_seqs()
 ref_seq = seqs['WT12rss'][0]
 ref_idx = seqs['WT12rss'][1]
 
 # Insert the x and y locations for the point mutants
-for g, d in point.groupby('mutant'):
+for g, d in data.groupby('mutant'):
     seq = vdj.io.mutation_parser(g)
     seq_idx = seq['seq_idx']
     loc = np.argmax(seq_idx != ref_idx)
     val = seq_idx[loc]
-    point.loc[point['mutant']==g, 'x'] = loc + 1
-    point.loc[point['mutant']==g, 'y'] = val + 1
+    data.loc[data['mutant']==g, 'x'] = loc + 1
+    data.loc[data['mutant']==g, 'y'] = val + 1
     dwell.loc[dwell['mutant']==g, 'n_muts'] = seq['n_muts']
 
-dwell = dwell[dwell['n_muts']==1]
+# Isoate only the point mutants for now
+point = data[data['n_muts'] == 1.0].copy()
+point_posts = posts[posts['n_muts'] == 1.0].copy()
+
+
 # Figure out the cutting probability of the wildtype
 wt_prob = data[data['mutant']=='WT12rss']['mode'].values[0]
 point['diff'] = point['mode'].values - wt_prob
@@ -81,20 +85,21 @@ for g, d in dwell.groupby(['mutant']):
     # Dist all dwell times
     hist, bins = np.histogram(d['dwell_time_min'], bins=bins)
     # hist = hist / np.sum(hist)
-    _df = pd.DataFrame(np.array([hist, bins[:-1], bins[1:]]).T, columns=['top', 'left', 'right'])
-    _df['mutant'] = g
-    _df['bottom'] = 0
-    hist_dfs.append(_df)
+    if d['n_muts'].unique() <= 1: 
+        _df = pd.DataFrame(np.array([hist, bins[:-1], bins[1:]]).T, columns=['top', 'left', 'right'])
+        _df['mutant'] = g
+        _df['bottom'] = 0
+        hist_dfs.append(_df)
 
-    # Hist only the cutting events
-    _d = d[d['cut']==1]
-    cut_hist, cut_bins = np.histogram(_d['dwell_time_min'], bins=bins)
-    # cut_hist = cut_hist / np.sum(hist)
-    _df = pd.DataFrame(np.array([cut_hist, cut_bins[:-1], cut_bins[1:]]).T, 
-                       columns=['top', 'left', 'right'])
-    _df['mutant'] = g
-    _df['bottom'] = 0 
-    cut_dfs.append(_df)
+        # Hist only the cutting events
+        _d = d[d['cut']==1]
+        cut_hist, cut_bins = np.histogram(_d['dwell_time_min'], bins=bins)
+        # cut_hist = cut_hist / np.sum(hist)
+        _df = pd.DataFrame(np.array([cut_hist, cut_bins[:-1], cut_bins[1:]]).T, 
+                           columns=['top', 'left', 'right'])
+        _df['mutant'] = g
+        _df['bottom'] = 0 
+        cut_dfs.append(_df)
 hist_df = pd.concat(hist_dfs)
 cut_hist_df = pd.concat(cut_dfs)
 
@@ -102,7 +107,11 @@ cut_hist_df = pd.concat(cut_dfs)
 hist_source = ColumnDataSource(hist_df)
 cut_source = ColumnDataSource(cut_hist_df)
 wt_hist = hist_df[hist_df['mutant']=='WT12rss'] 
-wt_cut_hist = cut_hist_df[cut_hist_df['mutant']=='WT12rss'] 
+wt_cut_hist = cut_hist_df[(hist_df['mutant']=='WT12rss')]
+wt_hist_display = ColumnDataSource(wt_hist)
+wt_cut_hist_display = ColumnDataSource(wt_cut_hist)
+wt_hist = ColumnDataSource(wt_hist)
+wt_cut_hist = ColumnDataSource(wt_cut_hist)
 hist_display = ColumnDataSource(dict(left=[], right=[], bottom=[], top=[]))
 cut_hist_display = ColumnDataSource(dict(left=[], right=[], bottom=[], top=[]))
 
@@ -117,7 +126,11 @@ cb = bokeh.models.CustomJS(args=dict(mut_source=muts, post_source=muts_post,
                                       hist_source=hist_source, 
                                       hist_source_display=hist_display,
                                       cut_source=cut_source,
-                                      cut_hist_display=cut_hist_display), code = """
+                                      cut_hist_display=cut_hist_display,
+                                      wt_hist=wt_hist, wt_hist_display=wt_hist_display,
+                                      wt_cut_hist=wt_cut_hist,
+                                      wt_cut_hist_display=wt_cut_hist_display), 
+                                      code = """
         var data = post_source.data;
         var hist_data = hist_source.data;
         var cut_data = cut_source.data;
@@ -148,6 +161,31 @@ cb = bokeh.models.CustomJS(args=dict(mut_source=muts, post_source=muts_post,
         post_source_display.change.emit();
         cut_hist_display.change.emit();
         hist_source_display.change.emit();
+        if (typeof(mut_ind) === 'number') {
+            wt_cut_hist_display.data['top'] = []
+            wt_cut_hist_display.data['bottom'] = []
+            wt_cut_hist_display.data['left'] = []
+            wt_cut_hist_display.data['right'] = []
+            wt_hist_display.data['top'] = []
+            wt_hist_display.data['bottom'] = []
+            wt_hist_display.data['left'] = []
+            wt_hist_display.data['right'] = []
+
+        }
+
+        else {
+            wt_cut_hist_display.data['top'] = wt_cut_hist.data['top']
+            wt_cut_hist_display.data['bottom'] = wt_cut_hist.data['bottom']
+            wt_cut_hist_display.data['left'] = wt_cut_hist.data['left'] 
+            wt_cut_hist_display.data['right'] = wt_cut_hist.data['right']
+            wt_hist_display.data['top'] = wt_hist.data['top'] 
+            wt_hist_display.data['bottom'] = wt_hist.data['bottom']
+            wt_hist_display.data['left'] = wt_hist.data['left']
+            wt_hist_display.data['right'] = wt_hist.data['right']
+            }
+
+        wt_cut_hist_display.change.emit();
+        wt_hist_display.change.emit();
          """)
 
 
@@ -167,20 +205,20 @@ diff_ax = bokeh.plotting.figure(width=700, height=200,
 post_ax = bokeh.plotting.figure(width=350, height=300, x_axis_label='cutting probability',
                                 y_axis_label='probability', 
                                 title='posterior probability distribution',
-                                y_range=[0, 0.08])
+                                y_range=[0, 0.08], tools=[])
 dist_ax = bokeh.plotting.figure(width=350, height=300,
                           x_axis_label='paired-complex dwell time [min]',
                                 y_axis_label='number of loops', 
-                                title='dwell time distributions')
+                                title='dwell time distributions', tools=[])
+dist_ax.yaxis.axis_label_standoff = 20
 
 
-
-# dist_ax.quad(bottom='bottom', top='top', left='left', right='right',
-#     source=wt_hist, fill_alpha=0.2, line_width=1, legend='reference',
-#     line_color='dodgerblue', fill_color='dodgerblue')
-# dist_ax.quad(bottom='bottom', top='top', left='left', right='right',
-#     source=wt_cut_hist, fill_alpha=0.4, line_width=1, legend='reference (cut)',
-#     line_color='grey', fill_color='grey')
+dist_ax.quad(bottom='bottom', top='top', left='left', right='right',
+    source=wt_hist_display, fill_alpha=0.2, line_width=1, legend='reference loops',
+    line_color='dodgerblue', fill_color='dodgerblue')
+dist_ax.quad(bottom='bottom', top='top', left='left', right='right',
+    source=wt_cut_hist_display, fill_alpha=0.4, line_width=1, legend='cut reference loops',
+    line_color='black', fill_color=None, hatch_pattern='/', hatch_color='black')
 
 dist_ax.quad(bottom='bottom', top='top', left='left', right='right',
     source=hist_display, fill_alpha=0.4, line_width=1, legend='all loops',
