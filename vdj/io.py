@@ -40,7 +40,7 @@ def endogenous_seqs():
     # Add the integer conversions
     ref_seq = _seqs['reference']
     seqs = {m: [seq, np.array([conv[a] for a in seq]),  
-        np.sum(list(ref_seq) != list(seq))] for m, seq in _seqs.items()}
+        np.sum(np.array(list(ref_seq)) != np.array(list(seq)))] for m, seq in _seqs.items()}
 
     return seqs
 
