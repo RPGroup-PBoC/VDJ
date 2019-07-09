@@ -40,6 +40,8 @@ for g, d in data.groupby('mutant'):
     val = seq_idx[loc]
     data.loc[data['mutant']==g, 'x'] = loc + 1
     data.loc[data['mutant']==g, 'y'] = val + 1
+    data.loc[data['mutant']==g, 'n_muts'] = seq['n_muts']
+    posts.loc[posts['mutant']==g, 'n_muts'] = seq['n_muts']
     dwell.loc[dwell['mutant']==g, 'n_muts'] = seq['n_muts']
 
 # Isoate only the point mutants for now
