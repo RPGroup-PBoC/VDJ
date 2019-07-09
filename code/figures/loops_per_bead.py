@@ -12,6 +12,9 @@ vdj.viz.plotting_style()
 data = pd.read_csv('../../data/compiled_looping_events.csv')
 data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
 
+cut_data = pd.read_csv('../../data/pooled_cutting_probability.csv')
+cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
+
 
 #%%
 counts = data.groupby(['mutant'])[['n_loops']].agg(('sum', 'count')).reset_index()
@@ -78,11 +81,9 @@ ax.set_ylabel('change in\nloop frequency', fontsize=12)
 for i in range(1, 29, 2):
     ax.axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
 ax.vlines(0.5, -0.4, 0.4, color='#f5e3b3', linewidth=4, zorder=0)
-plt.savefig('./loop_frequency_stickplot.pdf', facecolor='white')
+#plt.savefig('./loop_frequency_stickplot.pdf', facecolor='white')
 #%%
 # Obtain information on endogenous sequences
-data = pd.read_csv('../../data/pooled_cutting_probability.csv')
-data = data[(data['hmgb1'] == 80) & (data['salt']=='Mg')]
 
 # Rename some of the mutant names to correct endogenous names
 endog_names = {'WT12rss' : 'V4-57-1 (ref)',
@@ -91,7 +92,7 @@ endog_names = {'WT12rss' : 'V4-57-1 (ref)',
                 'DFL1613' : 'DFL 16.1-3\''}
 
 # Isolate only the point mutants for now
-endog = data[(~data['mutant'].str.startswith('12')) | (data['mutant']=='12SpacC1A')].copy()
+endog = cut_data[(~cut_data['mutant'].str.startswith('12')) | (cut_data['mutant']=='12SpacC1A')].copy()
 endog_counts = counts[(~counts['mutant'].str.startswith('12')) | (counts['mutant']=='12SpacC1A')].copy()
 
 endog = endog.replace({'mutant' : endog_names})
@@ -160,6 +161,7 @@ for a in ax:
 _ = ax[0].set_yticklabels(list(endog_ordering_y), fontsize=12)
 _ = ax[1].set_yticklabels([])
 ax[0].set_xlim([-0.25, 0.25])
+ax[1].set_xlim([-0.45, 0.45])
 
 ax[0].set_xlabel('change in\nloop frequency', fontsize=14)
 ax[1].set_xlabel('change in cut\nprobability', fontsize=14)
