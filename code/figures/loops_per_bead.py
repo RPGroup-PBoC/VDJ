@@ -80,9 +80,44 @@ for i in range(1, 29, 2):
 ax.vlines(0.5, -0.4, 0.4, color='#f5e3b3', linewidth=4, zorder=0)
 plt.savefig('./loop_frequency_stickplot.pdf', facecolor='white')
 #%%
+# Obtain information on endogenous sequences
+endog = counts[(~counts['mutant'].str.startswith('12')) | (counts['mutant']=='12SpacC1A')].copy()
+endog_names = {'WT12rss' : 'V4-57-1 (ref)',
+                '12SpacC1A' : 'V4-55',
+                'DFL161' : 'DFL 16.1-5\'',
+                'DFL1613' : 'DFL 16.1-3\''}
+endog = endog.replace({'mutant' : endog_names})
 
+endog_ordering_y = {'V6-15' : 0.0,
+                    'V6-17' : 1.0,
+                    'V8-18' : 2.0,
+                    'V5-43' : 3.0,
+                    'V4-55' : 4.0,
+                    'V4-57-1 (ref)' : 5.0,
+                    'V19-93' : 6.0,
+                    'V10-96' : 7.0,
+                    'V9-120' : 8.0,
+                    'V1-135' : 9.0,
+                    'DFL 16.1-5\'' : 10.0,
+                    'DFL 16.1-3\'' : 11.0,
+                    }
 
+fig, ax = plt.subplots(1, 1, figsize=(3, 6))
 
+for mut, mut_info in endog.groupby('mutant'):
+    ax.plot(mut_info['rel_diff'], endog_ordering_y[mut], marker='o',
+            color='#38C2F2', ms=4.5, linestyle='None')
+    ax.hlines(endog_ordering_y[mut], 0, mut_info['rel_diff'],  color='#38C2F2',
+                linewidth=2, label='__nolegend__')
 
+_ = ax.set_yticks(np.arange(0, 12))
+_ = ax.set_yticklabels(list(endog_ordering_y), fontsize=12)
+ax.set_xlim([-0.25, 0.25])
+ax.set_ylim([-0.5, 11.5])
+
+ax.set_xlabel('change in\nloop frequency', fontsize=14)
+ax.vlines(0, 0, len(endog_ordering_y), color='k', linestyle=':', zorder=-1)
+
+plt.savefig('./looping_frequency_stickplot_endog.pdf', facecolor='white', bbox_inches='tight')
 
 #%%
