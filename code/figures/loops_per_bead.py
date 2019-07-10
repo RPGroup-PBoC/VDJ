@@ -15,6 +15,9 @@ data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
 cut_data = pd.read_csv('../../data/pooled_cutting_probability.csv')
 cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
 
+cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv')
+cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg')]
+
 endog_ordering_y = {'V6-15' : 0.0,
                     'V6-17' : 1.0,
                     'V8-18' : 2.0,
@@ -40,6 +43,7 @@ ref_idx = ref[1]
 # Include the mutant id information
 wt_val = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
+wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
 for m in counts['mutant'].unique():
     seq = vdj.io.mutation_parser(m)
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
@@ -72,14 +76,27 @@ for m in points_cut['mutant'].unique():
         _d = points_cut[points_cut['mutant']==m]
         points_cut.loc[points_cut['mutant']==m, 'rel_diff'] = _d['mode'].values[0] - wt_cut
 
+posterior_list = ['12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', 'WT12rss', '12SpacG10T']
+post_colors = {'12HeptC3G' : '#E10C00', 
+                '12HeptC3T' : '#F5BADB', 
+                '12SpacC4G' : '#ED837C', 
+                '12NonA4C' : '#38C2F2', 
+                'WT12rss' : '#278C00', 
+                '12SpacG10T' : '#5919FF'}
+post_hatch = {'12HeptC3G' : None, 
+                '12HeptC3T' : None, 
+                '12SpacC4G' : None, 
+                '12NonA4C' : None, 
+                'WT12rss' : None, 
+                '12SpacG10T' : None}
 #%%
 bar_width = 0.75
-fig, ax = plt.subplots(2, 1, figsize=(8, 7))
-plt.subplots_adjust(hspace=0.1)
+fig, ax = plt.subplots(3, 1, figsize=(8, 7))
+plt.subplots_adjust(hspace=0.3)
 
-# Isolate 12HeptT6A for points_cut
-hept_cut = points_cut[points_cut['mutant']=='12HeptT6A'].copy()
-rest_cut = points_cut[points_cut['mutant']!='12HeptT6A'].copy()
+# Isolate cut information with few beads for points_cut
+low_cut = points_cut[points_cut['n_beads']<=20].copy()
+high_cut = points_cut[points_cut['n_beads']>=20].copy()
 
 colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
 shift = {'A':-0.26, 'T':0.26, 'C':-0.13, 'G':0.13}
@@ -89,44 +106,54 @@ for g, d in points.groupby(['base']):
                 ms=4.5, linestyle='none', label=g)
     ax[0].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=2, label='__nolegend__')
 
-for g, d in rest_cut.groupby(['base']):
-        ax[1].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=1,
+for g, d in high_cut.groupby(['base']):
+        ax[1].plot(d['pos'] + shift[g] + 1, d['mode'], marker='o', color=colors[g], lw=1,
                 ms=4.5, linestyle='none', label=g)
-        ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=2, label='__nolegend__')
+        ax[1].errorbar(d['pos'] + shift[g] + 1, d['mode'], yerr=d['std'], marker='o', color=colors[g], lw=1,
+                ms=4.5, linestyle='none', label=g)
 
 # Plot HeptT6A:
-for g, d in hept_cut.groupby(['base']):
-        ax[1].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=1,
+for g, d in low_cut.groupby(['base']):
+        ax[1].plot(d['pos'] + shift[g] + 1, d['mode'], marker='o', color=colors[g], lw=1,
                         ms=4.5, linestyle='none', label=g, alpha=0.3)
-        ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=2, 
-                label='__nolegend__', alpha=0.3)
+        ax[1].errorbar(d['pos'] + shift[g] + 1, d['mode'], yerr=d['std'], marker='o', color=colors[g], lw=1,
+                        ms=4.5, linestyle='none', label=g, alpha=0.3)
 
-line1 = lines.Line2D([7.5, 7.5], [-0.76, -0.67], clip_on=False, alpha=1,
+line1 = lines.Line2D([7.5, 7.5], [-0.15, -0.06], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line2 = lines.Line2D([19.5, 19.5], [-0.76, -0.67], clip_on=False, alpha=1,
+line2 = lines.Line2D([19.5, 19.5], [-0.15, -0.06], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
-for a in ax:
-        _ = a.set_xticks(np.arange(1, 29))
-        a.set_xlim([0.5, 28.5])
-        a.hlines(0, 0, 29, color='k', linestyle=':')
-        a.vlines(0.5, -0.65, 0.65, color='#f5e3b3', linewidth=4, zorder=0)
+for n in range(0,2):
+        _ = ax[n].set_xticks(np.arange(1, 29))
+        ax[n].set_xlim([0.5, 28.5])
+        ax[n].vlines(0.5, -0.65, 1.0, color='#f5e3b3', linewidth=4, zorder=0)
         for i in range(1, 29, 2):
-                a.axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
+                ax[n].axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
 
 _ = ax[0].set_xticklabels([])
 _ = ax[1].set_xticklabels(list(ref_seq))
 ax[1].add_line(line1)
 ax[1].add_line(line2)
-
+ax[0].hlines(0, 0, 29, color='k', linestyle=':')
+ax[1].axhspan(wt_cut-wt_std, wt_cut+wt_std, 0, 29, color='gray', 
+        linestyle=':', alpha=0.4)
 
 ax[0].legend(fontsize=8, ncol=5)
 ax[1].set_xlabel('reference sequence', fontsize=12)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
-ax[1].set_ylim([-0.65, 0.65])
+ax[1].set_ylim([0.0, 1.0])
 ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
 ax[1].set_ylabel('change in cut\nprobability', fontsize=12)
+
+for mut in posterior_list:
+        ax[2].fill_between(cut_posts[cut_posts['mutant']==mut]['probability'],
+                cut_posts[cut_posts['mutant']==mut]['posterior'], linewidth=0,
+                alpha=0.8, label=mut, facecolor=post_colors[mut], hatch=post_hatch[mut])
+ax[2].legend(loc=1, ncol=3, borderaxespad=0.)
+ax[2].set_xlabel('cut probability', fontsize=12)
+ax[2].set_ylabel('posterior', fontsize=12)
 
 plt.savefig('./point_mutation_stickplot.pdf', facecolor='white',bbox_inches='tight')
 #%%
@@ -167,37 +194,42 @@ for mut, mut_info in endog_counts.groupby('mutant'):
 
 ref = endog[endog['mutant']=='V4-57-1 (ref)']
 ref_mode = ref['mode'].values[0]
+ref_std = ref['std'].values[0]
 
 for mut, mut_info in endog.groupby('mutant'):
         if mut=='V8-18':
                 continue
         if mut_info['mode'].values[0] - ref_mode < 0:
-                ax[1].plot(mut_info['mode'] - ref_mode, endog_ordering_y[mut], marker='o',
+                ax[1].plot(mut_info['mode'], endog_ordering_y[mut], marker='o',
                         color='#E10C00', ms=4.5, linestyle='None')
-                ax[1].hlines(endog_ordering_y[mut], 0, mut_info['mode'] - ref_mode,  color='#E10C00',
+                ax[1].errorbar(mut_info['mode'], endog_ordering_y[mut], xerr=mut_info['std'], color='#E10C00',
                         linewidth=2, label='__nolegend__')
         elif mut_info['mode'].values[0] - ref_mode > 0:
-                ax[1].plot(mut_info['mode'] - ref_mode, endog_ordering_y[mut], marker='o',
+                ax[1].plot(mut_info['mode'], endog_ordering_y[mut], marker='o',
                         color='#38C2F2', ms=4.5, linestyle='None')
-                ax[1].hlines(endog_ordering_y[mut], 0, mut_info['mode'] - ref_mode,  color='#38C2F2',
+                ax[1].errorbar(mut_info['mode'], endog_ordering_y[mut], xerr=mut_info['std'], color='#38C2F2',
                         linewidth=2, label='__nolegend__')
         else:
-                ax[1].plot(mut_info['mode'] - ref_mode, endog_ordering_y[mut], marker='o',
+                ax[1].plot(mut_info['mode'], endog_ordering_y[mut], marker='o',
                         color='k', ms=4.5, linestyle='None')
-                ax[1].hlines(endog_ordering_y[mut], 0, mut_info['mode'] - ref_mode,  color='k',
+                ax[1].errorbar(mut_info['mode'], endog_ordering_y[mut], xerr=mut_info['std'], color='k',
                         linewidth=2, label='__nolegend__')
+
+ax[0].hlines(-0.5, -0.3, 0.3, color='#f5e3b3', linewidth=4, zorder=0)
+ax[1].hlines(-0.5, -0.45, 0.45, color='#f5e3b3', linewidth=4, zorder=0)
 
 for a in ax:
         _ = a.set_yticks(np.arange(0, 12))
         a.set_ylim([-0.5, 11.5])
-        a.vlines(0, 0, len(endog_ordering_y), color='k', linestyle=':', zorder=-1)
         for i in range(0, 12, 2):
                 a.axhspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-2)
-
+ax[0].vlines(0, 0, len(endog_ordering_y), color='k', linestyle=':', zorder=-1)
+ax[1].axvspan(ref_mode-ref_std, ref_mode+ref_std, 0, len(endog_ordering_y), 
+        color='gray', linestyle=':', zorder=-1, alpha=0.4)
 _ = ax[0].set_yticklabels(list(endog_ordering_y), fontsize=12)
 _ = ax[1].set_yticklabels([])
 ax[0].set_xlim([-0.25, 0.25])
-ax[1].set_xlim([-0.45, 0.45])
+ax[1].set_xlim([0.0, 1.0])
 
 ax[0].set_xlabel('change in\nloop frequency', fontsize=14)
 ax[1].set_xlabel('change in cut\nprobability', fontsize=14)

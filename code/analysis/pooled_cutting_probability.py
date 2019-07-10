@@ -21,8 +21,8 @@ mut_info = {m:vdj.io.mutation_parser(m) for m in data['mutant'].unique()}
 pooled = data.groupby(['mutant', 'salt', 'hmgb1']).agg(('sum')).reset_index()
 pooled = pooled[['mutant', 'salt', 'hmgb1', 'n_beads', 'n_cuts']]
 pooled['mode'] = pooled['n_cuts'].values / pooled['n_beads']
-pooled['std'] = (pooled['n_cuts'].values * (pooled['n_beads'] -\
-                 pooled['n_cuts'])) / pooled['n_beads'].values**3
+pooled['std'] = np.sqrt((pooled['n_cuts'].values * (pooled['n_beads'] -\
+                 pooled['n_cuts'])) / pooled['n_beads'].values**3)
 for m, seq in mut_info.items():
     pooled.loc[pooled['mutant']==m, 'n_muts'] = seq['n_muts']
 pooled.to_csv('../../data/pooled_cutting_probability.csv', index=False)
