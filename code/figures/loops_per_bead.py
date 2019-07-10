@@ -79,21 +79,22 @@ for m in points_cut['mutant'].unique():
 
 posterior_list = ['12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', 'WT12rss', '12SpacG10T']
 post_colors = {'12HeptC3G' : '#E10C00', 
-                '12HeptC3T' : '#F5BADB', 
-                '12SpacC4G' : '#ED837C', 
-                '12NonA4C' : '#38C2F2', 
-                'WT12rss' : '#278C00', 
-                '12SpacG10T' : '#5919FF'}
+                '12HeptC3T' : '#BF3030', 
+                '12SpacC4G' : '#A24F59', 
+                '12NonA4C' : '#7D778E', 
+                'WT12rss' : '#599DC1', 
+                '12SpacG10T' : '#38C2F2'}
 post_hatch = {'12HeptC3G' : None, 
                 '12HeptC3T' : None, 
                 '12SpacC4G' : None, 
                 '12NonA4C' : None, 
                 'WT12rss' : None, 
                 '12SpacG10T' : None}
+plot_offset = dict(zip(posterior_list[::-1], np.arange(0.0, 0.3, 0.3/len(posterior_list))))
 #%%
 bar_width = 0.75
 fig, ax = plt.subplots(3, 1, figsize=(8, 7))
-plt.subplots_adjust(hspace=0.3)
+plt.subplots_adjust(hspace=0.4)
 
 # Isolate cut information with few beads for points_cut
 low_cut = points_cut[points_cut['n_beads']<=20].copy()
@@ -146,15 +147,30 @@ ax[1].set_ylim([-0.65, 0.65])
 ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
 ax[1].set_ylabel('change in cut\nprobability', fontsize=12)
 
-for mut in posterior_list:
-        ax[2].fill_between(cut_posts[cut_posts['mutant']==mut]['probability'],
-                cut_posts[cut_posts['mutant']==mut]['posterior'], linewidth=0,
-                alpha=0.8, label=mut, facecolor=post_colors[mut], hatch=post_hatch[mut])
-ax[2].legend(loc=1, ncol=3, borderaxespad=0.)
-ax[2].set_xlabel('cut probability', fontsize=12)
-ax[2].set_ylabel('posterior', fontsize=12)
+df_post = cut_posts.loc[cut_posts['mutant'].isin(posterior_list)]
 
-plt.savefig('./point_mutation_stickplot.pdf', facecolor='white',bbox_inches='tight')
+sort_index = dict(zip(posterior_list, range(len(posterior_list))))
+df_post['rank_index'] = df_post['mutant'].map(sort_index)
+df_post.sort_values(['rank_index', 'probability'], ascending=True, inplace=True)
+df_post.drop('rank_index', 1, inplace=True)
+
+for mut, mut_posts in df_post.groupby('mutant'):
+        ax[2].fill_between(mut_posts['probability'], plot_offset[mut],
+                        mut_posts['posterior'] + plot_offset[mut],
+                        color=post_colors[mut], alpha=1.0)
+        ax[2].plot(mut_posts['probability'], mut_posts['posterior'] + plot_offset[mut],
+                        color='white')
+        ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0)
+        ax[2].text(1.00, 0.02 + plot_offset[mut], mut, 
+                fontsize=12, color='k', ha="right", va="center")
+
+ax[2].set_xlabel('probability of cut')
+ax[2].set_ylim([-0.01, 0.4])
+ax[2].set_xlim([0.0, 1.0])
+ax[2].set_yticklabels([])
+ax[2].set_ylabel('posterior distribution')
+
+plt.savefig('./point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
 #%%
 fig, ax = plt.subplots(1, 1, figsize=(7,4))
