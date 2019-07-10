@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
+import seaborn as sns
 import vdj.io 
 import vdj.viz
 vdj.viz.plotting_style()
@@ -107,27 +108,28 @@ for g, d in points.groupby(['base']):
     ax[0].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=2, label='__nolegend__')
 
 for g, d in high_cut.groupby(['base']):
-        ax[1].plot(d['pos'] + shift[g] + 1, d['mode'], marker='o', color=colors[g], lw=1,
+        ax[1].plot(d['pos'] + shift[g] + 1, d['mode']-wt_cut, marker='o', color=colors[g], lw=1,
                 ms=4.5, linestyle='none', label=g)
-        ax[1].errorbar(d['pos'] + shift[g] + 1, d['mode'], yerr=d['std'], marker='o', color=colors[g], lw=1,
-                ms=4.5, linestyle='none', label=g)
+        ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['mode']-wt_cut, color=colors[g], lw=1,
+                label='__nolegend__', linewidth=2)
 
 # Plot HeptT6A:
 for g, d in low_cut.groupby(['base']):
-        ax[1].plot(d['pos'] + shift[g] + 1, d['mode'], marker='o', color=colors[g], lw=1,
+        ax[1].plot(d['pos'] + shift[g] + 1, d['mode']-wt_cut, marker='o', color=colors[g], lw=1,
                         ms=4.5, linestyle='none', label=g, alpha=0.3)
-        ax[1].errorbar(d['pos'] + shift[g] + 1, d['mode'], yerr=d['std'], marker='o', color=colors[g], lw=1,
-                        ms=4.5, linestyle='none', label=g, alpha=0.3)
+        ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['mode']-wt_cut, color=colors[g], lw=1,
+                        label='__nolegend__', alpha=0.3, linewidth=2)
 
-line1 = lines.Line2D([7.5, 7.5], [-0.15, -0.06], clip_on=False, alpha=1,
+line1 = lines.Line2D([7.5, 7.5], [-0.84, -0.72], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line2 = lines.Line2D([19.5, 19.5], [-0.15, -0.06], clip_on=False, alpha=1,
+line2 = lines.Line2D([19.5, 19.5], [-0.84, -0.72], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
 for n in range(0,2):
         _ = ax[n].set_xticks(np.arange(1, 29))
         ax[n].set_xlim([0.5, 28.5])
         ax[n].vlines(0.5, -0.65, 1.0, color='#f5e3b3', linewidth=4, zorder=0)
+        ax[n].hlines(0, 0, 29, color='k', linestyle=':')
         for i in range(1, 29, 2):
                 ax[n].axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
 
@@ -135,15 +137,12 @@ _ = ax[0].set_xticklabels([])
 _ = ax[1].set_xticklabels(list(ref_seq))
 ax[1].add_line(line1)
 ax[1].add_line(line2)
-ax[0].hlines(0, 0, 29, color='k', linestyle=':')
-ax[1].axhspan(wt_cut-wt_std, wt_cut+wt_std, 0, 29, color='gray', 
-        linestyle=':', alpha=0.4)
 
 ax[0].legend(fontsize=8, ncol=5)
 ax[1].set_xlabel('reference sequence', fontsize=12)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
-ax[1].set_ylim([0.0, 1.0])
+ax[1].set_ylim([-0.65, 0.65])
 ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
 ax[1].set_ylabel('change in cut\nprobability', fontsize=12)
 
@@ -156,6 +155,41 @@ ax[2].set_xlabel('cut probability', fontsize=12)
 ax[2].set_ylabel('posterior', fontsize=12)
 
 plt.savefig('./point_mutation_stickplot.pdf', facecolor='white',bbox_inches='tight')
+
+#%%
+fig, ax = plt.subplots(1, 1, figsize=(7,4))
+for g, d in high_cut.groupby(['base']):
+        ax.errorbar(d['pos'] + shift[g] + 1, d['mode'], yerr=d['std'], marker='o', color=colors[g], lw=1,
+                ms=4.5, linestyle='none', label=g)
+
+# Plot HeptT6A:
+for g, d in low_cut.groupby(['base']):
+        ax.errorbar(d['pos'] + shift[g] + 1, d['mode'], yerr=d['std'], marker='o', color=colors[g], lw=1,
+                        ms=4.5, linestyle='none', alpha=0.3)
+
+line1 = lines.Line2D([7.5, 7.5], [-0.08, -0.02], clip_on=False, alpha=1,
+                    linewidth=1, color='k')
+line2 = lines.Line2D([19.5, 19.5], [-0.08, -0.02], clip_on=False, alpha=1,
+                    linewidth=1, color='k')
+
+_ = ax.set_xticks(np.arange(1, 29))
+ax.set_xlim([0.5, 28.5])
+ax.vlines(0.5, -0.65, 1.0, color='#f5e3b3', linewidth=4, zorder=0)
+for i in range(1, 29, 2):
+        ax.axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
+
+_ = ax.set_xticklabels(list(ref_seq))
+ax.add_line(line1)
+ax.add_line(line2)
+ax.axhspan(wt_cut-wt_std, wt_cut+wt_std, 0, 29, color='gray', 
+        linestyle=':', alpha=0.4, label=r'$p_{cut}^{ref} \pm \sigma$')
+
+ax.legend(fontsize=8, ncol=5)
+ax.set_xlabel('reference sequence', fontsize=12)
+ax.set_ylim([0.0, 1.0])
+ax.set_ylabel('change in cut\nprobability', fontsize=12)
+
+plt.savefig('p_cut_point_SI.pdf', facecolor='white')
 #%%
 # Obtain information on endogenous sequences
 
