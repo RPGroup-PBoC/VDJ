@@ -161,8 +161,12 @@ for mut, mut_posts in df_post.groupby('mutant'):
         ax[2].plot(mut_posts['probability'], mut_posts['posterior'] + plot_offset[mut],
                         color='white')
         ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0)
-        ax[2].text(1.00, 0.02 + plot_offset[mut], mut, 
-                fontsize=12, color='k', ha="right", va="center")
+        if mut=='WT12rss':
+                ax[2].text(1.00, 0.02 + plot_offset[mut], 'reference', 
+                        fontsize=12, color='k', ha="right", va="center")
+        else:
+                ax[2].text(1.00, 0.02 + plot_offset[mut], mut, 
+                        fontsize=12, color='k', ha="right", va="center")
 
 ax[2].set_xlabel('probability of cut')
 ax[2].set_ylim([-0.01, 0.4])
