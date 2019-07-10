@@ -189,7 +189,7 @@ ax.set_xlabel('reference sequence', fontsize=12)
 ax.set_ylim([0.0, 1.0])
 ax.set_ylabel('change in cut\nprobability', fontsize=12)
 
-plt.savefig('p_cut_point_SI.pdf', facecolor='white')
+plt.savefig('./p_cut_point_SI.pdf', facecolor='white')
 #%%
 # Obtain information on endogenous sequences
 
