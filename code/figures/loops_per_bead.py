@@ -77,24 +77,37 @@ for m in points_cut['mutant'].unique():
         _d = points_cut[points_cut['mutant']==m]
         points_cut.loc[points_cut['mutant']==m, 'rel_diff'] = _d['mode'].values[0] - wt_cut
 
-posterior_list = ['12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', 'WT12rss', '12SpacG10T']
+posterior_list = ['WT12rss', '12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', '12SpacG10T']
+posterior_shift = {'WT12rss': 0, 
+                   '12HeptC3G': 0.1, 
+                   '12HeptC3T': 0.2, 
+                   '12SpacC4G': 0.3, 
+                   '12NonA4C': 0.4,
+                   '12SpacG10T': 0.5}
 post_colors = {'12HeptC3G' : '#E10C00', 
                 '12HeptC3T' : '#BF3030', 
                 '12SpacC4G' : '#A24F59', 
                 '12NonA4C' : '#7D778E', 
-                'WT12rss' : '#599DC1', 
+                'WT12rss' :  'slategrey', #599DC1', 
                 '12SpacG10T' : '#38C2F2'}
+post_zorder = {'12HeptC3G' : 2, 
+                '12HeptC3T' : 3, 
+                '12SpacC4G' : 4, 
+                '12NonA4C' : 5, 
+                'WT12rss' :  1,
+                '12SpacG10T': 6}
+ 
 post_hatch = {'12HeptC3G' : None, 
                 '12HeptC3T' : None, 
                 '12SpacC4G' : None, 
                 '12NonA4C' : None, 
                 'WT12rss' : None, 
                 '12SpacG10T' : None}
-plot_offset = dict(zip(posterior_list[::-1], np.arange(0.0, 0.3, 0.3/len(posterior_list))))
+plot_offset = dict(zip(posterior_list[::-1], np.arange(0.0, 0.2, 0.2/(len(posterior_list)))))
 #%%
 bar_width = 0.75
-fig, ax = plt.subplots(3, 1, figsize=(8, 7))
-plt.subplots_adjust(hspace=0.4)
+fig, ax = plt.subplots(3, 1, figsize=(8.2, 7))
+plt.subplots_adjust(hspace=0.2)
 
 # Isolate cut information with few beads for points_cut
 low_cut = points_cut[points_cut['n_beads']<=20].copy()
@@ -121,9 +134,10 @@ for g, d in low_cut.groupby(['base']):
         ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['mode']-wt_cut, color=colors[g], lw=1,
                         label='__nolegend__', alpha=0.3, linewidth=2)
 
-line1 = lines.Line2D([7.5, 7.5], [-0.84, -0.72], clip_on=False, alpha=1,
+# Previous y positions were -0.84 and -0.72
+line1 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line2 = lines.Line2D([19.5, 19.5], [-0.84, -0.72], clip_on=False, alpha=1,
+line2 = lines.Line2D([19.5, 19.5], [-0.4, -0.32], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
 for n in range(0,2):
@@ -134,16 +148,21 @@ for n in range(0,2):
         for i in range(1, 29, 2):
                 ax[n].axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
 
-_ = ax[0].set_xticklabels([])
-_ = ax[1].set_xticklabels(list(ref_seq))
-ax[1].add_line(line1)
-ax[1].add_line(line2)
+_ = ax[1].set_xticklabels([])
+_ = ax[0].set_xticklabels(list(ref_seq))
+ax[0].add_line(line1)
+ax[0].add_line(line2)
+fig.text(-0.05, 0.66, 'reference sequence', fontsize=12)
+
+
 
 ax[0].legend(fontsize=8, ncol=5)
-ax[1].set_xlabel('reference sequence', fontsize=12)
+ax[0].set_xlabel('reference sequence', fontsize=12)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
-ax[1].set_ylim([-0.65, 0.65])
+ax[1].set_ylim([-0.5, 0.5])
+ax[0].set_xlim([0, 29])
+ax[1].set_xlim([0, 29])
 ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
 ax[1].set_ylabel('change in cut\nprobability', fontsize=12)
 
@@ -155,24 +174,26 @@ df_post.sort_values(['rank_index', 'probability'], ascending=True, inplace=True)
 df_post.drop('rank_index', 1, inplace=True)
 
 for mut, mut_posts in df_post.groupby('mutant'):
-        ax[2].fill_between(mut_posts['probability'], plot_offset[mut],
+        ax[2].fill_between(mut_posts['probability'] , plot_offset[mut],
                         mut_posts['posterior'] + plot_offset[mut],
-                        color=post_colors[mut], alpha=1.0)
+                        color=post_colors[mut], alpha=0.75, zorder=post_zorder[mut])
         ax[2].plot(mut_posts['probability'], mut_posts['posterior'] + plot_offset[mut],
-                        color='white')
-        ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0)
+                        color='white', zorder=post_zorder[mut])
+        ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0,
+                      zorder=post_zorder[mut])
         if mut=='WT12rss':
-                ax[2].text(1.00, 0.02 + plot_offset[mut], 'reference', 
-                        fontsize=12, color='k', ha="right", va="center")
+                text = 'reference'
         else:
-                ax[2].text(1.00, 0.02 + plot_offset[mut], mut, 
-                        fontsize=12, color='k', ha="right", va="center")
+                text = mut
+        ax[2].text(0.95 - posterior_shift[mut], plot_offset[mut], text, backgroundcolor='#f5e3b3', 
+                fontsize=10, color=post_colors[mut], ha="right", va="center",
+                zorder=post_zorder[mut] + 1)
 
-ax[2].set_xlabel('probability of cut')
-ax[2].set_ylim([-0.01, 0.4])
+ax[2].set_xlabel('probability of cutting')
+ax[2].set_ylim([-0.025, 0.26])
 ax[2].set_xlim([0.0, 1.0])
 ax[2].set_yticklabels([])
-ax[2].set_ylabel('posterior distribution')
+ax[2].set_ylabel('probability')
 
 plt.savefig('./point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
@@ -288,6 +309,6 @@ ax[1].set_xlim([0.0, 1.0])
 ax[0].set_xlabel('change in\nloop frequency', fontsize=14)
 ax[1].set_xlabel('change in cut\nprobability', fontsize=14)
 
-plt.savefig('./endog_stickplot.pdf', facecolor='white', bbox_inches='tight')
+# plt.savefig('./endog_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
 #%%
