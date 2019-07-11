@@ -152,12 +152,11 @@ _ = ax[1].set_xticklabels([])
 _ = ax[0].set_xticklabels(list(ref_seq))
 ax[0].add_line(line1)
 ax[0].add_line(line2)
-fig.text(-0.05, 0.66, 'reference sequence', fontsize=12)
+ax[0].text(-1.4, -0.35, 'reference\nsequence', ha='center', va='center', fontsize=10)
 
 
 
 ax[0].legend(fontsize=8, ncol=5)
-ax[0].set_xlabel('reference sequence', fontsize=12)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
 ax[1].set_ylim([-0.5, 0.5])
