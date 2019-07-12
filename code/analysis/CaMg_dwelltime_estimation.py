@@ -52,7 +52,7 @@ for g, d in tqdm.tqdm(salt_data.groupby(['mutant', 'salt']), desc='Mutant and sa
                 _draw = np.random.exponential(s, size=int(n_low))
                 for _d in _draw[_draw > dead_filter]:
                     draws.append(_d)
-                n_low -= np.sum(_draw < dead_filter)
+                n_low = np.sum(_draw < dead_filter)
         _df = pd.DataFrame([])
         _df['draws'] = np.sort(draws)
         _df['ecdf'] = np.arange(0, data_dict['N']) / data_dict['N']
