@@ -9,3 +9,4 @@
 *checkpoints*
 *.mat
 data/*samples.csv
+data/*ppc*.csv

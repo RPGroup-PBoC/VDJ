@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- 
 #%%
-import numpy as numpy
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -82,16 +82,20 @@ for m, a in mut_ax.items():
 
         # Plot the PPC
         _ppc = ppc[(ppc['mutant']==m) & (ppc['salt']==s)]
-        for g, d in _ppc.groupby(['sample_idx']):
-            if g%1 == 0:
-                a[ad].step(d['draws'] * 60, d['ecdf'], '-', lw=0.01, alpha=0.5,
+        x_min = []
+        x_max = []
+        ys = []
+        for g, d in _ppc.groupby(['ecdf']):
+            x_min.append(np.min(d['draws'] * 60))
+            x_max.append(np.max(d['draws'] * 60))
+        a[ad].fill_betweenx(np.linspace(0, 1, len(x_max)), x_min, x_max, step='pre', alpha=0.25,
             color=colors[s])
         
         # Plot the compared empirical CDFS
         if s == 'Ca':
-            label = 'Ca$^2+$'
+            label = 'Ca$^{2+}$ data'
         else:
-            label = 'Mg$^2+$'
+            label = 'Mg$^{2+}$ data'
         compare_ax[m].step(x, y,color=colors[s], label=label)
 
 ax0.legend(loc='lower right', fontsize=8)
