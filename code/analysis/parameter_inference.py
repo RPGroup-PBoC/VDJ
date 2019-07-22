@@ -28,7 +28,7 @@ for i, m in enumerate(tqdm.tqdm(f_looped['mutant'].unique(),
                  'n_cuts':int(_fates['n_cuts'].sum()), 
                  'total_frames':int(_f_looped['total_frames'].sum()),
                  'looped_frames':int(_f_looped['looped_frames'].sum()),
-                 'dwell_time':_dwell['dwell_time_s']}
+                 'dwell_time':_dwell['dwell_time_min']}
 
     # Sample the model and compute the statistics
     _, samples = model.sample(data_dict)
