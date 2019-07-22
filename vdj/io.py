@@ -34,8 +34,8 @@ def endogenous_seqs():
             'V4-55': 'CACAGTGATACAGACTGGAACAAAAACC',
             'V5-43': 'CACAGTGATGCAGACCATAGCAAAAATC',
             'V6-15': 'CACAGTACTTCAGCCTCCTACATAAACC',
-            'DFL161': 'CACAGTGCTATATCCATCAGCAAAAACC',
-            'DFL1613': 'CACAGTAGTAGATCCCTTCACAAAAAGC'}
+            'DFL1613': 'CACAGTGCTATATCCATCAGCAAAAACC',
+            'DFL161': 'CACAGTAGTAGATCCCTTCACAAAAAGC'}
 
     # Add the integer conversions
     ref_seq = _seqs['reference']
