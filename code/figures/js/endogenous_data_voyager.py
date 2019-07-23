@@ -24,18 +24,20 @@ import scipy.stats
 dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
 dwell_times = dwell_times[dwell_times['mutant'] != 'analysis']
 dwell_times = dwell_times[(~dwell_times['mutant'].str.startswith('12')) | (dwell_times['mutant']=='12SpacC1A')]
+dwell_times = dwell_times[dwell_times['salt']=='Mg']
+
 f_looped = pd.read_csv('../../../data/compiled_looping_fraction.csv')
 f_looped = f_looped[f_looped['mutant'] != 'analysis']
 f_looped = f_looped[(~f_looped['mutant'].str.startswith('12')) | (f_looped['mutant']=='12SpacC1A')]
+f_looped = f_looped[f_looped['salt']=='Mg']
+
 fates = pd.read_csv('../../../data/compiled_cutting_events.csv')
 fates = fates[fates['mutant'] != 'analysis']
 fates = fates[(~fates['mutant'].str.startswith('12')) | (fates['mutant']=='12SpacC1A')]
-
 # Load the sampling information
-#samples = pd.read_csv('../../../data/pooled_model_samples.csv')
-#samples = samples[(~samples['mutant'].str.startswith('12')) | (samples['mutant']=='12SpacC1A')]
-#stats = pd.read_csv('../../../data/pooled_model_summary.csv')
-#stats = stats[(~stats['mutant'].str.startswith('12')) | (stats['mutant']=='12SpacC1A')]
+pcut_stats = pd.read_csv('../../../data/pooled_cutting_probability.csv')
+pcut_stats = pcut_stats[(~pcut_stats['mutant'].str.startswith('12')) | (pcut_stats['mutant']=='12SpacC1A')]
+pcut_stats = pcut_stats[pcut_stats['salt']=='Mg']
 
 endog_names = {'WT12rss' : 'V4-57-1 (ref)',
                 'DFL161' : 'DFL 16.1-5\'',
@@ -48,33 +50,14 @@ endog_names = {'WT12rss' : 'V4-57-1 (ref)',
 #samples = samples.replace({'mutant' : endog_names})
 #stats = stats.replace({'mutant' : endog_names})
 
-# Compute the statistics for the cutting probability and looping time
+# Compute the statistics for the cutting probability
 pcut_df = pd.DataFrame([])
-floop_df = pd.DataFrame([])
-for g, d in samples.groupby(['mutant']):
-    ind = np.argmax(d['lp__'].values)
-    # Compute p_loop
-    _p_cut = d['r_cut'].values /\
-                (d['r_cut'].values + d['k_unloop'].values)
-    _floop = d['k_loop'].values /\
-                (d['r_cut'].values + d['k_unloop'].values +\
-                 d['k_loop'].values) 
-    mean_pcut = np.mean(_p_cut)
-    median_pcut = np.median(_p_cut) 
-    mode_pcut = _p_cut[ind]
-    hpd_min, hpd_max = vdj.stats.compute_hpd(_p_cut, 0.95)
-    pcut_df = pcut_df.append({'mean':mean_pcut, 'median':median_pcut, 
-                            'mode':mode_pcut, 'hpd_min':hpd_min, 
-                            'hpd_max':hpd_max, 'mutant':g}, ignore_index=True)
-    mean_floop = np.mean(_floop)
-    median_floop = np.median(_floop) 
-    mode_floop = _floop[ind]
-    hpd_min, hpd_max = vdj.stats.compute_hpd(_floop, 0.95)
-    floop_df = floop_df.append({'mean':mean_floop, 'median':median_floop, 
-                            'mode':mode_floop, 'hpd_min':hpd_min, 
-                            'hpd_max':hpd_max, 'mutant':g}, ignore_index=True)
+for g, d in pcut_stats.groupby(['mutant']):
+    pcut_df = pcut_df.append({'mode':d['mode'].values[0],
+                            'std_min':d['mode'].values[0] - d['std'].values[0],
+                            'std_max':d['mode'].values[0] + d['std'].values[0], 
+                            'mutant':g}, ignore_index=True)
 pcut_df = pcut_df.replace({'mutant' : endog_names})
-floop_df = floop_df.replace({'mutant' : endog_names})
 # ##############################################################################
 #  COMPUTING POOLED AND REPLICATE PROPERTIES 
 # ##############################################################################
@@ -198,9 +181,6 @@ filter = GroupFilter(column_name="mutant", group="V4-57-1 (ref)")
 rep_source = ColumnDataSource(rep_dwell)
 pooled_source = ColumnDataSource(pooled_dwell)
 
-# Modeled dwell times
-#dwell_cdf_source = ColumnDataSource(dwell_cdfs)
-
 # Bead fate
 fate_source = ColumnDataSource(pooled_fates)
 
@@ -209,14 +189,11 @@ pcut_source = ColumnDataSource(cut_prob)
 rep_pcut_source = ColumnDataSource(rep_cut_prob)
 
 # Modeled cutting probabily
-#pcut_model_source = ColumnDataSource(pcut_df)
+pcut_model_source = ColumnDataSource(pcut_df)
 
 # Looping fraction
 floop_pooled_source = ColumnDataSource(floop_pooled)
 floop_rep_source = ColumnDataSource(floop_rep)
-
-# Modeled looping fraction
-#floop_model_source = ColumnDataSource(floop_df)
 
 # Sequences
 seq_source = ColumnDataSource(seq_df)
@@ -227,9 +204,6 @@ seq_source = ColumnDataSource(seq_df)
 # Dwell times
 pooled_view = CDSView(source=pooled_source, filters=[filter])
 rep_view = CDSView(source=rep_source, filters=[filter])
-
-# Modelled dwell times
-#dwell_cdf_view = CDSView(source=dwell_cdf_source, filters=[filter])
 
 # Bead Fates
 fate_view = CDSView(source=fate_source, filters=[filter])
@@ -245,9 +219,6 @@ pcut_model_view = CDSView(source=pcut_model_source, filters=[filter])
 floop_view = CDSView(source=floop_pooled_source, filters=[filter])
 floop_rep_view = CDSView(source=floop_rep_source, filters=[filter])
 
-# Modeled floop view
-floop_model_view = CDSView(source=floop_model_source, filters=[filter])
-
 # Sequence display
 seq_view = CDSView(source=seq_source, filters=[filter])
 
@@ -258,13 +229,13 @@ seq_view = CDSView(source=seq_source, filters=[filter])
 # Define the callback args and callback code
 cb_args = {'pv':pooled_view, 'rv':rep_view, 'fv':fate_view, 'pcv':pcut_view, 
            'rpcv':rep_pcut_view, 'flv':floop_view, 'flrv':floop_rep_view,
-           'seqv':seq_view, 'cdfv':dwell_cdf_view, 'cflv':floop_model_view,
+           'seqv':seq_view,
            'cpcv': pcut_model_view,
           'sel':selector, 'filter':filter,
           'ps':pooled_source, 'rs':rep_source, 'fs':fate_source, 
           'pcs':pcut_source, 'rpcs':rep_pcut_source, 'fls':floop_pooled_source,
-          'flrs':floop_rep_source, 'seqs':seq_source, 'cdfs':dwell_cdf_source,
-          'cfls': floop_model_source, 'cpcs':pcut_model_source}
+          'flrs':floop_rep_source, 'seqs':seq_source,
+          'cpcs':pcut_model_source}
 dwell_cb = CustomJS(args=cb_args, 
     code="""
     var mut = sel.value
@@ -279,8 +250,6 @@ dwell_cb = CustomJS(args=cb_args,
     rpcv.filters[0] = filter; // Replicate cutting probabily
     flv.filters[0] = filter; // Pooled looping fraction
     flrv.filters[0] = filter; // replicate looping fraction
-    cdfv.filters[0] = filter; // Modeled dwell time
-    cflv.filters[0] = filter; // Modeled looping fraction
     cpcv.filters[0] = filter; // Modeled cutting probability
     
     // Update the view on the data
@@ -292,8 +261,6 @@ dwell_cb = CustomJS(args=cb_args,
     pcs.data.view = pv; // Pooled cutting probability source
     rpcs.data.view = pv; // Replicate cutting probability source
     fs.data.view = fv; // Bead fate source
-    cdfs.data.view = cdfv; // Modeled dwell times
-    cfls.data.view = cflv; // Modeled looping fraction
     cpcs.data.view = cpcv; // modeled cutting probability
 
     // Push changes to the plot 
@@ -305,8 +272,6 @@ dwell_cb = CustomJS(args=cb_args,
     fls.change.emit(); // Pooled looping fraction
     flrs.change.emit(); // Replicate looping fraction
     seqs.change.emit(); // Sequence display
-    cdfs.change.emit(); // Modeled dwell times
-    cfls.change.emit(); // Modeled looping fraction
     cpcs.change.emit(); // Modeled cutting probability
 """)
 
@@ -358,11 +323,7 @@ seq.add_glyph(seq_source, glyph, view=seq_view)
 #         size=5, alpha=0.75, color='slategrey')
 dwell_ax.step(x='pooled_dwell_time', y='ecdf', source=pooled_source, view=pooled_view,
         legend='pooled data', line_width=2, color='dodgerblue')
-    
-dwell_ax.quad(top='hpd_max', bottom='hpd_min', left='left', 
-            right='right', color='tomato', alpha=0.5,
-            source=dwell_cdf_source,
-            view=dwell_cdf_view, legend='fit')
+
 
 # Plot the cutting idx
 cut_ax.segment(x0=0, x1='value', y0='fate',  y1='fate', line_width=2, color='dodgerblue',
@@ -377,9 +338,9 @@ pcut_ax.circle(x='p_cut', y=0.05, source=pcut_source, line_color='dodgerblue',
                 view=pcut_view, fill_color='white', size=8, line_width=2)
 
 # Plot the modeled cutting probabilities
-pcut_ax.square(x='median', y=-0.05, source=pcut_model_source, view=pcut_model_view,
+pcut_ax.square(x='mode', y=-0.05, source=pcut_model_source, view=pcut_model_view,
                fill_color='white', size=8, line_color='tomato')
-pcut_ax.segment(x0='hpd_min', x1='hpd_max', y0=-0.05, y1=-0.05,
+pcut_ax.segment(x0='std_min', x1='std_max', y0=-0.05, y1=-0.05,
                source=pcut_model_source, line_width=2, color='tomato',
                view=pcut_model_view)
 
@@ -389,13 +350,6 @@ floop_ax.circle(x='mean', y='y', source=floop_rep_source, view=floop_rep_view,
 floop_ax.circle(x='mean', y=0.05, source=floop_pooled_source, view=floop_view,
                 fill_color='white', line_color='dodgerblue', line_width=2,
                 size=10)
-                
-# Modeled looping fraction
-floop_ax.square(x='median', y=-0.05, source=floop_model_source, view=floop_model_view,
-               fill_color='white', size=8, line_color='tomato')
-floop_ax.segment(x0='hpd_min', x1='hpd_max', y0=-0.05, y1=-0.05,
-               source=floop_model_source, line_width=2, color='tomato',
-               view=floop_model_view)
 
 
 selector.js_on_change("value",dwell_cb)
@@ -447,3 +401,6 @@ bokeh.io.save(layout)
 
 
 
+
+
+#%%
