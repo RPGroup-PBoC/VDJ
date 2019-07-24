@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#%%
 """
 Builds a Bokeh appelet for exploring the data and visualizing the inference
 statistics.
@@ -86,20 +87,34 @@ seq_df = seq_df.replace({'mutant' : endog_names})
 
 # Compute the ECDFs for the dwell times
 pooled_dwell_times= []
+pooled_cut_dwell_times = []
 for g, d in dwell_times.groupby('mutant'):
     # Compute the pooled ecdf
     # x = np.sort(d['dwell_time_s'])
     # y = np.linspace(0, 1, len(d))
-    hist, bins = np.histogram(d['dwell_time_min'], bins=100)
-    hist = hist / hist.max()
+    bins = np.linspace(0, d['dwell_time_min'].max(), 100)
+    hist, bins = np.histogram(d['dwell_time_min'], bins=bins)
+    #hist = hist / hist.max()
     df = pd.DataFrame([])
+    df = pd.DataFrame(np.array([hist, bins[:-1], bins[1:]]).T, 
+                            columns=['count', 'left', 'right'])    
+    df['bottom'] = 0
     df['pooled_dwell_time'] = bins[:-1]
     df['ecdf'] = hist 
     df['mutant'] = g
     pooled_dwell_times.append(df)
+
+    hist_cut, bins_cut = np.histogram(d[d['cut']==1]['dwell_time_min'], bins=bins)
+    _df = pd.DataFrame([])
+    _df = pd.DataFrame(np.array([hist_cut, bins_cut[:-1], bins_cut[1:]]).T,
+                        columns=['count', 'left', 'right'])
+    _df['bottom'] = 0
+    _df['mutant'] = g
+    pooled_cut_dwell_times.append(_df)
 pooled_dwell = pd.concat(pooled_dwell_times)
 pooled_dwell = pooled_dwell.replace({'mutant' : endog_names})
-
+pooled_cut_dwell = pd.concat(pooled_cut_dwell_times)
+pooled_cut_dwell = pooled_cut_dwell.replace({'mutant' : endog_names})
 # Compute the replicate ecdfs
 rep_dwell_times = []
 for g, d in dwell_times.groupby(['mutant', 'replicate']):
@@ -180,6 +195,7 @@ filter = GroupFilter(column_name="mutant", group="V4-57-1 (ref)")
 # Dwell times
 rep_source = ColumnDataSource(rep_dwell)
 pooled_source = ColumnDataSource(pooled_dwell)
+pooled_cut_source = ColumnDataSource(pooled_cut_dwell)
 
 # Bead fate
 fate_source = ColumnDataSource(pooled_fates)
@@ -203,6 +219,7 @@ seq_source = ColumnDataSource(seq_df)
 
 # Dwell times
 pooled_view = CDSView(source=pooled_source, filters=[filter])
+pooled_cut_view = CDSView(source=pooled_cut_source, filters=[filter])
 rep_view = CDSView(source=rep_source, filters=[filter])
 
 # Bead Fates
@@ -227,12 +244,14 @@ seq_view = CDSView(source=seq_source, filters=[filter])
 # ##############################################################################
 
 # Define the callback args and callback code
-cb_args = {'pv':pooled_view, 'rv':rep_view, 'fv':fate_view, 'pcv':pcut_view, 
+cb_args = {'pv':pooled_view, 'pocv':pooled_cut_view, 
+            'rv':rep_view, 'fv':fate_view, 'pcv':pcut_view, 
            'rpcv':rep_pcut_view, 'flv':floop_view, 'flrv':floop_rep_view,
            'seqv':seq_view,
            'cpcv': pcut_model_view,
-          'sel':selector, 'filter':filter,
-          'ps':pooled_source, 'rs':rep_source, 'fs':fate_source, 
+          'sel':selector, 'filter':filter, 
+          'ps':pooled_source, 'pocs':pooled_cut_source, 
+          'rs':rep_source, 'fs':fate_source, 
           'pcs':pcut_source, 'rpcs':rep_pcut_source, 'fls':floop_pooled_source,
           'flrs':floop_rep_source, 'seqs':seq_source,
           'cpcs':pcut_model_source}
@@ -243,6 +262,7 @@ dwell_cb = CustomJS(args=cb_args,
 
     // Define the filters
     pv.filters[0] = filter; // Pooled dwell times
+    pocv.filters[0] = filter; // Pooled cut dwell times
     rv.filters[0] = filter; //  Replicate dwell times
     seqv.filters[0] = filter; // Sequences
     fv.filters[0] = filter;  // Bead fates
@@ -257,6 +277,7 @@ dwell_cb = CustomJS(args=cb_args,
     fls.data.view = fv; // Pooled looping fraction source 
     flrs.data.view = fv; // Replicate looping fraction source
     ps.data.view = pv; // Pooled dwell time source
+    pocs.data.view = pcs; // Pooled cut dwell time source
     rs.data.view = rv; // Replicate dwell time source
     pcs.data.view = pv; // Pooled cutting probability source
     rpcs.data.view = pv; // Replicate cutting probability source
@@ -266,6 +287,7 @@ dwell_cb = CustomJS(args=cb_args,
     // Push changes to the plot 
     rs.change.emit(); // Replicate dwell times
     ps.change.emit(); // Pooled dwell times
+    pocs.change.emit(); // Pooled cut dwell times
     pcs.change.emit(); // Pooled cutting probabilities
     rpcs.change.emit(); // Replicate cutting probabilities
     fs.change.emit(); // Bead fates
@@ -281,11 +303,11 @@ dwell_cb = CustomJS(args=cb_args,
 # Dwell time figure canvas
 dwell_ax = bokeh.plotting.figure(width=800, height=400, 
                            x_axis_label='dwell time [min]',
-                           y_axis_label='cumulative distribution',
-                           title=f'paired complex dwell time',
-                           x_range=[np.min(dwell_times['dwell_time_min']), 
-                                    np.max(dwell_times['dwell_time_min'])],
-                           x_axis_type='log')
+                           y_axis_label='counts',
+                           title=f'paired complex lifetime',
+#                           x_range=[np.min(dwell_times['dwell_time_min']), 
+#                                    np.max(dwell_times['dwell_time_min'])],
+                           x_axis_type='linear')
 
 _fates = ['unlooped', 'cut']
 
@@ -321,9 +343,16 @@ seq.add_glyph(seq_source, glyph, view=seq_view)
 # dwell_ax.circle(x=[], y=[], line_width=2, color='slategrey', legend='replicate')
 # dwell_ax.circle(x='dwell', y='ecdf', source=rep_source, view=rep_view,
 #         size=5, alpha=0.75, color='slategrey')
-dwell_ax.step(x='pooled_dwell_time', y='ecdf', source=pooled_source, view=pooled_view,
-        legend='pooled data', line_width=2, color='dodgerblue')
+dwell_ax.quad(bottom='bottom', top='count', left='left', right='right', 
+        source=pooled_source, view=pooled_view,
+        legend='pooled data', line_width=1, fill_alpha=0.5,
+        fill_color='dodgerblue')
 
+# Plot cutting dwell times
+dwell_ax.quad(bottom='bottom', top='count', left='left', right='right',
+        source=pooled_cut_source, view=pooled_cut_view,
+        legend='pooled cut dwell data', line_width=1, fill_color=None,
+        line_color='black', hatch_pattern='/', hatch_color='black')
 
 # Plot the cutting idx
 cut_ax.segment(x0=0, x1='value', y0='fate',  y1='fate', line_width=2, color='dodgerblue',
@@ -353,10 +382,11 @@ floop_ax.circle(x='mean', y=0.05, source=floop_pooled_source, view=floop_view,
 
 
 selector.js_on_change("value",dwell_cb)
-dwell_ax.legend.location = 'bottom_right'
-layout = bokeh.layouts.gridplot([[selector], [seq],
-                                [dwell_ax],
-                                [cut_ax, pcut_ax, floop_ax]])
+dwell_ax.legend.location = 'top_right'
+row = bokeh.layouts.row(cut_ax, pcut_ax, floop_ax)
+col = bokeh.layouts.column(selector, seq, dwell_ax, row)
+bokeh.io.show(col)
+
 
 # #############################################################################
 #  THEME DETAILS
@@ -397,7 +427,7 @@ theme_json = {'attrs':
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
-bokeh.io.save(layout)
+bokeh.io.save(col)
 
 
 
