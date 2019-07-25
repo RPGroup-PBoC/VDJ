@@ -100,8 +100,9 @@ plt.subplots_adjust(hspace=0.2)
 # high_cut = points_cut[points_cut['n_beads']>=20].copy()
 
 colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
-shift = {'A':-0.3,  'T':0.3, 'C':-0.10, 'G':0.10}
-
+# shift = {'A':0.3,  'T':0.3, 'C':-0.10, 'G':0.10}
+shift = {'A':0,  'T':0, 'C':0, 'G':0.0}
+points.sort_values('rel_diff', inplace=True)
 for g, d in points.groupby(['base']):
     ax[0].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=0.75, 
                 ms=10, linestyle='none', label=g, markerfacecolor='white')
