@@ -103,25 +103,45 @@ colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
 # shift = {'A':0.3,  'T':0.3, 'C':-0.10, 'G':0.10}
 shift = {'A':0,  'T':0, 'C':0, 'G':0.0}
 points.sort_values('rel_diff', inplace=True)
-for g, d in points.groupby(['base']):
-    ax[0].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker='o', color=colors[g], lw=0.75, 
-                ms=10, linestyle='none', label=g, markerfacecolor='white')
-    ax[0].plot(d['pos'] + shift[g] + 1, d['rel_diff'], marker=f'${g}$', color=colors[g], markeredgewidth=0.5,
-                ms=5, linestyle='none', label='__nolegend__')
+for g, d in points.groupby('pos'):
+    d = d.copy()
+    if len(d) == 1:
+        base = d['base'].unique()[0]
+        ax[0].plot(g + 1, d['rel_diff'], marker='o', color=colors[base], lw=0.75, 
+                ms=10, linestyle='none', label='__nolegend__', 
+                markerfacecolor='white')
+        ax[0].plot(g + 1, d['rel_diff'], marker=f'${base}$', color=colors[base], markeredgewidth=0.5,
+                    ms=5, linestyle='none', label='__nolegend__')
     
-    ax[0].vlines(d['pos'] + shift[g] + 1, 0, d['rel_diff'], color=colors[g], lw=1.5, label='__nolegend__')
-    # for i, p in d.groupby(['pos']):
-    #     ax[0].text(p['pos'] + shift[g] + 0.8, p['rel_diff'] - 0.018, g,  color=colors[g])
+        ax[0].vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
+    else:
+        zorder = 1
+        d['abs_rel_diff'] = np.sort(d['rel_diff'])
+        d = d.sort_values('abs_rel_diff')
+        for i in range(len(d)):
+            _d = d.iloc[i]
+            base = _d['base'].unique()[0]
+            ax[0].vlines(g + 1, 0, _d['rel_diff'], color=colors[base], lw=1.5, 
+                        label='__nolegend__', zorder=zorder)
+            ax[0].plot(g + 1, _d['rel_diff'], marker='o', color=colors[base], lw=0.75, 
+                ms=10, linestyle='none', label='__nolegend__', 
+                markerfacecolor='white', zorder=zorder)
+            ax[0].plot(g + 1, _d['rel_diff'], marker=f'${base}$', 
+                      color=colors[base], markeredgewidth=0.5, ms=5, 
+                      linestyle='none', label='__nolegend__', zorder=zorder)
+            zorder += 1
+ 
 
 
-for g, d in points_cut.groupby(['base']):
-    ax[1].plot(d['pos'] + shift[g] + 1, d['mode']-wt_cut, marker='o', color=colors[g], lw=.75,
-                ms=10, linestyle='none', label=g, markerfacecolor='white')
-    ax[1].plot(d['pos'] + shift[g] + 1, d['mode']-wt_cut, marker=f'${g}$', color=colors[g], markeredgewidth=0.5,
-                ms=5, linestyle='none', label=g)
+        
+# for g, d in points_cut.groupby(['base']):
+#     ax[1].plot(d['pos'] + 1, d['mode']-wt_cut, marker='o', color=colors[g[0]], lw=.75,
+#                 ms=10, linestyle='none', label=g, markerfacecolor='white')
+#     ax[1].plot(d['pos'] + 1, d['mode']-wt_cut, marker=f'${g}$', color=colors[g[0]], markeredgewidth=0.5,
+#                 ms=5, linestyle='none', label=g)
 
-    ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['mode']-wt_cut, color=colors[g], 
-                label='__nolegend__', linewidth=1.5)
+#     ax[1].vlines(d['pos'] + 1, 0, d['mode']-wt_cut, color=colors[g[0]], 
+#                 label='__nolegend__', linewidth=1.5)
 
 # Plot HeptT6A:
 # for g, d in low_cut.groupby(['base']):
@@ -135,31 +155,40 @@ line1 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 line2 = lines.Line2D([19.5, 19.5], [-0.4, -0.32], clip_on=False, alpha=1,
                     linewidth=1, color='k')
+line3 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
+                    linewidth=1, color='k')
+line4 = lines.Line2D([19.5, 19.5], [-0.4, -0.32], clip_on=False, alpha=1,
+                    linewidth=1, color='k')
 
 for n in range(0,2):
         _ = ax[n].set_xticks(np.arange(1, 29))
         ax[n].set_xlim([0.5, 28.5])
-        ax[n].vlines(0.5, -0.65, 1.0, color='#f5e3b3', linewidth=4, zorder=0)
+        ax[n].vlines(0.5, -0.65, 1.0, linewidth=4, zorder=0) #, color='#f5e3b3')
         ax[n].hlines(0, 0, 29, color='k', linestyle=':')
         for i in range(1, 29, 2):
-                ax[n].axvspan(i-0.5, i+0.5, color='w', linewidth=0, zorder=-1)
+                ax[n].axvspan(i-0.5, i+0.5, color='white',
+                                alpha=0.65, linewidth=0, zorder=-1)
 
 _ = ax[1].set_xticklabels([])
 _ = ax[0].set_xticklabels(list(ref_seq))
 ax[0].add_line(line1)
 ax[0].add_line(line2)
+
 ax[0].text(-1.4, -0.35, 'reference\nsequence', ha='center', va='center', fontsize=10)
 
-ax[0].legend(fontsize=8, ncol=5)
+# ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
 ax[1].set_ylim([-0.5, 0.5])
-ax[0].set_xlim([1, 29])
-ax[1].set_xlim([1, 29])
+ax[0].set_xlim([0.5, 28.5])
+ax[1].set_xlim([0.5, 28.5])
 ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
 ax[1].set_ylabel('change in cut\nprobability', fontsize=12)
-ax[0].spines['left'].set_visible(True)
-ax[1].spines['left'].set_visible(True)
+ax[0].set_title('Heptamer', loc='left')
+ax[0].set_title('Spacer')
+ax[0].set_title('Nonamer', loc='right')
+# ax[0].spines['left'].set_visible(True)
+# ax[1].spines['left'].set_visible(True)
 
 df_post = cut_posts.loc[cut_posts['mutant'].isin(posterior_list)]
 
@@ -174,8 +203,7 @@ for mut, mut_posts in df_post.groupby('mutant'):
                         color=post_colors[mut], alpha=0.75, zorder=post_zorder[mut])
         ax[2].plot(mut_posts['probability'], mut_posts['posterior'] + plot_offset[mut],
                         color='white', zorder=post_zorder[mut])
-        ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0,
-                      zorder=post_zorder[mut])
+        ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0, zorder=post_zorder[mut])
         if mut=='WT12rss':
                 text = 'reference'
         else:
@@ -195,5 +223,8 @@ ax[2].hlines(plot_offset['WT12rss'] + 0.06, 0.49, 0.51, color='k')
 ax[2].hlines(plot_offset['WT12rss'], 0.49, 0.51, color='k')
 ax[2].text(0.512, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
 plt.savefig('./point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
+
+#%%
+
 
 #%%
