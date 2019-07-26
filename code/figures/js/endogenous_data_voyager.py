@@ -561,9 +561,11 @@ floop_ax.circle(x='mean', y=0.05, source=floop_pooled_source, view=floop_view,
 selector.js_on_change("value",dwell_cb)
 dwell_ax.legend.location = 'top_right'
 row = bokeh.layouts.row(cut_ax, pcut_ax, floop_ax)
-col = bokeh.layouts.column(selector, dwell_ax, const_loops_ax, 
-                            seq, const_cut_ax, row)
-bokeh.io.show(col)
+col1 = bokeh.layouts.column(selector, const_loops_ax, 
+                            seq, const_cut_ax)
+col2 = bokeh.layouts.column(dwell_ax, row)
+row2 = bokeh.layouts.row(col1, col2)
+bokeh.io.show(row2)
 
 
 # #############################################################################
@@ -605,7 +607,7 @@ theme_json = {'attrs':
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
-bokeh.io.save(col)
+bokeh.io.save(row2)
 
 
 
