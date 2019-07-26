@@ -35,6 +35,17 @@ f_looped = f_looped[f_looped['salt']=='Mg']
 fates = pd.read_csv('../../../data/compiled_cutting_events.csv')
 fates = fates[fates['mutant'] != 'analysis']
 fates = fates[(~fates['mutant'].str.startswith('12')) | (fates['mutant']=='12SpacC1A')]
+
+data = pd.read_csv('../../../data/compiled_looping_events.csv')
+data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
+
+endog_data = data[(~data['mutant'].str.startswith('12')) | (data['mutant']=='12SpacC1A')]
+
+cut_data = pd.read_csv('../../../data/pooled_cutting_probability.csv')
+cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
+
+cut_endog_data = cut_data[(~cut_data['mutant'].str.startswith('12')) | (data['mutant']=='12SpacC1A')]
+
 # Load the sampling information
 pcut_stats = pd.read_csv('../../../data/pooled_cutting_probability.csv')
 pcut_stats = pcut_stats[(~pcut_stats['mutant'].str.startswith('12')) | (pcut_stats['mutant']=='12SpacC1A')]
@@ -50,6 +61,121 @@ endog_names = {'WT12rss' : 'V4-57-1 (ref)',
 #fates = fates.replace({'mutant' : endog_names})
 #samples = samples.replace({'mutant' : endog_names})
 #stats = stats.replace({'mutant' : endog_names})
+
+#%%
+# Determine individual point mutations
+def point_mutation_name(n, nucleotide):
+    ref = vdj.io.endogenous_seqs()['reference'][0]
+
+    pos_n = -1
+
+    if n < 7:
+        term_name = '12Hept'
+    elif n > 18:
+        term_name = '12Non'
+        pos_n = 18
+    else:
+        term_name = '12Spac'
+        pos_n = 6
+
+    term_name = term_name + ref[n] + str(n - pos_n) + nucleotide
+
+    return term_name
+
+def color_mutant(nucleotide):
+    if nucleotide=='E':
+        color = 'tomato'
+    else:
+        color = 'dodgerblue'
+    return color
+
+#%%
+# Compile constituent data
+ref = vdj.io.endogenous_seqs()['reference'][0]
+
+ref_loops_per_bead = np.sum(data[data['mutant']=='WT12rss']['n_loops']) /\
+                        len(data[data['mutant']=='WT12rss'])
+ref_cut_fraction = cut_data[cut_data['mutant']=='WT12rss']['n_cuts'].values[0] /\
+                        cut_data[cut_data['mutant']=='WT12rss']['n_beads'].values[0]
+
+constituent_loops = []
+constituent_cuts = []
+for m in endog_data.mutant.unique():
+    seq = vdj.io.mutation_parser(m)['seq']
+
+    mutant_name = []
+    pos_list = []
+    nucl_list = []
+    loops_per_bead = []
+    rel_diff_loops = []
+    cut_fraction = []
+    rel_diff_cut = []
+    color_list = []
+
+    for n in range(len(seq)):
+        if ref[n] != seq[n]:
+            # Start plotting at 1
+            pos_list.append(n+1)
+            nucl_list.append(seq[n])
+
+            color = color_mutant(seq[n])
+            color_list.append(color)
+
+            term_name = point_mutation_name(n, seq[n])
+            mutant_name.append(term_name)
+            
+            mut_loops_per_bead = np.sum(data[data['mutant']==term_name]['n_loops']) /\
+                                    len(data[data['mutant']==term_name])
+            loops_per_bead.append(mut_loops_per_bead)
+            rel_diff_loops.append(mut_loops_per_bead - ref_loops_per_bead)
+
+            mut_cut_frac = cut_data[cut_data['mutant']==term_name]['n_cuts'].values[0] /\
+                            cut_data[cut_data['mutant']==term_name]['n_beads'].values[0]
+            cut_fraction.append(mut_cut_frac)
+            rel_diff_cut.append(mut_cut_frac - ref_cut_fraction)
+
+    # Append endogenous information    
+    mutant_name.append(m)
+    pos_list.append(29)
+    nucl_list.append('E')
+    color_list.append(color_mutant('E'))
+    
+    endog_loops_per_bead = np.sum(data[data['mutant']==m]['n_loops']) /\
+                                len(data[data['mutant']==m])
+    loops_per_bead.append(endog_loops_per_bead)
+    rel_diff_loops.append(endog_loops_per_bead - ref_loops_per_bead)
+
+    mut_cut_frac = cut_data[cut_data['mutant']==m]['n_cuts'].values[0] /\
+                    cut_data[cut_data['mutant']==m]['n_beads'].values[0]
+    cut_fraction.append(mut_cut_frac)
+    rel_diff_cut.append(mut_cut_frac - ref_cut_fraction)
+
+    df = pd.DataFrame([])
+    df['point_mutant'] = mutant_name
+    df['position'] = pos_list
+    df['nucleotide'] = nucl_list
+    df['mutant'] = m
+    df['loops_per_bead'] = loops_per_bead
+    df['relative_loops'] = rel_diff_loops
+    df['color'] = color_list
+
+    _df = pd.DataFrame([])
+    _df['point_mutant'] = mutant_name
+    _df['position'] = pos_list
+    _df['nucleotide'] = nucl_list
+    _df['mutant'] = m
+    _df['cut_fraction'] = cut_fraction
+    _df['relative_cuts'] = rel_diff_cut
+    _df['color'] = color_list
+    
+    constituent_loops.append(df)
+    constituent_cuts.append(_df)
+
+constituent_loops_df = pd.concat(constituent_loops, ignore_index=True)
+constituent_loops_df = constituent_loops_df.replace({'mutant' : endog_names})
+
+constituent_cuts_df = pd.concat(constituent_cuts, ignore_index=True)
+constituent_cuts_df = constituent_cuts_df.replace({'mutant' : endog_names})
 
 # Compute the statistics for the cutting probability
 pcut_df = pd.DataFrame([])
@@ -211,6 +337,10 @@ pcut_model_source = ColumnDataSource(pcut_df)
 floop_pooled_source = ColumnDataSource(floop_pooled)
 floop_rep_source = ColumnDataSource(floop_rep)
 
+# Loop and Cut Fractions
+loops_source = ColumnDataSource(constituent_loops_df)
+cuts_source = ColumnDataSource(constituent_cuts_df)
+
 # Sequences
 seq_source = ColumnDataSource(seq_df)
 
@@ -236,6 +366,10 @@ pcut_model_view = CDSView(source=pcut_model_source, filters=[filter])
 floop_view = CDSView(source=floop_pooled_source, filters=[filter])
 floop_rep_view = CDSView(source=floop_rep_source, filters=[filter])
 
+# Constituent loops and cuts
+loops_view = CDSView(source=loops_source, filters=[filter])
+cuts_view = CDSView(source=cuts_source, filters=[filter])
+
 # Sequence display
 seq_view = CDSView(source=seq_source, filters=[filter])
 
@@ -244,12 +378,14 @@ seq_view = CDSView(source=seq_source, filters=[filter])
 # ##############################################################################
 
 # Define the callback args and callback code
-cb_args = {'pv':pooled_view, 'pocv':pooled_cut_view, 
+cb_args = {'clv':loops_view, 'ccv':cuts_view,
+            'pv':pooled_view, 'pocv':pooled_cut_view, 
             'rv':rep_view, 'fv':fate_view, 'pcv':pcut_view, 
            'rpcv':rep_pcut_view, 'flv':floop_view, 'flrv':floop_rep_view,
            'seqv':seq_view,
            'cpcv': pcut_model_view,
           'sel':selector, 'filter':filter, 
+          'cls':loops_source, 'ccs':cuts_source,
           'ps':pooled_source, 'pocs':pooled_cut_source, 
           'rs':rep_source, 'fs':fate_source, 
           'pcs':pcut_source, 'rpcs':rep_pcut_source, 'fls':floop_pooled_source,
@@ -261,6 +397,8 @@ dwell_cb = CustomJS(args=cb_args,
     filter.group = mut;
 
     // Define the filters
+    clv.filters[0] = filter; // Constituent loops per bead
+    ccv.filters[0] = filter; // Constituent cut fraction
     pv.filters[0] = filter; // Pooled dwell times
     pocv.filters[0] = filter; // Pooled cut dwell times
     rv.filters[0] = filter; //  Replicate dwell times
@@ -278,6 +416,8 @@ dwell_cb = CustomJS(args=cb_args,
     flrs.data.view = fv; // Replicate looping fraction source
     ps.data.view = pv; // Pooled dwell time source
     pocs.data.view = pcs; // Pooled cut dwell time source
+    cls.data.view = clv; // Constituent loops per bead source
+    ccs.data.view = ccs; // Constituent cut fraction source
     rs.data.view = rv; // Replicate dwell time source
     pcs.data.view = pv; // Pooled cutting probability source
     rpcs.data.view = pv; // Replicate cutting probability source
@@ -288,6 +428,8 @@ dwell_cb = CustomJS(args=cb_args,
     rs.change.emit(); // Replicate dwell times
     ps.change.emit(); // Pooled dwell times
     pocs.change.emit(); // Pooled cut dwell times
+    cls.change.emit(); // Constituent dwell times
+    ccs.change.emit(); // Constituent cut dwell times
     pcs.change.emit(); // Pooled cutting probabilities
     rpcs.change.emit(); // Replicate cutting probabilities
     fs.change.emit(); // Bead fates
@@ -311,6 +453,16 @@ dwell_ax = bokeh.plotting.figure(width=800, height=400,
 
 _fates = ['unlooped', 'cut']
 
+const_loops_ax = bokeh.plotting.figure(width=800, height=400, 
+                           x_axis_label='nucleotide position',
+                           y_axis_label='relative loops per bead',
+                           y_range=[-0.25, 0.25], x_range=[0.5, 29.5])
+
+# Cutting fraction canvas
+const_cut_ax = bokeh.plotting.figure(width=800, height=400, 
+                               y_axis_label='relative cut fraction',
+                               y_range=[-0.45, 0.45], x_range=[0.5, 29.5])
+
 # Cutting fraction canvas
 cut_ax = bokeh.plotting.figure(width=200, height=150, 
                                x_axis_label='number of events',
@@ -329,7 +481,7 @@ floop_ax = bokeh.plotting.figure(width=300, height=150,
 floop_ax.yaxis.visible = False
 
 # Sequence canvas
-seq = bokeh.plotting.figure(width=600, height=40, y_range=[0, 0.1], x_range=[0, 28])
+seq = bokeh.plotting.figure(width=780, height=40, y_range=[0, 0.1], x_range=[0, 28])
 seq.xaxis.visible=False
 seq.yaxis.visible=False
 glyph = bokeh.models.glyphs.Text(x='x', y='y', text='sequence', text_color='colors', 
@@ -353,6 +505,23 @@ dwell_ax.quad(bottom='bottom', top='count', left='left', right='right',
         source=pooled_cut_source, view=pooled_cut_view,
         legend='pooled cut dwell data', line_width=1, fill_color=None,
         line_color='black', hatch_pattern='/', hatch_color='black')
+
+const_loops_ax.circle(x='position', y='relative_loops',
+        source=loops_source, view=loops_view,
+        size=10, fill_alpha=0.5, fill_color='color')
+const_loops_ax.line(x=[0,30], y=[0,0], line_dash='dashed', 
+            line_width=2, color='black')
+const_loops_ax.line(x=[28.5, 28.5], y=[-0.25, 0.25], line_dash='dotted',
+            line_width=2, color='black')
+
+# Plot cutting dwell times
+const_cut_ax.circle(x='position', y='relative_cuts',
+        source=cuts_source, view=cuts_view,
+        size=10, fill_color='color')
+const_cut_ax.line(x=[0,30], y=[0,0], line_dash='dashed',
+            line_width=2, color='black')
+const_cut_ax.line(x=[28.5, 28.5], y=[-0.45, 0.45], line_dash='dotted',
+            line_width=2, color='black')
 
 # Plot the cutting idx
 cut_ax.segment(x0=0, x1='value', y0='fate',  y1='fate', line_width=2, color='dodgerblue',
@@ -384,7 +553,8 @@ floop_ax.circle(x='mean', y=0.05, source=floop_pooled_source, view=floop_view,
 selector.js_on_change("value",dwell_cb)
 dwell_ax.legend.location = 'top_right'
 row = bokeh.layouts.row(cut_ax, pcut_ax, floop_ax)
-col = bokeh.layouts.column(selector, seq, dwell_ax, row)
+col = bokeh.layouts.column(selector, dwell_ax, const_loops_ax, 
+                            seq, const_cut_ax, row)
 bokeh.io.show(col)
 
 
