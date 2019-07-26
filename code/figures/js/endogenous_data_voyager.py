@@ -508,20 +508,28 @@ dwell_ax.quad(bottom='bottom', top='count', left='left', right='right',
 
 const_loops_ax.circle(x='position', y='relative_loops',
         source=loops_source, view=loops_view,
-        size=10, fill_alpha=0.5, fill_color='color')
+        size=15, fill_color='color')
 const_loops_ax.line(x=[0,30], y=[0,0], line_dash='dashed', 
             line_width=2, color='black')
 const_loops_ax.line(x=[28.5, 28.5], y=[-0.25, 0.25], line_dash='dotted',
             line_width=2, color='black')
+const_loops_ax.segment(x0='position', x1='position', 
+                        y0=0, y1='relative_loops',
+                        source=loops_source, view=loops_view,
+                        line_color='color', line_width=3)
 
 # Plot cutting dwell times
 const_cut_ax.circle(x='position', y='relative_cuts',
         source=cuts_source, view=cuts_view,
-        size=10, fill_color='color')
+        size=15, fill_color='color')
 const_cut_ax.line(x=[0,30], y=[0,0], line_dash='dashed',
             line_width=2, color='black')
 const_cut_ax.line(x=[28.5, 28.5], y=[-0.45, 0.45], line_dash='dotted',
             line_width=2, color='black')
+const_cut_ax.segment(x0='position', x1='position',
+                    y0=0, y1='relative_cuts',
+                    source=cuts_source, view=cuts_view,
+                    line_color='color', line_width=3)
 
 # Plot the cutting idx
 cut_ax.segment(x0=0, x1='value', y0='fate',  y1='fate', line_width=2, color='dodgerblue',
