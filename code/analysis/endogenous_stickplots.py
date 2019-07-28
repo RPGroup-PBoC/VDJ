@@ -22,6 +22,8 @@ cuts.rename(columns={'mode':'mean_p_cut'}, inplace=True)
 dfs = [counts, median_dwell, cuts]
 valid_dfs = [[], [], []]
 for i, d in enumerate(dfs):
+    d = d.copy()
+    d[d['mutant']=='12SpacC1A', 'mutant'] = 'V4-55'
     for g, _d in d.groupby(['mutant']):
         if ('Hept' not in g) & ('Spac' not in g) & ('Non' not in g):
             valid_dfs[i].append(_d) 
@@ -33,10 +35,18 @@ endo_cuts = pd.concat(valid_dfs[2])
 # Set up the figure canvas
 fig, ax = plt.subplots(3, 1, figsize=(3.42, 5), sharex=True)
 
+fig.text(-0.05, 0.88, '(A)', fontsize=8)
+fig.text(-0.05, 0.61, '(B)', fontsize=8)
+fig.text(-0.05, 0.36, '(C)', fontsize=8)
 # Generate a mapping for position to mutant
 muts = endo_counts['mutant'].unique()
+
 map = {m:i for m, i in zip(muts, np.arange(1, 13))}
-muts[-1] = 'V4-57-1\n(ref)'
+map = {'DFL1613':1, 'DFL161':2, 'V1-135':3, 'V9-120':4,
+       'V10-96':5, 'V19-93':6, 'WT12rss':7, 'V4-55':8,
+       'V5-43':9, 'V8-18':10, 'V6-17':11, 'V6-15':12}
+muts = list(map.keys())
+muts[6] = 'V4-57-1'
 
 # Format and add labels
 for a in ax:
@@ -51,10 +61,10 @@ ax[2].set_ylabel('cutting probability', fontsize=8)
 for a in ax:
     a.set_xlim([0, len(muts) + 1])
 
-for a in [ax[0], ax[2]]:
-    a.set_yticks([0, 0.2,  0.4, 0.6, 0.8, 1])
+ax[0].set_yticks([0, 0.2,  0.4, 0.6])
+ax[2].set_yticks([0, 0.2,  0.4, 0.6, 0.8, 1])
 ax[1].set_yticks([0, 1, 2, 3, 4, 5])
-ax[0].set_ylim([0, 1])
+ax[0].set_ylim([0, 0.75])
 ax[1].set_ylim([0, 5])
 ax[2].set_ylim([0, 1])
 
