@@ -23,7 +23,7 @@ dfs = [counts, median_dwell, cuts]
 valid_dfs = [[], [], []]
 for i, d in enumerate(dfs):
     d = d.copy()
-    d[d['mutant']=='12SpacC1A', 'mutant'] = 'V4-55'
+    d.loc[d['mutant']=='12SpacC1A', 'mutant'] = 'V4-55'
     for g, _d in d.groupby(['mutant']):
         if ('Hept' not in g) & ('Spac' not in g) & ('Non' not in g):
             valid_dfs[i].append(_d) 
@@ -47,6 +47,8 @@ map = {'DFL1613':1, 'DFL161':2, 'V1-135':3, 'V9-120':4,
        'V5-43':9, 'V8-18':10, 'V6-17':11, 'V6-15':12}
 muts = list(map.keys())
 muts[6] = 'V4-57-1'
+muts[0] = "DFL 16.1-3'"
+muts[1] = "DFL 16.1-5'"
 
 # Format and add labels
 for a in ax:
@@ -61,10 +63,10 @@ ax[2].set_ylabel('cutting probability', fontsize=8)
 for a in ax:
     a.set_xlim([0, len(muts) + 1])
 
-ax[0].set_yticks([0, 0.2,  0.4, 0.6])
+ax[0].set_yticks([0,0.1, 0.2, 0.3, 0.4, 0.5])
 ax[2].set_yticks([0, 0.2,  0.4, 0.6, 0.8, 1])
 ax[1].set_yticks([0, 1, 2, 3, 4, 5])
-ax[0].set_ylim([0, 0.75])
+ax[0].set_ylim([0, 0.5])
 ax[1].set_ylim([0, 5])
 ax[2].set_ylim([0, 1])
 
@@ -76,21 +78,40 @@ for a in ax:
 
 # looping frequency
 for g, d in endo_counts.groupby('mutant'):
+    if g == 'WT12rss':
+            face = 'dodgerblue' 
+    else:
+            face = 'w'
+ 
     ax[0].vlines(map[g], 0, d['loops_per_bead'], color='dodgerblue', lw=1)
     ax[0].plot(map[g], d['loops_per_bead'], marker='o', markeredgecolor='dodgerblue', 
-                markerfacecolor='white', ms=5)
+                markerfacecolor=face, ms=5)
+
+
 
 # Median dwell time
 for g, d in endo_dwell.groupby('mutant'):
+    if g == 'WT12rss':
+            face = 'tomato' 
+    else:
+            face = 'w'
+ 
     ax[1].vlines(map[g], 0, d['dwell_time_min'], color='tomato', lw=1)
     ax[1].plot(map[g], d['dwell_time_min'], marker='o', markeredgecolor='tomato', 
-                markerfacecolor='white', ms=5)
+                markerfacecolor=face, ms=5)
+
 
 # Cutting probability
 for g, d in endo_cuts.groupby('mutant'):
+    if g == 'WT12rss':
+            face = 'rebeccapurple' 
+    else:
+            face = 'w'
+ 
     ax[2].vlines(map[g], 0, d['mean_p_cut'], color='rebeccapurple', lw=1)
     ax[2].plot(map[g], d['mean_p_cut'], marker='o', markeredgecolor='rebeccapurple', 
-                markerfacecolor='white', ms=5)
+                markerfacecolor=face, ms=5)
+
 
 plt.savefig('./FigX_endogenous_properties.pdf', facecolor='white', bbox_inches='tight')
 #%%
