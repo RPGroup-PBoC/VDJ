@@ -11,6 +11,10 @@ vdj.viz.plotting_style()
 data = pd.read_csv('../../data/compiled_looping_events.csv')
 data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
 
+# Load the dwell time data
+dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
+dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
+
 # Load all cutting probability estimates taking gaussian approximation.
 cut_data = pd.read_csv('../../data/pooled_cutting_probability.csv')
 cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
@@ -18,6 +22,9 @@ cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
 # Compute the number of loops per bead
 counts = data.groupby(['mutant'])[['n_loops']].agg(('sum', 'count')).reset_index()
 counts['loops_per_bead'] = counts['n_loops']['sum'] / counts['n_loops']['count']
+
+#Compute the median dwell time
+median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
 
 # Load the reference sequence
 ref = vdj.io.endogenous_seqs()
@@ -27,10 +34,12 @@ ref_idx = ref['WT12rss'][1]
 # Compute the wild-type cutting probability and loop freq
 wt_pcut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_freq = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
+wt_dwell = median_dwell[median_dwell['mutant']=='WT12rss']['dwell_time_min'].values[0]
 
 # Compute the relative difference. 
 cut_data['rel_diff'] = cut_data['mode'] - wt_pcut
 counts['rel_diff'] = counts['loops_per_bead'] - wt_freq
+median_dwell['rel_diff'] = median_dwell['dwell_time_min'] - wt_dwell
 
 #%%
 # Make a new data frame and connect the two statistics. 
@@ -38,6 +47,7 @@ df = pd.DataFrame([])
 for g, d in cut_data.groupby('mutant'):
     # Get the looping frequencies for the same mutant. 
     freq = counts[counts['mutant']==g].copy()
+    _dwell = median_dwell[median_dwell['mutant']==g].copy()
 
     # Parse the info about the mutant. 
     parsed = vdj.io.mutation_parser(g)
@@ -69,8 +79,10 @@ for g, d in cut_data.groupby('mutant'):
     # Generate the new data frame. 
     df = df.append({'freq':freq['loops_per_bead'].values[0],
                    'p_cut':d['mode'].values[0],
+                   'dwell':_dwell['dwell_time_min'].values[0],
                    'freq_diff':freq['rel_diff'].values[0],
                    'prob_diff':d['rel_diff'].values[0],
+                   'dwell_diff':_dwell['rel_diff'].values[0],
                    'mutant': g,
                    'kind': exp,
                    'region':region,
@@ -79,14 +91,26 @@ for g, d in cut_data.groupby('mutant'):
                    
 #%%
 # Set up the figure canvas
-fig = plt.figure(figsize=(3.42, 3.42))
-gs = gridspec.GridSpec(10, 10)
-# loop_marg = fig.add_subplot(gs[0:3, 0:-2])
-cut_marg= fig.add_subplot(gs[2:, 2:])
-ax = fig.add_subplot(gs[2:, :-2])
+fig, ax = plt.subplots(3, 3, figsize=(5, 5))
 
+# Turn off unnecessary axes
+ax[0, 0].axis('off')
+ax[0, 1].axis('off')
+ax[0, 2].axis('off')
+ax[1, 1].axis('off')
+ax[1, 2].axis('off')
+ax[2, 2].axis('off')
+
+# Turn off the ticks
+ax[1, 0].set_xticks([])
+ax[2, 1].set_yticks([])
+
+# Plot the dashed zero lines
+populated_ax = [ax[1, 0]
+
+#%%
 # loop_marg = fig.add_subplot(gs[1:5, -1])
-cut_marg.set_xticks([])
+_marg.set_xticks([])
 cut_marg.set_yticks([])
 loop_marg.set_xticks([])
 loop_marg.set_yticks([])

@@ -10,7 +10,15 @@ vdj.viz.plotting_style()
 data = pd.read_csv('../../data/compiled_looping_events.csv')
 data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
 
-# Load all cutting probability estimates takin ggaussian approximation.
+# Load the dwell times
+dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
+dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
+
+#%%
+# Compute the median dwell time
+median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
+
+# Load all cutting probability estimates taking gaussian approximation.
 cut_data = pd.read_csv('../../data/pooled_cutting_probability.csv')
 cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
 
@@ -31,17 +39,24 @@ ref_idx = ref[1]
 wt_val = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
+wt_dwell = median_dwell[median_dwell['mutant']=='WT12rss']['dwell_time_min'].values[0]
+
 for m in counts['mutant'].unique():
     seq = vdj.io.mutation_parser(m)
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
     cut_data.loc[cut_data['mutant']==m, 'n_muts'] = seq['n_muts']
+    median_dwell.loc[median_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
 
     # Find the x and mutation identity
     loc = np.argmax(ref_idx != seq['seq_idx'])
     mut = seq['seq'][loc]
     counts.loc[counts['mutant']==m, 'pos'] = loc
     counts.loc[counts['mutant']==m, 'base'] = mut
+    median_dwell.loc[median_dwell['mutant']==m, 'pos'] = loc
+    median_dwell.loc[median_dwell['mutant']==m, 'base'] = mut
 
+# Compute the difference in the dwell time
+median_dwell['rel_diff'] = median_dwell['dwell_time_min'] - wt_dwell
 for m in counts['mutant'].unique():
     _d = counts[counts['mutant']==m]
     if _d['loops_per_bead'].values[0] < wt_val:
@@ -54,6 +69,7 @@ for m in counts['mutant'].unique():
 points = counts[counts['n_muts'] == 1].copy()
 points_cut = cut_data[cut_data['n_muts'] == 1].copy()
 points_cut['diff'] = points_cut['mode'] - wt_cut
+points_dwell = median_dwell[median_dwell['n_muts']==1].copy()
 
 for m in points_cut['mutant'].unique():
         seq = vdj.io.mutation_parser(m)
@@ -93,22 +109,26 @@ post_hatch = {'12HeptC3G' : None,
 plot_offset = dict(zip(posterior_list[::-1], np.arange(0.0, 0.2, 0.2/(len(posterior_list)))))
 
 bar_width = 0.75
-fig, ax = plt.subplots(3, 1, figsize=(8.2, 7), facecolor='white')
+fig, ax = plt.subplots(4, 1, figsize=(8.2, 9), facecolor='white')
 plt.subplots_adjust(hspace=0.2)
 
 colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
 shift = {'A':0,  'T':0, 'C':0, 'G':0.0}
 points.sort_values('rel_diff', inplace=True)
 
-for j, p in enumerate([points, points_cut]): 
+for j, p in enumerate([points, points_dwell, points_cut]): 
         if j == 0:
                 a = ax[0]
                 v = 'rel_diff'
                 vshift = 0.019
-        else:
+        elif j == 1:
                 a = ax[1]
+                v = 'rel_diff'
+                vshift = 0.15
+        else:
+                a = ax[2]
                 v = 'diff'
-                vshift = 0.037
+                vshift = 0.04
 
         for g, d in p.groupby('pos'):
             d = d.copy()
@@ -159,8 +179,13 @@ line3 = lines.Line2D([7.5, 7.5], [0.32, 0.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 line4 = lines.Line2D([19.5, 19.5], [0.32, 0.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
+line5 = lines.Line2D([7.5, 7.5], [-2.2, -2.8], clip_on=False, alpha=1,
+                    linewidth=1, color='k')
+line6 = lines.Line2D([19.5, 19.5], [-2.2, -2.8], clip_on=False, alpha=1,
+                    linewidth=1, color='k')
 
-for n in range(0,2):
+
+for n in range(0,3):
         _ = ax[n].set_xticks(np.arange(1, 29))
         ax[n].set_xlim([0.5, 28.5])
         ax[n].vlines(0.5, -0.65, 1.0, linewidth=4, zorder=0) #, color='#f5e3b3')
@@ -169,23 +194,30 @@ for n in range(0,2):
                 ax[n].axvspan(i-0.5, i+0.5, color='white',
                                 alpha=0.65, linewidth=0, zorder=-1)
 
-_ = ax[1].set_xticklabels([])
+_ = ax[0].set_xticklabels([])
+_ = ax[2].set_xticklabels([])
+_ = ax[1].set_xticklabels(list(ref_seq))
 _ = ax[0].set_xticklabels(list(ref_seq))
 ax[0].add_line(line1)
 ax[0].add_line(line2)
 ax[0].add_line(line3)
 ax[0].add_line(line4)
+ax[1].add_line(line5)
+ax[1].add_line(line6)
 
 ax[0].text(-1.4, -0.35, 'reference\nsequence', ha='center', va='center', fontsize=10)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
-ax[1].set_ylim([-0.6, 0.8])
+ax[1].set_ylim([-2, 3])
+ax[2].set_ylim([-0.55, 0.7])
 ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
-ax[0].set_ylabel('$\Delta$ loop frequency', fontsize=12)
-ax[1].set_ylabel('$\Delta$ cutting probability', fontsize=12)
+ax[2].set_xlim([0.7, 28.5])
+ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
+ax[1].set_ylabel('change in\ndwell time [min]', fontsize=12)
+ax[2].set_ylabel('change in\ncutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
 ax[0].set_title('Spacer         ') # Spaces are ad-hoc positioning
 ax[0].set_title('Nonamer', loc='right')
@@ -200,38 +232,41 @@ df_post.sort_values(['rank_index', 'probability'], ascending=True, inplace=True)
 df_post.drop('rank_index', 1, inplace=True)
 
 for mut, mut_posts in df_post.groupby('mutant'):
-        ax[2].fill_between(mut_posts['probability'] , plot_offset[mut],
+        ax[3].fill_between(mut_posts['probability'] , plot_offset[mut],
                         mut_posts['posterior'] + plot_offset[mut],
                         color=post_colors[mut], alpha=0.75, zorder=post_zorder[mut])
-        ax[2].plot(mut_posts['probability'], mut_posts['posterior'] + plot_offset[mut],
+        ax[3].plot(mut_posts['probability'], mut_posts['posterior'] + plot_offset[mut],
                         color='white', zorder=post_zorder[mut])
-        ax[2].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0, zorder=post_zorder[mut])
+        ax[3].axhline(plot_offset[mut], 0, 1.0, color=post_colors[mut], alpha=1.0, zorder=post_zorder[mut])
         if mut=='WT12rss':
                 text = 'reference'
         else:
                 text = mut
-        ax[2].text(0.95 - posterior_shift[mut], plot_offset[mut], text, backgroundcolor='#ffffff', 
+        ax[3].text(0.95 - posterior_shift[mut], plot_offset[mut], text, backgroundcolor='#ffffff', 
                 fontsize=10, color=post_colors[mut], ha="right", va="center",
                 zorder=post_zorder[mut] + 1)
-ax[2].set_facecolor('white')
-ax[2].set_xlabel('probability of cutting')
-ax[2].set_ylim([-0.025, 0.26])
-ax[2].set_xlim([0.0, 1.0])
-ax[2].set_yticklabels([])
+ax[3].set_facecolor('white')
+ax[3].set_xlabel('probability of cutting')
+ax[3].set_ylim([-0.025, 0.26])
+ax[3].set_xlim([0.0, 1.0])
+ax[3].set_yticklabels([])
 
 # Try adding an annotation. THis may be tricky.
-ax[2].vlines(0.51,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='k')
-ax[2].hlines(plot_offset['WT12rss'] + 0.06, 0.49, 0.51, color='k')
-ax[2].hlines(plot_offset['WT12rss'], 0.49, 0.51, color='k')
-ax[2].text(0.512, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
+ax[3].vlines(0.51,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='k')
+ax[3].hlines(plot_offset['WT12rss'] + 0.06, 0.49, 0.51, color='k')
+ax[3].hlines(plot_offset['WT12rss'], 0.49, 0.51, color='k')
+ax[3].text(0.512, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
 
 # Add Figure Panels. 
-fig.text(0.005, 0.9, '(A)')
-fig.text(0.005, .6, '(B)')
-fig.text(0.005, .35, '(C)')
+# fig.text(0.005, 0.9, '(A)')
+# fig.text(0.005, .6, '(B)')
+# fig.text(0.005, .35, '(C)')
 plt.savefig('./point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
 
+
+
+#%%
 
 
 #%%
