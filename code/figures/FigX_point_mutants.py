@@ -53,6 +53,7 @@ for m in counts['mutant'].unique():
 # Keep the single point mutants
 points = counts[counts['n_muts'] == 1].copy()
 points_cut = cut_data[cut_data['n_muts'] == 1].copy()
+points_cut['diff'] = points_cut['mode'] - wt_cut
 
 for m in points_cut['mutant'].unique():
         seq = vdj.io.mutation_parser(m)
@@ -95,69 +96,68 @@ bar_width = 0.75
 fig, ax = plt.subplots(3, 1, figsize=(8.2, 7), facecolor='white')
 plt.subplots_adjust(hspace=0.2)
 
-# Isolate cut information with few beads for points_cut
-# low_cut = points_cut[points_cut['n_beads']<=20].copy()
-# high_cut = points_cut[points_cut['n_beads']>=20].copy()
-
 colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
-# shift = {'A':0.3,  'T':0.3, 'C':-0.10, 'G':0.10}
 shift = {'A':0,  'T':0, 'C':0, 'G':0.0}
 points.sort_values('rel_diff', inplace=True)
-for g, d in points.groupby('pos'):
-    d = d.copy()
-    if len(d) == 1:
-        base = d['base'].unique()[0]
-        ax[0].plot(g + 1, d['rel_diff'], marker='o', color=colors[base], lw=0.75, 
-                ms=10, linestyle='none', label='__nolegend__', 
-                markerfacecolor='white')
-        ax[0].plot(g + 1, d['rel_diff'], marker=f'${base}$', color=colors[base], markeredgewidth=0.5,
-                    ms=5, linestyle='none', label='__nolegend__')
-    
-        ax[0].vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
-    else:
-        zorder = 1
-        d['abs_rel_diff'] = np.sort(d['rel_diff'])
-        d = d.sort_values('abs_rel_diff')
-        for i in range(len(d)):
-            _d = d.iloc[i]
-            base = _d['base'].unique()[0]
-            ax[0].vlines(g + 1, 0, _d['rel_diff'], color=colors[base], lw=1.5, 
-                        label='__nolegend__', zorder=zorder)
-            ax[0].plot(g + 1, _d['rel_diff'], marker='o', color=colors[base], lw=0.75, 
-                ms=10, linestyle='none', label='__nolegend__', 
-                markerfacecolor='white', zorder=zorder)
-            ax[0].plot(g + 1, _d['rel_diff'], marker=f'${base}$', 
-                      color=colors[base], markeredgewidth=0.5, ms=5, 
-                      linestyle='none', label='__nolegend__', zorder=zorder)
-            zorder += 1
- 
 
+for j, p in enumerate([points, points_cut]): 
+        if j == 0:
+                a = ax[0]
+                v = 'rel_diff'
+                vshift = 0.019
+        else:
+                a = ax[1]
+                v = 'diff'
+                vshift = 0.037
 
+        for g, d in p.groupby('pos'):
+            d = d.copy()
+            if len(d) == 1:
+                base = d['base'].unique()
+                if type(base) != str:
+                        base = base[0]
+                a.plot(g + 1, d[v], marker='o', color=colors[base], lw=0.75, 
+                        ms=10, linestyle='none', label='__nolegend__', 
+                        markerfacecolor='white', alpha=0.8)
+                if (base == 'T') | (base == 'A'):
+                        shift = 0.05
+                else:
+                        shift = 0 
+                a.annotate(base , xy=(g + 0.78 + shift, d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
+                            size=9,  label='__nolegend__')
+                a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
+            else:
+                zorder = len(d) + 2 
+                d[f'abs_{v}'] = np.abs(d[v])
+                d.sort_values(f'abs_{v}', inplace=True)
+                for i in range(len(d)):
+                    _d = d.iloc[i]
+                    base = _d['base']
+                    if type(base) != str:
+                            base = base[0]
+                    a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
+                                label='__nolegend__', zorder=zorder)
+                    if (base == 'T') | (base == 'A'):
+                        shift = 0.05
+                    else:
+                        shift = 0 
         
-# for g, d in points_cut.groupby(['base']):
-#     ax[1].plot(d['pos'] + 1, d['mode']-wt_cut, marker='o', color=colors[g[0]], lw=.75,
-#                 ms=10, linestyle='none', label=g, markerfacecolor='white')
-#     ax[1].plot(d['pos'] + 1, d['mode']-wt_cut, marker=f'${g}$', color=colors[g[0]], markeredgewidth=0.5,
-#                 ms=5, linestyle='none', label=g)
+                    a.plot(g + 1, _d[v], marker='o', color=colors[base], lw=0.75, 
+                        ms=10, linestyle='none', label='__nolegend__', 
+                        markerfacecolor='white', zorder=zorder, alpha=0.8)
+                    a.annotate(base , xy=(g + 0.78 + shift, _d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
+                           size=9,  label='__nolegend__', zorder=zorder)
 
-#     ax[1].vlines(d['pos'] + 1, 0, d['mode']-wt_cut, color=colors[g[0]], 
-#                 label='__nolegend__', linewidth=1.5)
-
-# Plot HeptT6A:
-# for g, d in low_cut.groupby(['base']):
-#         ax[1].plot(d['pos'] + shift[g] + 1, d['mode']-wt_cut, marker='o', color=colors[g], lw=1.5,
-#                         ms=7, linestyle='none', label=g, alpha=0.3)
-#         ax[1].vlines(d['pos'] + shift[g] + 1, 0, d['mode']-wt_cut, color=colors[g], lw=1.5,
-#                         label='__nolegend__', alpha=0.3, linewidth=2)
-
+                    zorder -= 1
+ 
 # Previous y positions were -0.84 and -0.72
 line1 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 line2 = lines.Line2D([19.5, 19.5], [-0.4, -0.32], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line3 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
+line3 = lines.Line2D([7.5, 7.5], [0.32, 0.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line4 = lines.Line2D([19.5, 19.5], [-0.4, -0.32], clip_on=False, alpha=1,
+line4 = lines.Line2D([19.5, 19.5], [0.32, 0.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
 for n in range(0,2):
@@ -173,22 +173,24 @@ _ = ax[1].set_xticklabels([])
 _ = ax[0].set_xticklabels(list(ref_seq))
 ax[0].add_line(line1)
 ax[0].add_line(line2)
+ax[0].add_line(line3)
+ax[0].add_line(line4)
 
 ax[0].text(-1.4, -0.35, 'reference\nsequence', ha='center', va='center', fontsize=10)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.3, 0.3])
-ax[1].set_ylim([-0.5, 0.5])
-ax[0].set_xlim([0.5, 28.5])
-ax[1].set_xlim([0.5, 28.5])
-ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
-ax[1].set_ylabel('change in cut\nprobability', fontsize=12)
+ax[1].set_ylim([-0.6, 0.8])
+ax[0].set_xlim([0.7, 28.5])
+ax[1].set_xlim([0.7, 28.5])
+ax[0].set_ylabel('$\Delta$ loop frequency', fontsize=12)
+ax[1].set_ylabel('$\Delta$ cutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
-ax[0].set_title('Spacer')
+ax[0].set_title('Spacer         ') # Spaces are ad-hoc positioning
 ax[0].set_title('Nonamer', loc='right')
-# ax[0].spines['left'].set_visible(True)
-# ax[1].spines['left'].set_visible(True)
+ax[0].spines['left'].set_visible(False)
+ax[1].spines['left'].set_visible(False)
 
 df_post = cut_posts.loc[cut_posts['mutant'].isin(posterior_list)]
 
@@ -222,9 +224,14 @@ ax[2].vlines(0.51,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='
 ax[2].hlines(plot_offset['WT12rss'] + 0.06, 0.49, 0.51, color='k')
 ax[2].hlines(plot_offset['WT12rss'], 0.49, 0.51, color='k')
 ax[2].text(0.512, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
+
+# Add Figure Panels. 
+fig.text(0.005, 0.9, '(A)')
+fig.text(0.005, .6, '(B)')
+fig.text(0.005, .35, '(C)')
 plt.savefig('./point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
-#%%
+
 
 
 #%%
