@@ -20,12 +20,12 @@ stats = stats[stats['salt']=='Mg']
 
 # select only the mutants of interest
 endogenous = ['WT12rss', 'V19-93', 'V5-43'] 
-heptamer = ['12HeptA4T', '12HeptG7A', '12HeptC3T']
-spacer = ['12SpacG11T', '12SpacC4T', '12SpacA12C']
-nonamer = ['12NonA1G', '12NonC8G', '12NonA3C']
+heptamer = ['12HeptC3T', '12HeptA4T', '12HeptG7A']
+spacer = ['12SpacC4T', '12SpacG11T', '12SpacA12C']
+nonamer = ['12NonA1G', '12NonA3C', '12NonC8G']
 
 rows = [endogenous, heptamer, spacer, nonamer]
-colors = ['', 'tomato', 'dodgerblue', 'rebeccapurple']
+colors = ['gray', 'tomato', 'dodgerblue', 'rebeccapurple']
 
 DEADFILTER = 21 / 60
 time = np.linspace(0, 60, 500) -  DEADFILTER
@@ -50,13 +50,13 @@ for i in range(4):
     ax[i, 0].set_ylabel('cumulative\ndistribution', fontsize=8)
 
 # Add row labels. 
-fig.text(-0.05, 0.85, 'Endogenous', rotation='vertical', color='slategrey', 
+fig.text(-0.05, 0.73, 'Endogenous', rotation='vertical', color='slategrey', 
          fontsize=9)
-fig.text(-0.05, 0.63, 'Heptamer', rotation='vertical', color='tomato', 
+fig.text(-0.05, 0.55, 'Heptamer', rotation='vertical', color='tomato', 
          fontsize=9)
-fig.text(-0.05, 0.415, 'Spacer', rotation='vertical', color='dodgerblue', 
+fig.text(-0.05, 0.37, 'Spacer', rotation='vertical', color='dodgerblue', 
          fontsize=9)
-fig.text(-0.05, 0.23, 'Nonamer', rotation='vertical', color='rebeccapurple', 
+fig.text(-0.05, 0.16, 'Nonamer', rotation='vertical', color='rebeccapurple', 
          fontsize=9)
 fig.text(-0.12, 0.87, '(A)', fontsize=9)
 fig.text(-0.12, 0.67, '(B)', fontsize=9)
