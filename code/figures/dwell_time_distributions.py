@@ -34,17 +34,35 @@ time = np.linspace(0, 60, 500) -  DEADFILTER
 #%%
 # Set up the figure canvas
 fig, ax = plt.subplots(4, 3, figsize=(4.5, 5), sharex=True, sharey=True)
+
+# Format the axes
 for a in ax.ravel():
     a.xaxis.set_tick_params(labelsize=8)
     a.yaxis.set_tick_params(labelsize=8)
     a.set_xscale('log')
-    a.set_ylim([0, 1])
-    a.set_xlim([DEADFILTER, 60])
-    
+    a.set_ylim([0, 1.1])
+    a.set_xlim([DEADFILTER, 80])
+
+# Add axis labels
 for i in range(3):
     ax[-1,i].set_xlabel('dwell time [min]', fontsize=8)
 for i in range(4):
     ax[i, 0].set_ylabel('cumulative\ndistribution', fontsize=8)
+
+# Add row labels. 
+fig.text(-0.05, 0.85, 'Endogenous', rotation='vertical', color='slategrey', 
+         fontsize=9)
+fig.text(-0.05, 0.63, 'Heptamer', rotation='vertical', color='tomato', 
+         fontsize=9)
+fig.text(-0.05, 0.415, 'Spacer', rotation='vertical', color='dodgerblue', 
+         fontsize=9)
+fig.text(-0.05, 0.23, 'Nonamer', rotation='vertical', color='rebeccapurple', 
+         fontsize=9)
+fig.text(-0.12, 0.87, '(A)', fontsize=9)
+fig.text(-0.12, 0.67, '(B)', fontsize=9)
+fig.text(-0.12, 0.47, '(C)', fontsize=9)
+fig.text(-0.12, 0.27, '(D)', fontsize=9)
+
 
 
 # Plot the observed dwell times. 
@@ -57,16 +75,17 @@ for i, row in enumerate(rows):
         high = mut_stats[mut_stats['parameter']=='tau']['hpd_max'].values[0]
 
         # Compute the empirical CDF
-        x = np.sort(mut_data['dwell_time_min'] - DEADFILTER)
-        y = np.arange(0, len(x), 1) / len(x)
-
+        x = list(np.sort(mut_data['dwell_time_min'] - DEADFILTER))
+        y = list(np.arange(0, len(x), 1) / len(x))
+        x.append(x[-1])
+        y.append(1)
         # Plot the steps.
         ax[i, j].step(x, y, color='k', lw=1)
 
         # Compute the fit
         low= 1 - np.exp(-(time - DEADFILTER)/low)
         high = 1 - np.exp(-(time - DEADFILTER)/high)
-        ax[i, j].fill_between(time, low, high, color=colors[i], alpha=0.75)
+        ax[i, j].fill_between(time, low, high, color=colors[i], alpha=0.5)
 
         # Add the titles
         if mut == 'WT12rss':
@@ -80,7 +99,9 @@ for i, row in enumerate(rows):
         else:
             title = mut
         ax[i, j].set_title(title, fontsize=8, y=0.95)
-#%%
-data.groupby(['mutant']).count()
+
+ax[0,0].set_title('V4-57-1', fontsize=8, y=0.95)
+plt.savefig('../figures/FigX_nonexponential_distributions.pdf', 
+            facecolor='white', bbox_inches='tight')
 
 #%%
