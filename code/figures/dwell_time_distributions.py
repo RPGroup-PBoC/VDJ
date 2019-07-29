@@ -11,26 +11,76 @@ vdj.viz.plotting_style()
 # load the dwell time data
 data = pd.read_csv('../../data/compiled_dwell_times.csv')
 data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
-ref = d[d['mutant']=='WT12rss']
 
 # Load the fitting statistics. 
 samps = pd.read_csv('../../data/expon_samples.csv')
-samps = samps[(samps['mutant']=='WT12rss') & (samps['salt']=='Mg')]
+samps = samps[samps['salt']=='Mg']
 stats = pd.read_csv('../../data/expon_summary.csv')
-stats = stats[(stats['mutant']=='WT12rss') & (stats['salt']=='Mg')]
+stats = stats[stats['salt']=='Mg']
+
+# select only the mutants of interest
+endogenous = ['WT12rss', 'V19-93', 'V5-43'] 
+heptamer = ['12HeptA4T', '12HeptG7A', '12HeptC3T']
+spacer = ['12SpacG11T', '12SpacC4T', '12SpacA12C']
+nonamer = ['12NonA1G', '12NonC8G', '12NonA3C']
+
+rows = [endogenous, heptamer, spacer, nonamer]
+colors = ['', 'tomato', 'dodgerblue', 'rebeccapurple']
+
+DEADFILTER = 21 / 60
+time = np.linspace(0, 60, 500) -  DEADFILTER
+
 
 #%%
 # Set up the figure canvas
-fig, ax = plt.subplots(1, 2, figsize=(4.5, 2))
-for a in ax:
+fig, ax = plt.subplots(4, 3, figsize=(4.5, 5), sharex=True, sharey=True)
+for a in ax.ravel():
     a.xaxis.set_tick_params(labelsize=8)
     a.yaxis.set_tick_params(labelsize=8)
-ax[1].set_xscale('log')
-ax[0].set_yscale('log')
+    a.set_xscale('log')
+    a.set_ylim([0, 1])
+    a.set_xlim([DEADFILTER, 60])
+    
+for i in range(3):
+    ax[-1,i].set_xlabel('dwell time [min]', fontsize=8)
+for i in range(4):
+    ax[i, 0].set_ylabel('cumulative\ndistribution', fontsize=8)
 
-ax[0].hist(ref['dwell_time_min'], density=True, bins=30, color='slategrey', alpha=0.75)
-x = np.sort(ref['dwell_time_min'])
-y = np.arange(0, len(x), 1) / len(x)
-ax[1].step(x, y, '-', color='w', lw=2, label='__nolegend__')
-ax[1].step(x, y, '-', color='slategrey', lw=1.25, )
+
+# Plot the observed dwell times. 
+for i, row in enumerate(rows):
+    for j, mut in enumerate(row):
+        # Isolate the mutant
+        mut_data = data[data['mutant']==mut]
+        mut_stats = stats[stats['mutant']==mut]
+        low = mut_stats[mut_stats['parameter']=='tau']['hpd_min'].values[0]
+        high = mut_stats[mut_stats['parameter']=='tau']['hpd_max'].values[0]
+
+        # Compute the empirical CDF
+        x = np.sort(mut_data['dwell_time_min'] - DEADFILTER)
+        y = np.arange(0, len(x), 1) / len(x)
+
+        # Plot the steps.
+        ax[i, j].step(x, y, color='k', lw=1)
+
+        # Compute the fit
+        low= 1 - np.exp(-(time - DEADFILTER)/low)
+        high = 1 - np.exp(-(time - DEADFILTER)/high)
+        ax[i, j].fill_between(time, low, high, color=colors[i], alpha=0.75)
+
+        # Add the titles
+        if mut == 'WT12rss':
+            title = 'V4-57-1'
+        if 'Hept' in mut:
+            title = f"Heptamer {mut.split('Hept')[-1]}"
+        elif 'Spac' in mut:
+            title = f'Spacer {mut.split("Spac")[-1]}'
+        elif 'Non' in mut:
+            title = f'Nonamer {mut.split("Non")[-1]}'
+        else:
+            title = mut
+        ax[i, j].set_title(title, fontsize=8, y=0.95)
+#%%
+data.groupby(['mutant']).count()
+
 #%%
