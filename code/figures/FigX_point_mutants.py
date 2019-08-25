@@ -148,8 +148,8 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 if j==2:
                         a.vlines(g + 1, d['diff']-d['std'], d['diff']+d['std'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
-                else:
-                        a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
+#                else:
+#                        a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
             else:
                 zorder = len(d) + 2 
                 d[f'abs_{v}'] = np.abs(d[v])
@@ -163,9 +163,9 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                             a.vlines(g + 1, _d[v] - _d['std'], _d[v]+_d['std'],
                                      color=colors[base], lw=1.5, label='__nolegend__',
                                      zorder=zorder, alpha=0.5)
-                    else:
-                            a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
-                                label='__nolegend__', zorder=zorder)
+#                    else:
+#                            a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
+#                                label='__nolegend__', zorder=zorder)
                     if (base == 'T') | (base == 'A'):
                         shift = 0.05
                     else:
@@ -227,7 +227,7 @@ ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
 ax[2].set_xlim([0.7, 28.5])
 ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
-ax[1].set_ylabel('change in\ndwell time [min]', fontsize=12)
+ax[1].set_ylabel('change in median\ndwell time [min]', fontsize=12)
 ax[2].set_ylabel('change in\ncutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
 ax[0].set_title('Spacer         ') # Spaces are ad-hoc positioning
