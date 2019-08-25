@@ -92,7 +92,7 @@ for g, d in endo_counts.groupby('mutant'):
     else:
             face = 'w'
  
-    ax[0].vlines(map[g], 0, d['loops_per_bead'], color='dodgerblue', lw=1)
+#    ax[0].vlines(map[g], 0, d['loops_per_bead'], color='dodgerblue', lw=1)
     ax[0].plot(map[g], d['loops_per_bead'], marker='o', markeredgecolor='dodgerblue', 
                 markerfacecolor=face, ms=5)
 
