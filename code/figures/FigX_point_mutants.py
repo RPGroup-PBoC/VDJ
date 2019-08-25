@@ -145,7 +145,11 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                         shift = 0 
                 a.annotate(base , xy=(g + 0.78 + shift, d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
                             size=9,  label='__nolegend__')
-                a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
+                if j==2:
+                        a.vlines(g + 1, d['diff']-d['std'], d['diff']+d['std'],
+                                color=colors[base], lw=1.5, label='__nolegend__')
+                else:
+                        a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
             else:
                 zorder = len(d) + 2 
                 d[f'abs_{v}'] = np.abs(d[v])
@@ -155,7 +159,12 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     base = _d['base']
                     if type(base) != str:
                             base = base[0]
-                    a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
+                    if j==2:
+                            a.vlines(g + 1, _d[v] - _d['std'], _d[v]+_d['std'],
+                                     color=colors[base], lw=1.5, label='__nolegend__',
+                                     zorder=zorder, alpha=0.5)
+                    else:
+                            a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
                                 label='__nolegend__', zorder=zorder)
                     if (base == 'T') | (base == 'A'):
                         shift = 0.05
@@ -169,6 +178,8 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                            size=9,  label='__nolegend__', zorder=zorder)
 
                     zorder -= 1
+
+ax[2].vlines(1, -1*wt_std, wt_std, colors='k', lw=2)
  
 # Previous y positions were -0.84 and -0.72
 line1 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
@@ -261,7 +272,7 @@ ax[3].text(0.512, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
 # fig.text(0.005, 0.9, '(A)')
 # fig.text(0.005, .6, '(B)')
 # fig.text(0.005, .35, '(C)')
-plt.savefig('./point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
+plt.savefig('./FigX_point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
 
 

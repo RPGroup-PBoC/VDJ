@@ -14,12 +14,21 @@ dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
 loops = pd.read_csv('../../data/compiled_looping_events.csv')
 loops = loops[(loops['salt']=='Mg') & (loops['hmgb1']==80)]
 
-#%% Compute the median dwell time and loops per bead
+#%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
+dwell_25 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.25).reset_index()
+dwell_75 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.75).reset_index()
+dwell_quartiles = pd.DataFrame()
+dwell_quartiles['mutant'] = median_dwell['mutant']
+dwell_quartiles['median_dwell_min'] = median_dwell['dwell_time_min']
+dwell_quartiles['quartile_low'] = dwell_25['dwell_time_min']
+dwell_quartiles['quartile_high'] = dwell_75['dwell_time_min']
+
 counts = loops.groupby(['mutant'])[['n_loops']].agg(('sum', 'count')).reset_index()
 counts['loops_per_bead'] = counts['n_loops']['sum'] / counts['n_loops']['count']
+
 cuts.rename(columns={'mode':'mean_p_cut'}, inplace=True)
-dfs = [counts, median_dwell, cuts]
+dfs = [counts, dwell, cuts]
 valid_dfs = [[], [], []]
 for i, d in enumerate(dfs):
     d = d.copy()
@@ -56,7 +65,7 @@ for a in ax:
 ax[-1].set_xticks(np.arange(1, 13))
 ax[-1].set_xticklabels(muts, rotation=90, fontsize=8)
 ax[0].set_ylabel('looping frequency', fontsize=8)
-ax[1].set_ylabel('median\ndwell time [min]', fontsize=8)
+ax[1].set_ylabel('dwell time [min]', fontsize=8)
 ax[2].set_ylabel('cutting probability', fontsize=8)
 
 # set limits
@@ -65,9 +74,9 @@ for a in ax:
 
 ax[0].set_yticks([0,0.1, 0.2, 0.3, 0.4, 0.5])
 ax[2].set_yticks([0, 0.2,  0.4, 0.6, 0.8, 1])
-ax[1].set_yticks([0, 1, 2, 3, 4, 5])
+ax[1].set_yticks([0, 4, 8, 12, 16, 20])
 ax[0].set_ylim([0, 0.5])
-ax[1].set_ylim([0, 5])
+ax[1].set_ylim([0, 20])
 ax[2].set_ylim([0, 1])
 
 # Add stripes to separate the endogenous mutants
@@ -88,18 +97,30 @@ for g, d in endo_counts.groupby('mutant'):
                 markerfacecolor=face, ms=5)
 
 
+"""# Boxplot
+dwell_endog = pd.DataFrame()
+for g, d in endo_dwell.groupby('mutant'):
+        bp = ax[1].boxplot(d['dwell_time_min'],positions=[map[g]],
+                        patch_artist=True)
+        for patch in bp['boxes']:
+                patch.set_facecolor('tomato')
+                patch.set_alpha(0.5)"""
 
 # Median dwell time
 for g, d in endo_dwell.groupby('mutant'):
-    if g == 'WT12rss':
-            face = 'tomato' 
-    else:
-            face = 'w'
- 
-    ax[1].vlines(map[g], 0, d['dwell_time_min'], color='tomato', lw=1)
-    ax[1].plot(map[g], d['dwell_time_min'], marker='o', markeredgecolor='tomato', 
-                markerfacecolor=face, ms=5)
+        if g == 'WT12rss':
+                face = 'tomato' 
+        else:
+                face = 'w'
 
+        quartiles = np.quantile(d['dwell_time_min'].values,
+                                [0.5, 0.25, 0.75])
+
+#        ax[1].vlines(map[g], 0, d['dwell_time_min'], color='tomato', lw=1)
+        ax[1].plot(map[g], quartiles[0], marker='o', markeredgecolor='tomato', 
+                markerfacecolor=face, ms=5)
+        ax[1].vlines(map[g], quartiles[0]-quartiles[1], quartiles[0]+quartiles[2],
+                        color='tomato', lw=2)
 
 # Cutting probability
 for g, d in endo_cuts.groupby('mutant'):
@@ -108,7 +129,7 @@ for g, d in endo_cuts.groupby('mutant'):
     else:
             face = 'w'
  
-    ax[2].vlines(map[g], 0, d['mean_p_cut'], color='rebeccapurple', lw=1)
+    ax[2].vlines(map[g], d['mean_p_cut']-d['std'], d['mean_p_cut']+d['std'], color='rebeccapurple', lw=1)
     ax[2].plot(map[g], d['mean_p_cut'], marker='o', markeredgecolor='rebeccapurple', 
                 markerfacecolor=face, ms=5)
 
