@@ -6,7 +6,7 @@ import bokeh.io
 import bokeh.plotting
 from bokeh import events
 from bokeh.models import (ColumnDataSource, Div, LinearAxis, CustomJS, 
-                          CDSView, Grid, GroupFilter, Band, Dropdown)
+                          CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool)
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
 from bokeh.embed import components
@@ -48,12 +48,16 @@ pooled_df = pd.DataFrame()
 rep_df = pd.DataFrame()
 for g, d in loops.groupby('mutant'):
     pooled_df = pooled_df.append({'mutant': g, 
-        'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx'])},
+        'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx']),
+        'n_beads':len(d['bead_idx']), 'n_loops':d['n_loops'].sum()},
         ignore_index=True)
     for _g, _d in d.groupby(['replicate']):
-        rep_df = rep_df.append({'mutant':g, 
-            'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx'])},
+        rep_df = rep_df.append({'mutant':g,
+            'loops_per_bead':_d['n_loops'].sum() / len(_d['bead_idx']),
+            'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum()},
             ignore_index=True)
+pooled_df['y'] = 0
+rep_df['y'] = np.random.normal(0,0.05, len(rep_df))
 #%%
 # ##############################################################################
 # GENERATE HISTOGRAMS OF DWELL TIMES 
@@ -98,7 +102,6 @@ invariant = ColumnDataSource(dict(pos=invar_pos,
 
 # Set up a source for the variant positions
 var_dict = {'pos':[], 'base':[], 'mutant':[], 'y':[]}
-seq_view = ColumnDataSource(var_dict)
 for g, d in df.groupby(['mutant']):
     mut_seq = list(seq[g][0])
     for i, b in enumerate(mut_seq):
@@ -108,49 +111,61 @@ for g, d in df.groupby(['mutant']):
             var_dict['y'].append(0)
             var_dict['mutant'].append(g)
 
-variant = ColumnDataSource(var_dict)
 
 #%%
 # ##############################################################################
 # SOURCE AND VIEW DEFINITION
 # ##############################################################################
 # Set up the dropdown with the mutations
-mut_sel = Select(value='', options=list(dwell_times['mutant'].unique()))
+menu = [ ("DFL 16.1-3'", 'DFL1613'), ("DFL 16.1-5'", 'DFL161'), 
+         ('V1-135', 'V1-135'), ('V9-120', 'V9-120'), ('V10-96', 'V10-96'),
+         ('V19-93', 'V19-93'), ('V4-57-1 (reference)', 'WT12rss'), 
+         ('V4-55', 'V4-55'), ('V5-43', 'V5-43'), ('V8-18', 'V8-18'), 
+         ('V6-17', 'V6-17'), ('V6-15', 'V6-15')]
+mut_sel = Dropdown(value='V4-57-1 (reference)', menu=menu)
 
 # Define the filter on the mutant props.
 mut_filter = GroupFilter(column_name="mutant", group=mut_sel.value)
 
 # Define the sources
+variant = ColumnDataSource(var_dict)
 dwell_source = ColumnDataSource(dwell_hist)
 cut_source = ColumnDataSource(cut_hist)
 post_source = ColumnDataSource(posteriors)
-pooled_loop_source = ColumnDataSource(pooled_df)
-rep_loop_source = ColumnDataSource(rep_df)
+pooled_source = ColumnDataSource(pooled_df)
+rep_source = ColumnDataSource(rep_df)
 
 # Define the Views
+seq_view = CDSView(source=variant, filters=[mut_filter])
 dwell_view = CDSView(source=dwell_source, filters=[mut_filter])
 cut_view = CDSView(source=cut_source, filters=[mut_filter])
-pooled_loop_view = CDSView(source=pooled_loop_source, filters=[mut_filter])
-rep_loop_view = CDSView(source=rep_loop_source, filters=[mut_filter])
-seq_view = CDSView(source=variant, filters=[mut_filter])
+pooled_loop_view = CDSView(source=pooled_source, filters=[mut_filter])
+rep_loop_view = CDSView(source=rep_source, filters=[mut_filter])
 post_view = CDSView(source=post_source, filters=[mut_filter])
+
 
 #%% 
 # ##############################################################################
 # DEFINE THE CANVASES
 # ##############################################################################
-ax_seq = bokeh.plotting.figure(height=40, y_range=[0, 0.1])
-ax_loop = bokeh.plotting.figure(height=100, 
-                                x_axis_label='paired complexes per bead')
+ax_seq = bokeh.plotting.figure(height=40, y_range=[0, 0.1], tools=[''])   
+ax_loop = bokeh.plotting.figure(height=120, 
+                                x_axis_label='paired complexes per bead',
+                                x_range=[0, 0.8], y_range=[-0.5, 0.5], tools=[''])
 ax_dwell = bokeh.plotting.figure(height=200, x_axis_label='paired complex dwell time [min]',
-                                y_axis_label='number of observations')
+                                y_axis_label='number of observations', tools=[''])
 ax_cut = bokeh.plotting.figure(height=200, x_axis_label='cutting probability',
-                               y_axis_label='posterior probability')
+                               y_axis_label='posterior probability', tools=[''])
 
 # Set features of the plots
 ax_seq.xaxis.visible = False
 ax_seq.yaxis.visible = False
 ax_seq.grid.visible = False
+ax_loop.yaxis.visible = False
+
+# Add hover tooltips to the loop plot 
+tooltips = [('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
+ax_loop.add_tools(HoverTool(tooltips=tooltips))
 
 # Define the layout
 lay = bokeh.layouts.column(mut_sel, ax_seq, ax_loop, ax_dwell, ax_cut) 
@@ -162,15 +177,18 @@ lay = bokeh.layouts.column(mut_sel, ax_seq, ax_loop, ax_dwell, ax_cut)
 invar_glyph = bokeh.models.glyphs.Text(x='pos', y='y', text='base', text_font='Courier',
                                     text_color='#95a3b2', text_font_size='28px')
 var_glyph = bokeh.models.glyphs.Text(x='pos', y='y', text='base', text_font='Courier',
-                                    text_color='skyblue', text_font_size='28px')
+                                    text_color='dodgerblue', text_font_size='28px', 
+                                    text_alpha=0.8)
 ax_seq.add_glyph(invariant, invar_glyph)
 ax_seq.add_glyph(variant, var_glyph, view=seq_view)
 
 # Loops per bead
-ax_loop.circle(x='loops_per_bead', y=0, source=rep_loop_source,
-                view=rep_loop_view, color='slategray', legend='replicate')
-ax_loop.circle(x='loops_per_bead', y=0, source=pooled_loop_source,
-                view=pooled_loop_view, color='dodgerblue', legend='pooled')
+ax_loop.x(x='loops_per_bead', y='y', source=rep_source,
+                view=rep_loop_view, color='slategray', legend='replicate',
+                alpha=0.5, size=8)
+ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source,
+                view=pooled_loop_view, color='dodgerblue', legend='pooled',
+                size=10, fill_alpha=0.5)
 
 # Add the histogram
 ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
@@ -189,17 +207,27 @@ ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='dodgerblue',
 # ##############################################################################
 # CALLBACK DEFINITION
 # ##############################################################################
-with open('endogenous_explorer.js') as f:
-    cb = f.read()
-
 # Set up the callback
-callback = CustomJS(code=cb, args={'sel':mut_sel, 'seq_view':seq_view, 'seqs':variant,
-                          'filter':mut_filter, 'dwell_view':dwell_view, 'cut_view':cut_view,
-                          'cut_hist':cut_source,
-                          'dwell_hist':dwell_source, 'post_view':post_view,
-                          'post':post_source})
-mut_sel.js_on_change('value', callback)
+args = {'sel':mut_sel, 'filter':mut_filter,
+        'seq_view':seq_view, 'pooled_view':pooled_loop_view, 
+        'rep_view':rep_loop_view, 'dwell_view':dwell_view, 'cut_view':cut_view,
+        'post_view':post_view,
+        'seq_data':variant, 'pooled_data':pooled_source, 'rep_data':rep_source,
+        'dwell_data':dwell_source, 'cut_data':cut_source, 'post_data':post_source}
+callback = CustomJS(args=args, code="""
+                    var mut = sel.value;
+                    filter.group = mut;
+                    var views = [seq_view, pooled_view, rep_view, dwell_view, 
+                                cut_view, post_view];
+                    var data = [seq_data, pooled_data, rep_data, dwell_data, 
+                                cut_data, post_data];
+                    for (var i = 0; i < views.length; i++) { 
+                          views[i].filters[0] = filter;
+                          data[i].data.view = views[i];
+                         data[i].change.emit();}
+                    """)
 
+mut_sel.js_on_change('value', callback)
 
 #%% 
 # ##############################################################################
@@ -242,3 +270,6 @@ theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
 bokeh.io.save(lay)
 
+
+
+#%%
