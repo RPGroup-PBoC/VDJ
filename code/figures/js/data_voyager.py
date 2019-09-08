@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#%%
 """
 Builds a Bokeh appelet for exploring the data and visualizing the inference
 statistics.
@@ -32,6 +33,7 @@ fates = fates[fates['mutant'] != 'analysis']
 samples = pd.read_csv('../../../data/pooled_model_samples.csv')
 stats = pd.read_csv('../../../data/pooled_model_summary.csv')
 
+#%%
 # Compute cdf for the dwell time distributions for each mutant
 dwell_cdfs = []
 for g, d in samples.groupby(['mutant']):
@@ -179,7 +181,7 @@ floop_rep['y'] = np.random.normal(0, 0.01, len(floop_rep))
 # ##############################################################################
 # FIGURE SOURCE AND VIEW DEFINITIONS
 # ##############################################################################
-bokeh.plotting.output_file('./data_voyager.html')
+boeh.plotting.output_file('./data_voyager.html')
 
 # Instantiate the dropdown menu
 selector = Select(title='Mutant', value='WT12rss', 
