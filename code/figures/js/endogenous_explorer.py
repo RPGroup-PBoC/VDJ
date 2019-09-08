@@ -122,7 +122,8 @@ menu = [ ("DFL 16.1-3'", 'DFL1613'), ("DFL 16.1-5'", 'DFL161'),
          ('V19-93', 'V19-93'), ('V4-57-1 (reference)', 'WT12rss'), 
          ('V4-55', 'V4-55'), ('V5-43', 'V5-43'), ('V8-18', 'V8-18'), 
          ('V6-17', 'V6-17'), ('V6-15', 'V6-15')]
-mut_sel = Dropdown(value='V4-57-1 (reference)', menu=menu)
+mut_sel = Dropdown(label='Select Endogenous 12RSS', value='V4-57-1 (reference)', 
+                    menu=menu, button_type='primary')
 
 # Define the filter on the mutant props.
 mut_filter = GroupFilter(column_name="mutant", group=mut_sel.value)
@@ -148,7 +149,7 @@ post_view = CDSView(source=post_source, filters=[mut_filter])
 # ##############################################################################
 # DEFINE THE CANVASES
 # ##############################################################################
-ax_seq = bokeh.plotting.figure(height=40, y_range=[0, 0.1], tools=[''])   
+ax_seq = bokeh.plotting.figure(height=60, y_range=[0, 0.1], tools=[''])   
 ax_loop = bokeh.plotting.figure(height=120, 
                                 x_axis_label='paired complexes per bead',
                                 x_range=[0, 0.8], y_range=[-0.5, 0.5], tools=[''])
@@ -157,19 +158,29 @@ ax_dwell = bokeh.plotting.figure(height=200, x_axis_label='paired complex dwell 
 ax_cut = bokeh.plotting.figure(height=200, x_axis_label='cutting probability',
                                y_axis_label='posterior probability', tools=[''])
 
+for a in [ax_seq, ax_loop, ax_dwell, ax_cut]:
+    a.toolbar.logo = None
 # Set features of the plots
 ax_seq.xaxis.visible = False
-ax_seq.yaxis.visible = False
+ax_seq.yaxis.visible = False 
+ax_seq.xgrid.visible = False
+ax_seq.ygrid.visible = False
+ax_seq.background_fill_color = None
+ax_seq.border_fill_color = None
+ax_seq.outline_line_color = None
 ax_seq.grid.visible = False
+ax_seq.title.text_font_style = 'bold'
 ax_loop.yaxis.visible = False
+mut_sel.js_link('value', ax_seq.title, 'text')
 
 # Add hover tooltips to the loop plot 
 tooltips = [('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
 ax_loop.add_tools(HoverTool(tooltips=tooltips))
 
 # Define the layout
-lay = bokeh.layouts.column(mut_sel, ax_seq, ax_loop, ax_dwell, ax_cut) 
-
+row = bokeh.layouts.row(ax_loop, ax_dwell, ax_cut)
+col = bokeh.layouts.column(mut_sel, ax_seq) 
+lay = bokeh.layouts.column(col,row)
 # ##############################################################################
 # POPULATE CANVASES
 # ############################################################################## 
@@ -184,7 +195,7 @@ ax_seq.add_glyph(variant, var_glyph, view=seq_view)
 
 # Loops per bead
 ax_loop.x(x='loops_per_bead', y='y', source=rep_source,
-                view=rep_loop_view, color='slategray', legend='replicate',
+                view=rep_loop_view, color='dodgerblue', legend='replicate',
                 alpha=0.5, size=8)
 ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source,
                 view=pooled_loop_view, color='dodgerblue', legend='pooled',
