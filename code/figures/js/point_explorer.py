@@ -27,7 +27,7 @@ dwell_ref = dwell_times[(dwell_times['mutant']=='WT12rss') &
 cut_ref = dwell_ref[dwell_ref['cut']==1]
 post_ref = posteriors[(posteriors['mutant']=='WT12rss') & 
                              (posteriors['hmgb1']==80) & (posteriors['salt']=='Mg')]
-loops_ref = loops[(loops['mutant']=='12WTrss') & 
+loops_ref = loops[(loops['mutant']=='WT12rss') & 
                     (loops['hmgb1']==80) & (loops['salt']=='Mg')]
 
 # Identify the endogenous muts
@@ -77,7 +77,7 @@ for g, d in loops_ref.groupby('mutant'):
             'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum()},
             ignore_index=True)
 pooled_ref['y'] = 0
-rep_ref['y'] = np.random.normal(0,0.05, len(rep_df))
+rep_ref['y] = np.random.normal(0,0.05, len(rep_df))
 
 # ##############################################################################
 # GENERATE HISTOGRAMS OF DWELL TIMES 
@@ -144,9 +144,31 @@ for g, d in dwell_times.groupby(['mutant']):
                 'base': base,
                 'diff': diff,
                 'med_dwell':med_dwell}, ignore_index=True)
-
-
 dwell_source = ColumnDataSource(dwell_mat)
+
+# ##############################################################################
+# COMPUTE THE DIFFERENCE IN LOOP FREQUENCY
+# ##############################################################################
+loops_ref = pooled_ref['loops_per_bead']
+for g, d in dwell_times.groupby(['mutant']):
+    mut_seq = vdj.io.mutation_parser(g)
+    if g != 'WT12rss':
+        # Parse the mutation
+        loc = np.where(mut_seq['seq_idx']!=ref_seq)[0][0]
+        base = mut_seq['seq'][loc]
+
+        # Compute the median dwell time
+        med_dwell = d['dwell_time_min'].median()
+        diff = med_dwell - median_dwell_ref
+        dwell_mat = dwell_mat.append(
+                {'mutant': g,
+                'pos': loc + 1,
+                'base_idx': nt_idx[base],
+                'base': base,
+                'diff': diff,
+                'med_dwell':med_dwell}, ignore_index=True)
+d
+
 
 # Set up a figure. 
 p = bokeh.plotting.figure(height=100)
