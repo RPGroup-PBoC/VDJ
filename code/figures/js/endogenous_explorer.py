@@ -101,62 +101,81 @@ invariant = ColumnDataSource(dict(pos=invar_pos,
                                   base=invar_base))
 
 # Set up a source for the variant positions
-var_dict = {'pos':[], 'base':[], 'mutant':[], 'y':[]}
+var_dict = {'pos':[], 'base':[], 'mutant':[], 'y1':[], 'y2':[]}
 for g, d in df.groupby(['mutant']):
     mut_seq = list(seq[g][0])
     for i, b in enumerate(mut_seq):
         if i not in invar_pos:
             var_dict['pos'].append(i)
             var_dict['base'].append(b)
-            var_dict['y'].append(0)
+            var_dict['y1'].append(1)
+            var_dict['y2'].append(2)
             var_dict['mutant'].append(g)
 
 
-#%%
+
 # ##############################################################################
 # SOURCE AND VIEW DEFINITION
 # ##############################################################################
 # Set up the dropdown with the mutations
-menu = [ ("DFL 16.1-3'", 'DFL1613'), ("DFL 16.1-5'", 'DFL161'), 
+menu = [ ("DFL16.1-3'", 'DFL1613'), ("DFL16.1-5'", 'DFL161'), 
          ('V1-135', 'V1-135'), ('V9-120', 'V9-120'), ('V10-96', 'V10-96'),
          ('V19-93', 'V19-93'), ('V4-57-1 (reference)', 'WT12rss'), 
          ('V4-55', 'V4-55'), ('V5-43', 'V5-43'), ('V8-18', 'V8-18'), 
-         ('V6-17', 'V6-17'), ('V6-15', 'V6-15')]
-mut_sel = Dropdown(label='Select Endogenous 12RSS', value='V4-57-1 (reference)', 
+         ('V6-17', 'V6-17'), ('V6-15', 'V6-15'), ('None ', 'nan')]
+mut_sel1 = Dropdown(label='Select Endogenous 12RSS', value="None", 
                     menu=menu, button_type='primary')
+mut_sel2 = Dropdown(label='Select Endogenous 12RSS', value="None", 
+                    menu=menu, button_type='danger')
 
 # Define the filter on the mutant props.
-mut_filter = GroupFilter(column_name="mutant", group=mut_sel.value)
+mut_filter1 = GroupFilter(column_name="mutant", group=mut_sel1.value)
+mut_filter2 = GroupFilter(column_name="mutant", group=mut_sel2.value)
 
 # Define the sources
-variant = ColumnDataSource(var_dict)
-dwell_source = ColumnDataSource(dwell_hist)
-cut_source = ColumnDataSource(cut_hist)
-post_source = ColumnDataSource(posteriors)
-pooled_source = ColumnDataSource(pooled_df)
-rep_source = ColumnDataSource(rep_df)
+variant1 = ColumnDataSource(var_dict)
+dwell_source1 = ColumnDataSource(dwell_hist)
+cut_source1 = ColumnDataSource(cut_hist)
+post_source1 = ColumnDataSource(posteriors)
+pooled_source1 = ColumnDataSource(pooled_df)
+rep_source1 = ColumnDataSource(rep_df)
+variant2 = ColumnDataSource(var_dict)
+dwell_source2 = ColumnDataSource(dwell_hist)
+cut_source2 = ColumnDataSource(cut_hist)
+post_source2 = ColumnDataSource(posteriors)
+pooled_source2 = ColumnDataSource(pooled_df)
+rep_source2 = ColumnDataSource(rep_df)
 
 # Define the Views
-seq_view = CDSView(source=variant, filters=[mut_filter])
-dwell_view = CDSView(source=dwell_source, filters=[mut_filter])
-cut_view = CDSView(source=cut_source, filters=[mut_filter])
-pooled_loop_view = CDSView(source=pooled_source, filters=[mut_filter])
-rep_loop_view = CDSView(source=rep_source, filters=[mut_filter])
-post_view = CDSView(source=post_source, filters=[mut_filter])
+seq_view1 = CDSView(source=variant1, filters=[mut_filter1])
+seq_view2 = CDSView(source=variant2, filters=[mut_filter2])
+dwell_view1 = CDSView(source=dwell_source1, filters=[mut_filter1])
+dwell_view2 = CDSView(source=dwell_source2, filters=[mut_filter2])
+cut_view1 = CDSView(source=cut_source1, filters=[mut_filter1])
+cut_view2 = CDSView(source=cut_source2, filters=[mut_filter2])
+pooled_loop_view1 = CDSView(source=pooled_source1, filters=[mut_filter1])
+pooled_loop_view2 = CDSView(source=pooled_source2, filters=[mut_filter2])
+rep_loop_view1 = CDSView(source=rep_source1, filters=[mut_filter1])
+rep_loop_view2 = CDSView(source=rep_source2, filters=[mut_filter2])
+post_view1 = CDSView(source=post_source1, filters=[mut_filter1])
+post_view2 = CDSView(source=post_source2, filters=[mut_filter2])
 
 
 #%% 
 # ##############################################################################
 # DEFINE THE CANVASES
 # ##############################################################################
-ax_seq = bokeh.plotting.figure(height=60, y_range=[0, 0.1], tools=[''])   
-ax_loop = bokeh.plotting.figure(height=120, 
-                                x_axis_label='paired complexes per bead',
-                                x_range=[0, 0.8], y_range=[-0.5, 0.5], tools=[''])
-ax_dwell = bokeh.plotting.figure(height=200, x_axis_label='paired complex dwell time [min]',
+ax_seq = bokeh.plotting.figure(height=100, y_range=[0, 4], tools=[''])   
+ax_loop = bokeh.plotting.figure(height=140, 
+                                x_axis_label='paired complexes per bead\n   ',
+                                x_range=[-0.05, 0.95], y_range=[-0.5, 0.5], tools=[''])
+ax_dwell = bokeh.plotting.figure(height=200, x_axis_label='paired complex dwell time [min]\n  ',
                                 y_axis_label='number of observations', tools=[''])
 ax_cut = bokeh.plotting.figure(height=200, x_axis_label='cutting probability',
                                y_axis_label='posterior probability', tools=[''])
+
+description1 = Div(text="""<center>Select an RSS</center>""")
+description2 = Div(text="""<center>Select an RSS</center>""")
 
 for a in [ax_seq, ax_loop, ax_dwell, ax_cut]:
     a.toolbar.logo = None
@@ -171,74 +190,150 @@ ax_seq.outline_line_color = None
 ax_seq.grid.visible = False
 ax_seq.title.text_font_style = 'bold'
 ax_loop.yaxis.visible = False
-mut_sel.js_link('value', ax_seq.title, 'text')
+
+# Add titles
+ax_loop.title.text = 'paired complex formation frequency'
+ax_dwell.title.text = 'paired complex dwell time distribution'
+ax_cut.title.text = 'paired complex cleavage probability'
 
 # Add hover tooltips to the loop plot 
-tooltips = [('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
+tooltips = [('mutant', '@mutant'), ('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
 ax_loop.add_tools(HoverTool(tooltips=tooltips))
 
 # Define the layout
-row = bokeh.layouts.row(ax_loop, ax_dwell, ax_cut)
-col = bokeh.layouts.column(mut_sel, ax_seq) 
-lay = bokeh.layouts.column(col,row)
-# ##############################################################################
-# POPULATE CANVASES
+selections = bokeh.layouts.row(mut_sel1, mut_sel2)
+descriptions = bokeh.layouts.row(description1, description2)
+lay = bokeh.layouts.column(selections, descriptions, bokeh.layouts.Spacer(), ax_loop, ax_dwell, ax_cut)
+lay.sizing_mode = 'scale_width'
+# ############################################################################## # POPULATE CANVASES
 # ############################################################################## 
 # Sequence
 invar_glyph = bokeh.models.glyphs.Text(x='pos', y='y', text='base', text_font='Courier',
                                     text_color='#95a3b2', text_font_size='28px')
-var_glyph = bokeh.models.glyphs.Text(x='pos', y='y', text='base', text_font='Courier',
+var_glyph1 = bokeh.models.glyphs.Text(x='pos', y='y1', text='base', text_font='Courier',
                                     text_color='dodgerblue', text_font_size='28px', 
                                     text_alpha=0.8)
+var_glyph2 = bokeh.models.glyphs.Text(x='pos', y='y2', text='base', text_font='Courier',
+                                    text_color='tomato', text_font_size='28px', 
+                                    text_alpha=0.8)
 ax_seq.add_glyph(invariant, invar_glyph)
-ax_seq.add_glyph(variant, var_glyph, view=seq_view)
+ax_seq.add_glyph(variant1, var_glyph1, view=seq_view1)
+ax_seq.add_glyph(variant2, var_glyph2, view=seq_view2)
 
 # Loops per bead
-ax_loop.x(x='loops_per_bead', y='y', source=rep_source,
-                view=rep_loop_view, color='dodgerblue', legend='replicate',
+ax_loop.triangle(x='loops_per_bead', y='y', source=rep_source1,
+                view=rep_loop_view1, color='dodgerblue', legend='replicate',
                 alpha=0.5, size=8)
-ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source,
-                view=pooled_loop_view, color='dodgerblue', legend='pooled',
+ax_loop.triangle(x='loops_per_bead', y='y', source=rep_source2,
+                view=rep_loop_view2, color='tomato', legend='replicate',
+                alpha=0.5, size=8)
+
+ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source1,
+                view=pooled_loop_view1, color='dodgerblue', legend='pooled',
                 size=10, fill_alpha=0.5)
+
+ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source2,
+                view=pooled_loop_view2, color='tomato', legend='pooled',
+                size=10, fill_alpha=0.5)
+ax_loop.legend.click_policy = 'hide'
 
 # Add the histogram
 ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
-               view=dwell_view, source=dwell_source, color='dodgerblue',
+               view=dwell_view1, source=dwell_source1, color='dodgerblue',
                alpha=0.5, legend="all PC events")
 ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
-               view=cut_view, source=cut_source, color='slategrey',
+               view=dwell_view2, source=dwell_source2, line_color='tomato',
+               alpha=0.5, fill_color=None, line_width=2.5, legend="all PC events")
+ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
+               view=cut_view1, source=cut_source1, hatch_color='navy',
                alpha=0.5, hatch_pattern='/', legend="cleavage events")
-
+ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
+               view=cut_view2, source=cut_source2, fill_color=None, hatch_color='firebrick',
+               alpha=0.5, hatch_pattern='\\', legend="cleavage events")
+ax_dwell.legend.click_policy = 'hide'
 # Cutting probability posterior
-ax_cut.line(x='probability', y='posterior', source=post_source, view=post_view, 
+ax_cut.line(x='probability', y='posterior', source=post_source1, view=post_view1, 
             color='dodgerblue')
 ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='dodgerblue',
-            fill_alpha=0.5, source=post_source, view=post_view)
-#
+            fill_alpha=0.5, source=post_source1, view=post_view1)
+ax_cut.line(x='probability', y='posterior', source=post_source2, view=post_view2, 
+            color='tomato')
+ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='tomato',
+            fill_alpha=0.5, source=post_source2, view=post_view2)
+
 # ##############################################################################
 # CALLBACK DEFINITION
 # ##############################################################################
 # Set up the callback
-args = {'sel':mut_sel, 'filter':mut_filter,
-        'seq_view':seq_view, 'pooled_view':pooled_loop_view, 
-        'rep_view':rep_loop_view, 'dwell_view':dwell_view, 'cut_view':cut_view,
-        'post_view':post_view,
-        'seq_data':variant, 'pooled_data':pooled_source, 'rep_data':rep_source,
-        'dwell_data':dwell_source, 'cut_data':cut_source, 'post_data':post_source}
-callback = CustomJS(args=args, code="""
-                    var mut = sel.value;
-                    filter.group = mut;
-                    var views = [seq_view, pooled_view, rep_view, dwell_view, 
-                                cut_view, post_view];
-                    var data = [seq_data, pooled_data, rep_data, dwell_data, 
-                                cut_data, post_data];
-                    for (var i = 0; i < views.length; i++) { 
-                          views[i].filters[0] = filter;
-                          data[i].data.view = views[i];
-                         data[i].change.emit();}
-                    """)
+args = {'sel1':mut_sel1, 'filter1':mut_filter1, 'sel2':mut_sel2, 'filter2':mut_filter2,
+        'seq_view1':seq_view1, 'seq_view2':seq_view2, 
+        'pooled_view1':pooled_loop_view1, 'pooled_view2':pooled_loop_view2, 
+        'rep_view1':rep_loop_view1, 'rep_view2':rep_loop_view2,
+        'dwell_view1':dwell_view1, 'dwell_view2':dwell_view2,
+        'cut_view1':cut_view1, 'cut_view2':cut_view2,
+        'post_view1':post_view1, 'post_view2':post_view2,
+        'seq_data1':variant1,  'seq_data2':variant2, 
+        'pooled_data1':pooled_source1, 'pooled_data2':pooled_source2, 
+        'rep_data1':rep_source1, 'rep_data2':rep_source2,
+        'dwell_data1':dwell_source1, 'dwell_data2':dwell_source2, 
+        'cut_data1':cut_source1, 'cut_data2':cut_source2, 
+        'post_data1':post_source1, 'post_data2':post_source2,
+        'description1':description1, 'description2':description2}
 
-mut_sel.js_on_change('value', callback)
+callback = CustomJS(args=args, code="""
+  var mut1 = sel1.value;
+  var mut2 = sel2.value;
+  filter1.group = mut1;
+  filter2.group = mut2;
+  var views1 = [seq_view1, pooled_view1, rep_view1, dwell_view1, cut_view1, post_view1]; 
+  var views2 = [seq_view2, pooled_view2, rep_view2, dwell_view2, cut_view2, post_view2];
+  var data1 = [seq_data1, pooled_data1, rep_data1, dwell_data1, cut_data1, post_data1];
+  var data2 = [seq_data2, pooled_data2, rep_data2, dwell_data2, cut_data2, post_data2];
+  for (var i = 0; i < views1.length; i++) { 
+       views1[i].filters[0] = filter1;
+       data1[i].data.view = views1[i];
+       data1[i].change.emit();}
+  for (var i = 0; i < views2.length; i++) { 
+       views2[i].filters[0] = filter2;
+       data2[i].data.view = views2[i];
+       data2[i].change.emit();}
+
+ // Set the descriptions of the sequences 
+if (mut1 === 'WT12rss') {
+     var desc1 = 'V4-57-1 (reference)';
+  }
+else if (mut1 === 'DFL161') {
+    var desc1 = "DFL16.1-5'";
+}
+else if (mut1 === 'DFL1613') {
+    var desc1 = "DFL16.1-3'";
+}
+else if (mut1 === 'nan') { 
+    var desc1 = "None Selected"; 
+}
+else { var desc1 = mut1}
+
+if (mut2 === 'WT12rss') {
+     var desc2 = 'V4-57-1 (reference)';
+  }
+else if (mut2 === 'DFL161') {
+    var desc2 = "DFL16.1-5'";
+}
+else if (mut2 === 'DFL1613') {
+    var desc1 = "DFL16.1-3'";
+}
+else if (mut2 === 'nan') {
+    var  desc2 = "None Selected";
+}
+else { var desc2 = mut2}
+
+  description1.text = "<span style='color: dodgerblue; font-size: 14pt; width: 50% margin: 0 auto;'>      " + desc1 + "    </span>"
+  description2.text = "<span style='color: tomato; font-size: 14pt;'>      " + desc2 + "     </span>"
+        """)
+
+mut_sel1.js_on_change('value', callback)
+mut_sel2.js_on_change('value', callback)
+
 
 #%% 
 # ##############################################################################
@@ -271,9 +366,10 @@ theme_json = {'attrs':
                'text_font': 'Helvetica'
             },
             'Title': {
-                'text_font_style': 'normal',
+                'text_font_style': 'bold',
                 'align': 'center',
                 'text_font': 'Helvetica',
+
                 'offset': 2,
             }}}
 
