@@ -229,7 +229,7 @@ ax_cut_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=['tap', '
 
 ax_cut = bokeh.plotting.figure(height=200, 
     x_axis_label='cleavage probability', y_axis_label='posterior probability',
-    tools=[''])
+    tools=[''], toolbar_location=None)
 
 
 # Insert interactivity
@@ -306,13 +306,15 @@ for a, t in zip([ax_loop_mat, ax_dwell_mat, ax_cut_mat], [loop_cb, dwell_cb, cut
     tap_event = a.select(type=TapTool)
     tap_event.callback = t
 
+endog_seq = vdj.io.endogenous_seqs()['WT12rss'][0]
 for a, s  in zip([ax_loop_mat, ax_dwell_mat, ax_cut_mat], [loop_source, dwell_source, pcut_source]):
     # hover = HoverTool(renderers=a, tooltips=tooltips, callback=hover_cb)
     # a.add_tools(hover)
+
     a.yaxis.ticker = [0, 1, 2, 3]
-    a.xaxis.ticker = np.arange(0, 29, 1)
+    a.xaxis.ticker = np.arange(0, len(endog_seq), 1)
     ylab = {int(i):nt_idx[i] for i in range(4)}
-    xlab = {int(i):b for i, b in zip(np.arange(0, 27, 1), str(vdj.io.endogenous_seqs()['WT12rss'][0]))}
+    xlab = {int(i):b for i, b in zip(np.arange(0, len(endog_seq), 1), list(endog_seq))}
     a.yaxis.major_label_overrides = ylab
     a.xaxis.major_label_overrides = xlab
 
