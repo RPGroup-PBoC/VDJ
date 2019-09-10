@@ -6,9 +6,11 @@ from bokeh.themes import Theme
 import bokeh.io
 import bokeh.plotting
 from bokeh import events
+from bokeh.events import Tap
 from bokeh.models import (ColumnDataSource, Div, LinearAxis, CustomJS, 
                           CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool,
-                          LinearColorMapper, TapTool, RadioButtonGroup)
+                          LinearColorMapper, TapTool, RadioButtonGroup,
+                          ColorBar, FixedTicker)
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select 
 from bokeh.embed import components
@@ -210,16 +212,19 @@ for g, d in pcuts.groupby(['mutant']):
 pcut_source = ColumnDataSource(pcut_mat)
 # %%
 # Set up the matrices
-ax_loop_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=[''])
+tooltips = [('mutation', '@mutant'), ('difference from ref.', '@diff')]
+ax_loop_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=['tap', 'hover'],
+            toolbar_location=None, tooltips=tooltips)
 ax_loop = bokeh.plotting.figure(height=120, x_axis_label='paired complexes per bead',
-            y_range=[-0.3, 0.8])
+            y_range=[-0.3, 0.8], x_range=[-0.1, 0.95], toolbar_location=None)
                                
-ax_dwell_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=[''])
-
+ax_dwell_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=['tap', 'hover'],
+                toolbar_location=None, tooltips=tooltips)
 ax_dwell = bokeh.plotting.figure(height=200, 
         x_axis_label='paired-complex dwell time [min]', y_axis_label='number of observations',
-        tools=[''])
-ax_cut_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=[''])
+        tools=[''], toolbar_location=None)
+ax_cut_mat = bokeh.plotting.figure(height=120, x_range=[-1, 28], tools=['tap', 'hover'],
+            toolbar_location=None, tooltips=tooltips)
                            
 
 ax_cut = bokeh.plotting.figure(height=200, 
@@ -238,32 +243,72 @@ post_view = CDSView(source=post_dist_source, filters=[mut_filter])
 
 
 # Set the ticks to the reference sequence
-tooltips = [('mutation', '@mutant'), ('difference from ref.', '@diff')]
-hover_cb = CustomJS(args={'mut_filter':mut_filter, 'mut_source':loop_source,
-                          'rep_view':rep_view, 'pooled_view':pooled_view,
-                          'dwell_view':dwell_view, 'cut_view':cut_view,
-                          'post_view':post_view, 'rep_source':rep_dist_source,
-                          'pooled_source':pooled_dist_source, 
-                          'dwell_source': dwell_hist_source,
-                          'cut_source': cut_hist_source,
-                          'post_source':post_dist_source}, 
-code="""
-var mut_ind = cb_data.index['1d'].indices[0];
-var mut = mut_source.data['mutant'][mut_ind];
+
+loop_sel_code = """
+var mut_ind = loop_source.selected['1d'].indices[0];
+var mut = loop_source.data['mutant'][mut_ind];
+console.log(mut_ind)
+"""
+
+dwell_sel_code = """
+var mut_ind = dwell_source.selected['1d'].indices[0];
+var mut = dwell_source.data['mutant'][mut_ind];
+console.log(mut_ind)
+"""
+
+cut_sel_code = """
+var mut_ind = cut_source.selected['1d'].indices[0];
+var mut = cut_source.data['mutant'][mut_ind];
+console.log(mut_ind)
+"""
+
+sel_code = """
+var sources = [loop_source, cut_source, dwell_source];
+for (var i = 0; i < sources.length; i++) {
+    sources[i].selected['1d'].indices[0] = mut_ind;
+    console.log(mut_ind)
+    sources[i].change.emit();
+} 
+"""
+
+draw = """
 mut_filter.group = mut;
-console.log(mut_filter.group)
-var views = [rep_view, pooled_view, dwell_view, cut_view, post_view];
-var sources = [rep_source, pooled_source, dwell_source, cut_source, post_source];
+views = [rep_view, pooled_view, dwell_view, cut_view, pcut_view];
+data = [rep_data, pooled_data, dwell_data, cut_data, pcut_data];
 for (var i = 0; i < views.length; i++) {
     views[i].filters[0] = mut_filter;
-    sources[i].data.view = views[i];
-    sources[i].change.emit();
+    data[i].data.view = views[i];
+    data[i].change.emit();
 }
-""")
+
+"""
+
+args = {'mut_filter':mut_filter, 
+        'loop_source':loop_source, 
+        'dwell_source':dwell_source,
+        'cut_source':pcut_source, 
+        'rep_view':rep_view, 
+        'pooled_view':pooled_view,
+        'dwell_view':dwell_view,
+        'cut_view':cut_view,
+        'pcut_view':post_view,
+        'rep_data':rep_dist_source,
+        'pooled_data':pooled_dist_source,
+        'dwell_data':dwell_hist_source,
+        'cut_data':cut_hist_source,
+        'pcut_data':post_dist_source}
+
+loop_cb = CustomJS(args=args, code=loop_sel_code + sel_code + draw)
+dwell_cb = CustomJS(args=args, code=dwell_sel_code + sel_code + draw)
+cut_cb = CustomJS(args=args, code=cut_sel_code + sel_code + draw)
+
+for a, t in zip([ax_loop_mat, ax_dwell_mat, ax_cut_mat], [loop_cb, dwell_cb, cut_cb]):
+    tap_event = a.select(type=TapTool)
+    tap_event.callback = t
 
 for a, s  in zip([ax_loop_mat, ax_dwell_mat, ax_cut_mat], [loop_source, dwell_source, pcut_source]):
-    hover = HoverTool(renderers=a, tooltips=tooltips, callback=hover_cb)
-    a.add_tools(hover)
+    # hover = HoverTool(renderers=a, tooltips=tooltips, callback=hover_cb)
+    # a.add_tools(hover)
     a.yaxis.ticker = [0, 1, 2, 3]
     a.xaxis.ticker = np.arange(0, 29, 1)
     ylab = {int(i):nt_idx[i] for i in range(4)}
@@ -287,12 +332,25 @@ lay = bokeh.layouts.column(ax_loop_mat, ax_loop, ax_dwell_mat,
                             ax_dwell, ax_cut_mat, ax_cut)
 
 # Define the color palettes
-loop_palette = bokeh.palettes.RdBu11
-dwell_palette = bokeh.palettes.RdGy11
-cut_palette = bokeh.palettes.Spectral11
-loop_color = LinearColorMapper(palette=loop_palette, low=-0.2, high=0.2)
-dwell_color = LinearColorMapper(palette=dwell_palette, low=-2, high=2)
-cut_color = LinearColorMapper(palette=cut_palette, low=-0.5, high=0.6)
+palette = bokeh.palettes.RdBu11
+loop_color = LinearColorMapper(palette=palette, low=-0.25, high=0.25)
+loop_bar = ColorBar(color_mapper=loop_color, location=(0, 0),
+                    bar_line_color='black', ticker=FixedTicker(ticks=[-0.2, 0, 0.2]), 
+                    width=15, height=50, background_fill_alpha=0)
+ax_loop_mat.add_layout(loop_bar, 'right')
+
+dwell_color = LinearColorMapper(palette=palette, low=-2.2, high=2.2)
+dwell_bar = ColorBar(color_mapper=dwell_color, location=(0, 0),
+                    bar_line_color='black', ticker=FixedTicker(ticks=[-2, 0, 2]), 
+                    width=15, height=50, background_fill_alpha=0, title='[min]',
+                    title_text_font_size='6pt')
+ax_dwell_mat.add_layout(dwell_bar, 'right')
+
+cut_color = LinearColorMapper(palette=palette, low=-0.62, high=0.62)
+cut_bar = ColorBar(color_mapper=cut_color, location=(0, 0),
+                    bar_line_color='black', ticker=FixedTicker(ticks=[-0.5, 0, 0.5]), 
+                    width=15, height=50, background_fill_alpha=0) 
+ax_cut_mat.add_layout(cut_bar, 'right')
 
 
 # Populate the matrices.
@@ -305,15 +363,15 @@ cut_fig = ax_cut_mat.rect('pos', 'base_idx', width=1, height=1, source=pcut_sour
 
 # Add the reference features
 ax_loop.triangle('loops_per_bead', 'y', color='grey', alpha=0.5, source=rep_ref, 
-                   size=8)
+                   size=8, legend='replicate')
 ax_loop.circle('loops_per_bead', 'y', line_color='grey', fill_color='white', 
-                alpha=0.5, source=pooled_ref, size=10, line_width=2)
+                alpha=0.5, source=pooled_ref, size=10, line_width=2, legend='pooled')
 
 ax_dwell.quad(bottom=0, left='left', right='right', top='top', color='grey', 
-            alpha=0.3, source=dwell_hist_ref)
+            alpha=0.3, source=dwell_hist_ref, legend='all PC events')
 ax_dwell.quad(bottom=0, left='left', right='right', top='top', color=None, 
             hatch_alpha=0.5, source=cut_hist_ref, hatch_pattern='/', hatch_color='grey',
-            line_color='grey', line_alpha=0.3)
+            line_color='grey', line_alpha=0.3, legend='cleavage events')
 
 ax_cut.line('probability', 'posterior', source=post_ref, color='grey',
             alpha=0.3)
@@ -323,9 +381,10 @@ ax_cut.varea('probability', 0, 'posterior', source=post_ref, fill_color='grey',
 
 # Add the point mutant features.
 ax_loop.triangle('loops_per_bead', 'y', color='dodgerblue', alpha=0.5, 
-                 source=rep_dist_source, view=rep_view)
+                 source=rep_dist_source, view=rep_view, size=8)
 ax_loop.circle('loops_per_bead', 'y', line_color='dodgerblue', alpha=0.75,
-                fill_color='white', source=pooled_dist_source, view=pooled_view)
+                fill_color='white', source=pooled_dist_source, view=pooled_view,
+                size=10, line_width=2)
 ax_dwell.quad(bottom=0, left='left', right='right', top='top',
                  color='dodgerblue', alpha=0.5, source=dwell_hist_source,
                  view=dwell_view)
@@ -339,9 +398,9 @@ ax_cut.varea('probability', y1=0, y2='posterior', source=post_dist_source,
             fill_color='dodgerblue', view=post_view, alpha=0.5)
 
 
-for a, s  in zip([ax_loop_mat, ax_dwell_mat, ax_cut_mat], [loop_fig, dwell_fig, cut_fig]):
-    hover = HoverTool(renderers=[s], tooltips=tooltips, callback=hover_cb)
-    a.add_tools(hover)
+# for a, s  in zip([ax_loop_mat, ax_dwell_mat, ax_cut_mat], [loop_fig, dwell_fig, cut_fig]):
+#     hover = HoverTool(renderers=[s], tooltips=tooltips, callback=hover_cb)
+#     a.add_tools(hover)
 
 # Plot x's for virgin mutation
 x, y = [], []
