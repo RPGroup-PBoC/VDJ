@@ -47,8 +47,8 @@ fnames = ['compiled_looping_fraction.csv', 'compiled_dwell_times.csv',
          'compiled_bead_fates.csv', 'compiled_looping_events.csv']
 for file, d in zip(fnames, dfs):
     df = pd.concat(d)
-    # V4-55 RSS and 12SpacC1A have the same sequence
-    df = df.replace(to_replace='V4-55', value='12SpacC1A')
+#   # V4-55 RSS and 12SpacC1A have the same sequence
+#    df = df.replace(to_replace='V4-55', value='12SpacC1A')
     # V10-95 and V10-96 have the same sequence
     df = df.replace(to_replace='V10-95', value='V10-96')
     df.to_csv(f'../../data/{file}', index=False)

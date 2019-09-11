@@ -227,10 +227,10 @@ n_beads,n_cuts,replicate,mutant,date,salt,hmgb1
 2,0,7,12SpacA7C,Date Unknown,Mg,80
 12,2,8,12SpacA7C,Date Unknown,Mg,80
 7,2,9,12SpacA7C,Date Unknown,Mg,80
-1,1,1,12SpacC1A,180327,Mg,80
-6,3,2,12SpacC1A,180327,Mg,80
-8,3,3,12SpacC1A,180327,Mg,80
-3,2,4,12SpacC1A,180327,Mg,80
+1,1,1,V4-55,180327,Mg,80
+6,3,2,V4-55,180327,Mg,80
+8,3,3,V4-55,180327,Mg,80
+3,2,4,V4-55,180327,Mg,80
 1,0,1,V8-18,180416,Mg,80
 3,0,2,V8-18,180416,Mg,80
 1,0,3,V8-18,180416,Mg,80
