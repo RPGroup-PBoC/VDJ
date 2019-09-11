@@ -443,7 +443,7 @@ ax_loop.tools.append(HoverTool(renderers=[rep_fig],
                 tooltips=[('mutant', 'V4-57-1'), ('kind', 'replicate result'),
                           ('# of beads', '@n_beads'), ('# observed PCs', '@n_loops')]))
 pool_fig = ax_loop.circle('loops_per_bead', 'y', line_color='slategrey', fill_color='white', 
-                   alpha=0.5, source=pooled_ref, size=10, line_width=2,
+                   source=pooled_ref, size=10, line_width=2,
                    legend='pooled')
 ax_loop.tools.append(HoverTool(renderers=[pool_fig],
                 tooltips=[('mutant', 'V4-57-1'), ('kind', 'pooled result'),
@@ -464,16 +464,16 @@ ax_cut.varea('probability', 0, 'posterior', source=post_ref, fill_color='slategr
 
 
 # Add the point mutant features.
-mut_pooled = ax_loop.triangle('loops_per_bead', 'y', color='dodgerblue', alpha=0.5, 
+mut_rep = ax_loop.triangle('loops_per_bead', 'y', color='dodgerblue', alpha=0.5, 
                  source=rep_dist_source, view=rep_view, size=8)
-ax_loop.tools.append(HoverTool(renderers=[mut_pooled],
+ax_loop.tools.append(HoverTool(renderers=[mut_rep],
                 tooltips=[('mutant', '@mutant'), ('kind', 'replicate result'),
                           ('# of beads', '@n_beads'), ('# observed PCs', '@n_loops')]))
  
-mut_rep = ax_loop.circle('loops_per_bead', 'y', line_color='dodgerblue', alpha=0.75,
+mut_pooled = ax_loop.circle('loops_per_bead', 'y', line_color='dodgerblue', alpha=1,
                 fill_color='white', source=pooled_dist_source, view=pooled_view,
                 size=10, line_width=2)
-ax_loop.tools.append(HoverTool(renderers=[mut_rep],
+ax_loop.tools.append(HoverTool(renderers=[mut_pooled],
                 tooltips=[('mutant', '@mutant'), ('kind', 'pooled result'),
                           ('# of beads', '@n_beads'), ('# observed PCs', '@n_loops')]))
 
