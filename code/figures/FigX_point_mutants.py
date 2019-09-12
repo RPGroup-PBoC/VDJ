@@ -220,7 +220,6 @@ ax[1].add_line(line5)
 ax[1].add_line(line6)
 
 ax[0].text(-0.5, -0.06, 'ref:', ha='center', va='center', fontsize=10)
-ax[2].text(6, 0.4, '*', ha='center', va='center', fontsize=14)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
