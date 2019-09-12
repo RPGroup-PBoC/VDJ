@@ -119,7 +119,7 @@ points.sort_values('rel_diff', inplace=True)
 for j, p in enumerate([points, points_dwell, points_cut]): 
         if j == 0:
                 a = ax[0]
-                v = 'rel_diff'
+                v = 'loops_per_bead'
                 vshift = 0.019
         elif j == 1:
                 a = ax[1]
@@ -182,13 +182,13 @@ for j, p in enumerate([points, points_dwell, points_cut]):
 ax[2].vlines(1, -1*wt_std, wt_std, colors='k', lw=2)
  
 # Previous y positions were -0.84 and -0.72
-line1 = lines.Line2D([7.5, 7.5], [-0.4, -0.32], clip_on=False, alpha=1,
+line1 = lines.Line2D([7.5, 7.5], [-0.1, -0.02], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line2 = lines.Line2D([19.5, 19.5], [-0.4, -0.32], clip_on=False, alpha=1,
+line2 = lines.Line2D([19.5, 19.5], [-0.1, -0.02], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line3 = lines.Line2D([7.5, 7.5], [0.32, 0.4], clip_on=False, alpha=1,
+line3 = lines.Line2D([7.5, 7.5], [0.52, 0.6], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line4 = lines.Line2D([19.5, 19.5], [0.32, 0.4], clip_on=False, alpha=1,
+line4 = lines.Line2D([19.5, 19.5], [0.52, 0.6], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 line5 = lines.Line2D([7.5, 7.5], [-2.2, -2.8], clip_on=False, alpha=1,
                     linewidth=1, color='k')
@@ -200,7 +200,10 @@ for n in range(0,3):
         _ = ax[n].set_xticks(np.arange(1, 29))
         ax[n].set_xlim([0.5, 28.5])
         ax[n].vlines(0.5, -0.65, 1.0, linewidth=4, zorder=0) #, color='#f5e3b3')
-        ax[n].hlines(0, 0, 29, color='k', linestyle=':')
+        if n==0:
+                ax[0].hlines(wt_val, 0, 29, color='k', linestyle=':')
+        else:
+                ax[n].hlines(0, 0, 29, color='k', linestyle=':')
         for i in range(1, 29, 2):
                 ax[n].axvspan(i-0.5, i+0.5, color='white',
                                 alpha=0.65, linewidth=0, zorder=-1)
@@ -216,17 +219,18 @@ ax[0].add_line(line4)
 ax[1].add_line(line5)
 ax[1].add_line(line6)
 
-ax[0].text(-1.4, -0.35, 'reference\nsequence', ha='center', va='center', fontsize=10)
+ax[0].text(-0.5, -0.06, 'ref:', ha='center', va='center', fontsize=10)
+ax[2].text(6, 0.4, '*', ha='center', va='center', fontsize=14)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
-ax[0].set_ylim([-0.3, 0.3])
+ax[0].set_ylim([-0.01, 0.5])
 ax[1].set_ylim([-2, 3])
 ax[2].set_ylim([-0.55, 0.7])
 ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
 ax[2].set_xlim([0.7, 28.5])
-ax[0].set_ylabel('change in\nloop frequency', fontsize=12)
+ax[0].set_ylabel('loop frequency', fontsize=12)
 ax[1].set_ylabel('change in median\ndwell time [min]', fontsize=12)
 ax[2].set_ylabel('change in\ncutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
@@ -263,15 +267,16 @@ ax[3].set_xlim([0.0, 1.0])
 ax[3].set_yticklabels([])
 
 # Try adding an annotation. THis may be tricky.
-ax[3].vlines(0.51,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='k')
-ax[3].hlines(plot_offset['WT12rss'] + 0.06, 0.49, 0.51, color='k')
-ax[3].hlines(plot_offset['WT12rss'], 0.49, 0.51, color='k')
-ax[3].text(0.512, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
+ax[3].vlines(0.56,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='k')
+ax[3].hlines(plot_offset['WT12rss'] + 0.06, 0.54, 0.56, color='k')
+ax[3].hlines(plot_offset['WT12rss'], 0.54, 0.56, color='k')
+ax[3].text(0.562, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
 
 # Add Figure Panels. 
-# fig.text(0.005, 0.9, '(A)')
-# fig.text(0.005, .6, '(B)')
-# fig.text(0.005, .35, '(C)')
+fig.text(0.005, 0.87, '(A)', fontsize=12)
+fig.text(0.005, .68, '(B)', fontsize=12)
+fig.text(0.005, .48, '(C)', fontsize=12)
+fig.text(0.005, .28, '(D)', fontsize=12)
 plt.savefig('./FigX_point_mutation_stickplot.pdf', facecolor='white', bbox_inches='tight')
 
 
