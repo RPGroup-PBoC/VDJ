@@ -204,7 +204,7 @@ seq_ax = bokeh.plotting.figure(width=700, height=50, x_range=[0, 30],
                                 tools=[''], toolbar_location=None,
                                 y_range=[-0.01, 0.1])
                                 
-dwell_all_ax = bokeh.plotting.figure(width=600, height=200, x_axis_type='log', 
+dwell_all_ax = bokeh.plotting.figure(width=600, height=250, x_axis_type='log', 
                                     x_range=[0.8, 80], 
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='all PCs')
@@ -213,7 +213,7 @@ dwell_unloop_ax = bokeh.plotting.figure(width=300, height=200, x_axis_type='log'
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='unlooped PCs')
 
-dwell_cut_ax = bokeh.plotting.figure(width=300, height=200, x_axis_type='log', 
+dwell_cut_ax = bokeh.plotting.figure(width=300, height=250, x_axis_type='log', 
                                     x_range=[0.8, 80], 
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='cleaved PCs')
@@ -260,13 +260,16 @@ loop_freq_ax.circle('position', 'loops_per_bead', source=pooled_endog,
 #
 # # Plot the dwell distribution for the point mutants. 
 dwell_all_ax.multi_line('xs', 'ys', source=dwell_all_blank, color='c', line_width=1)                   
-dwell_all_ax.circle('xs', 'ys', line_width=1, 
-                   source=dwell_all_blank,
-                   color='c', alpha=0.5)
-
 dwell_cut_ax.multi_line('xs', 'ys', source=dwell_cut_blank, color='c', line_width=1)                   
 dwell_unloop_ax.multi_line('xs', 'ys', source=dwell_unloop_blank, color='c', line_width=1)                   
 
+dwell_cut_ax.circle('dwell_time', 'ecdf', line_width=1, 
+                   source=dwell_cut_point, view=dwell_cut_point_view,
+                   color='color', alpha=0.5)
+#
+dwell_unloop_ax.circle('dwell_time', 'ecdf', line_width=1, 
+                   source=dwell_unloop_point, view=dwell_unloop_point_view,
+                   color='color', alpha=0.5)
 
 loop_freq_ax.triangle('position', 'loops_per_bead', source=rep_point, 
                       view=rep_point_view, color='color', alpha=0.5, 
@@ -280,16 +283,9 @@ loop_freq_ax.circle('position', 'loops_per_bead', source=pooled_point,
 # dwell_cut_ax.step('dwell_time', 'ecdf', line_width=1, 
 #                    source=dwell_cut_point, view=dwell_cut_point_view,
 #                    color='color')
-# dwell_cut_ax.circle('dwell_time', 'ecdf', line_width=1, 
-#                    source=dwell_cut_point, view=dwell_cut_point_view,
-#                    color='color', alpha=0.5)
-# dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, 
+ dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, 
 #                    source=dwell_cut_point, view=dwell_cut_point_view,
 #                    color='color')
-# dwell_unloop_ax.circle('dwell_time', 'ecdf', line_width=1, 
-#                    source=dwell_unloop_point, view=dwell_unloop_point_view,
-#                    color='color', alpha=0.5)
-
 
 
 
