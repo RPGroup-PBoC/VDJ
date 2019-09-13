@@ -14,7 +14,7 @@ def nucleotide_idx():
     """
     Returns the dictionary linking base identity to an integer
     """
-    return {'A':0, 'C':1, 'G':2, 'T':3, 0:'A', 1:'C', 2:'G', 3:'T'}
+    return {'A':3, 'C':2, 'G':1, 'T':0,  3:'A', 2:'C', 1:'G', 0:'T'}
 
 def endogenous_seqs():
     """

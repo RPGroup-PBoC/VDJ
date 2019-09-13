@@ -233,16 +233,16 @@ ax_dwell_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], to
                 toolbar_location=None)
 
 ax_dwell_unlooped = bokeh.plotting.figure(height=200, width=275,
-        x_axis_label='paired-complex dwell time [min]', y_axis_label='ECDF',
+        x_axis_label='paired complex dwell time [min]', y_axis_label='ECDF',
         tools=[''], toolbar_location=None, x_axis_type='log', title='unlooped PCs',
         x_range=[0.50, 80])
 ax_dwell_cut = bokeh.plotting.figure(height=200, width=275, 
-        x_axis_label='paired-complex dwell time [min]', y_axis_label='ECDF',
+        x_axis_label='paired complex dwell time [min]', y_axis_label='ECDF',
         tools=[''], toolbar_location=None, x_axis_type='log', title='cleaved PCs',
         x_range=[0.50, 80])
 
 ax_dwell_all = bokeh.plotting.figure(height=270, width=600,
-        x_axis_label='paired-complex dwell time [min]', y_axis_label='ECDF',
+        x_axis_label='paired complex dwell time [min]', y_axis_label='ECDF',
         tools=[''], toolbar_location=None, x_axis_type='log', title='all PCs',
         x_range=[0.50, 80])
 ax_cut_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],

@@ -1,4 +1,4 @@
-#%%
+#%% 
 import numpy as np
 import pandas as pd
 from bokeh.themes import Theme
@@ -27,6 +27,8 @@ loops = pd.read_csv('../../../data/compiled_looping_events.csv')
 # Identify the endogenous muts
 dfs  = []
 for i, df in enumerate([dwell_times, posteriors, loops]):
+    # Rename the point mutant 12SpacC1A to  the endogenous mutant V4-55
+    df.loc[df['mutant']=='12SpacC1A', 'mutant'] = 'V4-55'
     for g, d in df.groupby(['mutant']):
         if ('12Spac' not in g) & ('12Hept' not in g) & ('12Non' not in g):
             mut_class = 'endogenous'
@@ -38,6 +40,7 @@ for i, df in enumerate([dwell_times, posteriors, loops]):
     dfs.append(df)
 dwell_times, posteriors, loops = dfs
 cut_dwells = dwell_times[dwell_times['cut']==1]
+unloop_dwells = dwell_times[dwell_times['cut']==0]
 
 
 # %%
@@ -56,8 +59,8 @@ for g, d in loops.groupby('mutant'):
             'loops_per_bead':_d['n_loops'].sum() / len(_d['bead_idx']),
             'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum()},
             ignore_index=True)
-pooled_df['y'] = 0
-rep_df['y'] = np.random.normal(0,0.05, len(rep_df))
+pooled_df['y'] = 0.5 
+rep_df['y'] = np.random.normal(0.5,0.05, len(rep_df))
 #%%
 # ##############################################################################
 # GENERATE HISTOGRAMS OF DWELL TIMES 
@@ -65,20 +68,20 @@ rep_df['y'] = np.random.normal(0,0.05, len(rep_df))
 # Generate the histogrammed dwell times.
 bins = np.linspace(0, dwell_times['dwell_time_min'].max(), 25)
 dfs = []
-for source in [dwell_times, cut_dwells]: 
+for source in [dwell_times, cut_dwells, unloop_dwells]: 
     bin_dfs = []
     for g, d in source.groupby('mutant'):
-        hist, bins = np.histogram(d['dwell_time_min'], bins=bins)
+        x, y = np.sort(d['dwell_time_min'].values), np.arange(0, len(d), 1) / len(d)
+        y[-1] = 1
+        # hist, bins = np.histogram(d['dwell_time_min'], bins=bins)
         _df = pd.DataFrame()
-        _df['top'] = hist
-        _df['bottom'] = 0
-        _df['left'] = bins[1:]
-        _df['right'] = bins[:-1]
+        _df['dwell_time'] = x
+        _df['ecdf'] = y
         _df['mutant'] = g
         bin_dfs.append(_df)
     dwell_hist = pd.concat(bin_dfs)
     dfs.append(dwell_hist)
-dwell_hist, cut_hist = dfs
+dwell_dist, cut_dist, unloop_dist = dfs
 
 # %%
 # ##############################################################################
@@ -124,9 +127,9 @@ menu = [ ("DFL16.1-3'", 'DFL1613'), ("DFL16.1-5'", 'DFL161'),
          ('V4-55', 'V4-55'), ('V5-43', 'V5-43'), ('V8-18', 'V8-18'), 
          ('V6-17', 'V6-17'), ('V6-15', 'V6-15'), ('None ', 'nan')]
 mut_sel1 = Dropdown(label='Select Endogenous 12RSS', value="None", 
-                    menu=menu, button_type='primary')
+                    menu=menu)
 mut_sel2 = Dropdown(label='Select Endogenous 12RSS', value="None", 
-                    menu=menu, button_type='danger')
+                    menu=menu, button_type='primary')
 
 # Define the filter on the mutant props.
 mut_filter1 = GroupFilter(column_name="mutant", group=mut_sel1.value)
@@ -134,14 +137,17 @@ mut_filter2 = GroupFilter(column_name="mutant", group=mut_sel2.value)
 
 # Define the sources
 variant1 = ColumnDataSource(var_dict)
-dwell_source1 = ColumnDataSource(dwell_hist)
-cut_source1 = ColumnDataSource(cut_hist)
+dwell_all_source1 = ColumnDataSource(dwell_dist)
+dwell_cut_source1 = ColumnDataSource(cut_dist)
+dwell_unloop_source1 = ColumnDataSource(unloop_dist)
 post_source1 = ColumnDataSource(posteriors)
 pooled_source1 = ColumnDataSource(pooled_df)
 rep_source1 = ColumnDataSource(rep_df)
 variant2 = ColumnDataSource(var_dict)
-dwell_source2 = ColumnDataSource(dwell_hist)
-cut_source2 = ColumnDataSource(cut_hist)
+dwell_all_source2 = ColumnDataSource(dwell_dist)
+dwell_cut_source2 = ColumnDataSource(cut_dist)
+dwell_unloop_source2 = ColumnDataSource(unloop_dist)
+cut_source2 = ColumnDataSource(cut_dist)
 post_source2 = ColumnDataSource(posteriors)
 pooled_source2 = ColumnDataSource(pooled_df)
 rep_source2 = ColumnDataSource(rep_df)
@@ -149,10 +155,12 @@ rep_source2 = ColumnDataSource(rep_df)
 # Define the Views
 seq_view1 = CDSView(source=variant1, filters=[mut_filter1])
 seq_view2 = CDSView(source=variant2, filters=[mut_filter2])
-dwell_view1 = CDSView(source=dwell_source1, filters=[mut_filter1])
-dwell_view2 = CDSView(source=dwell_source2, filters=[mut_filter2])
-cut_view1 = CDSView(source=cut_source1, filters=[mut_filter1])
-cut_view2 = CDSView(source=cut_source2, filters=[mut_filter2])
+dwell_all_view1 = CDSView(source=dwell_all_source1, filters=[mut_filter1])
+dwell_all_view2 = CDSView(source=dwell_all_source2, filters=[mut_filter2])
+dwell_cut_view1 = CDSView(source=dwell_cut_source1, filters=[mut_filter1])
+dwell_cut_view2 = CDSView(source=dwell_cut_source2, filters=[mut_filter2])
+dwell_unloop_view1 = CDSView(source=dwell_unloop_source1, filters=[mut_filter1])
+dwell_unloop_view2 = CDSView(source=dwell_unloop_source2, filters=[mut_filter2])
 pooled_loop_view1 = CDSView(source=pooled_source1, filters=[mut_filter1])
 pooled_loop_view2 = CDSView(source=pooled_source2, filters=[mut_filter2])
 rep_loop_view1 = CDSView(source=rep_source1, filters=[mut_filter1])
@@ -160,24 +168,40 @@ rep_loop_view2 = CDSView(source=rep_source2, filters=[mut_filter2])
 post_view1 = CDSView(source=post_source1, filters=[mut_filter1])
 post_view2 = CDSView(source=post_source2, filters=[mut_filter2])
 
-
 #%% 
 # ##############################################################################
 # DEFINE THE CANVASES
 # ##############################################################################
-ax_seq = bokeh.plotting.figure(height=100, y_range=[0, 4], tools=[''])   
-ax_loop = bokeh.plotting.figure(height=140, 
+ax_seq = bokeh.plotting.figure(height=100, width=600, y_range=[0, 4], tools=[''])   
+ax_leg = bokeh.plotting.figure(height=80, width=600, tools =[''], toolbar_location=None)
+ax_loop = bokeh.plotting.figure(height=140, width=600, 
                                 x_axis_label='paired complexes per bead\n   ',
-                                x_range=[-0.05, 0.95], y_range=[-0.5, 0.5], tools=[''])
-ax_dwell = bokeh.plotting.figure(height=200, x_axis_label='paired complex dwell time [min]\n  ',
-                                y_axis_label='number of observations', tools=[''])
-ax_cut = bokeh.plotting.figure(height=200, x_axis_label='cutting probability',
+                                x_range=[-0.05, 0.95], y_range=[-0.8, 0.8], tools=[''])
+ax_dwell_all = bokeh.plotting.figure(height=200, width=600, x_axis_label='paired complex dwell time [min]',
+                                y_axis_label='ECDF', tools=[''], x_axis_type='log')
+ax_dwell_cut = bokeh.plotting.figure(height=200, width=300,x_axis_label='paired complex dwell time [min]',
+                                y_axis_label='ECDF', tools=[''], x_axis_type='log')
+ax_dwell_unloop = bokeh.plotting.figure(height=200, width=300, x_axis_label='paired complex dwell time [min]',
+                                y_axis_label='ECDF', tools=[''], x_axis_type='log')
+
+ax_cut = bokeh.plotting.figure(height=200, width=600, x_axis_label='cutting probability',
                                y_axis_label='posterior probability', tools=[''])
+
+# Add legend entries
+grey = ax_leg.line([], [], line_width=10, color='slategrey', legend=mut_sel1.value)
+blue = ax_leg.line([], [], line_width=10, color='dodgerblue', legend=mut_sel2.value)
+ax_leg.legend.location = 'center'
+ax_leg.legend.orientation  = 'horizontal'
+ax_leg.background_fill_color = None
+ax_leg.outline_line_color = None
+ax_leg.legend.background_fill_color = None
+ax_leg.xaxis.visible = False
+ax_leg.yaxis.visible = False
 
 description1 = Div(text="""<center>Select an RSS</center>""")
 description2 = Div(text="""<center>Select an RSS</center>""")
 
-for a in [ax_seq, ax_loop, ax_dwell, ax_cut]:
+for a in [ax_seq, ax_loop, ax_dwell_all, ax_dwell_cut, ax_dwell_unloop, ax_cut]:
     a.toolbar.logo = None
 # Set features of the plots
 ax_seq.xaxis.visible = False
@@ -193,7 +217,9 @@ ax_loop.yaxis.visible = False
 
 # Add titles
 ax_loop.title.text = 'paired complex formation frequency'
-ax_dwell.title.text = 'paired complex dwell time distribution'
+ax_dwell_unloop.title.text = 'unlooped PCs'
+ax_dwell_cut.title.text = 'cleaved PCs'
+ax_dwell_all.title.text = 'all PCs'
 ax_cut.title.text = 'paired complex cleavage probability'
 
 # Add hover tooltips to the loop plot 
@@ -203,7 +229,9 @@ ax_loop.add_tools(HoverTool(tooltips=tooltips))
 # Define the layout
 selections = bokeh.layouts.row(mut_sel1, mut_sel2)
 descriptions = bokeh.layouts.row(description1, description2)
-lay = bokeh.layouts.column(selections, descriptions, bokeh.layouts.Spacer(), ax_loop, ax_dwell, ax_cut)
+dwell_row = bokeh.layouts.row(ax_dwell_unloop, ax_dwell_cut)
+spacer = Div(text="<br/>")
+lay = bokeh.layouts.column(selections, ax_leg, descriptions, spacer, ax_loop, dwell_row, ax_dwell_all, ax_cut)
 lay.sizing_mode = 'scale_width'
 # ############################################################################## # POPULATE CANVASES
 # ############################################################################## 
@@ -225,40 +253,55 @@ ax_loop.triangle(x='loops_per_bead', y='y', source=rep_source1,
                 view=rep_loop_view1, color='dodgerblue', legend='replicate',
                 alpha=0.5, size=8)
 ax_loop.triangle(x='loops_per_bead', y='y', source=rep_source2,
-                view=rep_loop_view2, color='tomato', legend='replicate',
+                view=rep_loop_view2, color='slategrey', legend='replicate',
                 alpha=0.5, size=8)
 
 ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source1,
-                view=pooled_loop_view1, color='dodgerblue', legend='pooled',
-                size=10, fill_alpha=0.5)
+                view=pooled_loop_view1, fill_color='white', line_color='dodgerblue', legend='pooled',
+                size=10)
 
 ax_loop.circle(x='loops_per_bead', y='y', source=pooled_source2,
-                view=pooled_loop_view2, color='tomato', legend='pooled',
-                size=10, fill_alpha=0.5)
-ax_loop.legend.click_policy = 'hide'
+                view=pooled_loop_view2, fill_color='white', line_color='slategrey', legend='pooled',
+                size=10)
+
 
 # Add the histogram
-ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
-               view=dwell_view1, source=dwell_source1, color='dodgerblue',
-               alpha=0.5, legend="all PC events")
-ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
-               view=dwell_view2, source=dwell_source2, line_color='tomato',
-               alpha=0.5, fill_color=None, line_width=2.5, legend="all PC events")
-ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
-               view=cut_view1, source=cut_source1, hatch_color='navy',
-               alpha=0.5, hatch_pattern='/', legend="cleavage events")
-ax_dwell.quad(left='left', bottom='bottom', top='top', right='right', 
-               view=cut_view2, source=cut_source2, fill_color=None, hatch_color='firebrick',
-               alpha=0.5, hatch_pattern='\\', legend="cleavage events")
-ax_dwell.legend.click_policy = 'hide'
+ax_dwell_all.step('dwell_time', 'ecdf', source=dwell_all_source1, view=dwell_all_view1,
+                    color='slategrey', line_width=1)
+ax_dwell_all.step('dwell_time', 'ecdf', source=dwell_all_source2, view=dwell_all_view2,
+                    color='dodgerblue', line_width=1)
+ax_dwell_all.circle('dwell_time', 'ecdf', source=dwell_all_source1, view=dwell_all_view1,
+                    color='slategrey', line_width=1, fill_color='white')
+ax_dwell_all.circle('dwell_time', 'ecdf', source=dwell_all_source2, view=dwell_all_view2,
+                    color='dodgerblue', line_width=1, fill_color='white')
+ax_dwell_cut.step('dwell_time', 'ecdf', source=dwell_cut_source1, view=dwell_cut_view1,
+                    color='slategrey', line_width=1)
+ax_dwell_cut.step('dwell_time', 'ecdf', source=dwell_cut_source2, view=dwell_cut_view2,
+                    color='dodgerblue', line_width=1)
+ax_dwell_cut.circle('dwell_time', 'ecdf', source=dwell_cut_source1, view=dwell_cut_view1,
+                    color='slategrey', line_width=1, fill_color='white')
+ax_dwell_cut.circle('dwell_time', 'ecdf', source=dwell_cut_source2, view=dwell_cut_view2,
+                    color='dodgerblue', line_width=1, fill_color='white')
+ax_dwell_unloop.step('dwell_time', 'ecdf', source=dwell_unloop_source1, view=dwell_unloop_view1,
+                    color='slategrey', line_width=1)
+ax_dwell_unloop.step('dwell_time', 'ecdf', source=dwell_unloop_source2, view=dwell_unloop_view2,
+                    color='dodgerblue', line_width=1)
+ax_dwell_unloop.circle('dwell_time', 'ecdf', source=dwell_unloop_source1, view=dwell_unloop_view1,
+                    color='slategrey', line_width=1, fill_color='white')
+ax_dwell_unloop.circle('dwell_time', 'ecdf', source=dwell_unloop_source2, view=dwell_unloop_view2,
+                    color='dodgerblue', line_width=1, fill_color='white')
+
+
+
+
 # Cutting probability posterior
 ax_cut.line(x='probability', y='posterior', source=post_source1, view=post_view1, 
-            color='dodgerblue')
-ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='dodgerblue',
+            color='slategrey')
+ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='slategrey',
             fill_alpha=0.5, source=post_source1, view=post_view1)
 ax_cut.line(x='probability', y='posterior', source=post_source2, view=post_view2, 
-            color='tomato')
-ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='tomato',
+            color='dodgerblue')
+ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='dodgerblue',
             fill_alpha=0.5, source=post_source2, view=post_view2)
 
 # ##############################################################################
@@ -269,26 +312,29 @@ args = {'sel1':mut_sel1, 'filter1':mut_filter1, 'sel2':mut_sel2, 'filter2':mut_f
         'seq_view1':seq_view1, 'seq_view2':seq_view2, 
         'pooled_view1':pooled_loop_view1, 'pooled_view2':pooled_loop_view2, 
         'rep_view1':rep_loop_view1, 'rep_view2':rep_loop_view2,
-        'dwell_view1':dwell_view1, 'dwell_view2':dwell_view2,
-        'cut_view1':cut_view1, 'cut_view2':cut_view2,
+        'dwell_all_view1':dwell_all_view1, 'dwell_all_view2':dwell_all_view2,
+        'dwell_cut_view1':dwell_cut_view1, 'dwell_cut_view2':dwell_cut_view2,
+        'dwell_unloop_view1':dwell_unloop_view1, 'dwell_unloop_view2':dwell_unloop_view2,
         'post_view1':post_view1, 'post_view2':post_view2,
         'seq_data1':variant1,  'seq_data2':variant2, 
         'pooled_data1':pooled_source1, 'pooled_data2':pooled_source2, 
         'rep_data1':rep_source1, 'rep_data2':rep_source2,
-        'dwell_data1':dwell_source1, 'dwell_data2':dwell_source2, 
-        'cut_data1':cut_source1, 'cut_data2':cut_source2, 
+        'dwell_cut_data1':dwell_cut_source1, 'dwell_cut_data2':dwell_cut_source2, 
+        'dwell_unloop_data1':dwell_unloop_source1, 'dwell_unloop_data2':dwell_unloop_source2, 
+        'dwell_all_data1':dwell_all_source1, 'dwell_all_data2':dwell_all_source2, 
         'post_data1':post_source1, 'post_data2':post_source2,
-        'description1':description1, 'description2':description2}
+        'description1':description1, 'description2':description2, 'ax_leg':grey}
 
 callback = CustomJS(args=args, code="""
+    console.log(ax_leg)
   var mut1 = sel1.value;
   var mut2 = sel2.value;
   filter1.group = mut1;
   filter2.group = mut2;
-  var views1 = [seq_view1, pooled_view1, rep_view1, dwell_view1, cut_view1, post_view1]; 
-  var views2 = [seq_view2, pooled_view2, rep_view2, dwell_view2, cut_view2, post_view2];
-  var data1 = [seq_data1, pooled_data1, rep_data1, dwell_data1, cut_data1, post_data1];
-  var data2 = [seq_data2, pooled_data2, rep_data2, dwell_data2, cut_data2, post_data2];
+  var views1 = [seq_view1, pooled_view1, rep_view1, dwell_all_view1, dwell_cut_view1, dwell_unloop_view1, post_view1]; 
+  var views2 = [seq_view2, pooled_view2, rep_view2, dwell_all_view2, dwell_cut_view2, dwell_unloop_view2, post_view2];
+  var data1 = [seq_data1, pooled_data1, rep_data1, dwell_all_data1, dwell_cut_data1, dwell_unloop_data1, post_data1];
+  var data2 = [seq_data2, pooled_data2, rep_data2, dwell_all_data2, dwell_cut_data2, dwell_unloop_data2, post_data2];
   for (var i = 0; i < views1.length; i++) { 
        views1[i].filters[0] = filter1;
        data1[i].data.view = views1[i];
