@@ -32,7 +32,6 @@ dfs = [counts, dwell, cuts]
 valid_dfs = [[], [], []]
 for i, d in enumerate(dfs):
     d = d.copy()
-    d.loc[d['mutant']=='12SpacC1A', 'mutant'] = 'V4-55'
     for g, _d in d.groupby(['mutant']):
         if ('Hept' not in g) & ('Spac' not in g) & ('Non' not in g):
             valid_dfs[i].append(_d) 
@@ -56,8 +55,8 @@ map = {'DFL1613':1, 'DFL161':2, 'V1-135':3, 'V9-120':4,
        'V5-43':9, 'V8-18':10, 'V6-17':11, 'V6-15':12}
 muts = list(map.keys())
 muts[6] = 'V4-57-1'
-muts[0] = "DFL 16.1-3'"
-muts[1] = "DFL 16.1-5'"
+muts[0] = "DFL16.1-3'"
+muts[1] = "DFL16.1-5'"
 
 # Format and add labels
 for a in ax:
