@@ -27,8 +27,18 @@ cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv')
 cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg')]
 
 # Compute the number of loops per bead
-counts = data.groupby(['mutant'])[['n_loops']].agg(('sum', 'count')).reset_index()
-counts['loops_per_bead'] = counts['n_loops']['sum'] / counts['n_loops']['count']
+#counts = data.groupby(['mutant'])[['n_loops']].agg(('sum', 'count')).reset_index()
+#counts['loops_per_bead'] = counts['n_loops']['sum'] / counts['n_loops']['count']
+
+count_rep = data.groupby(['mutant','replicate'])[['n_loops']].agg(('sum','count')).reset_index()
+count_rep['freq_loops'] = count_rep['n_loops']['sum'] / count_rep['n_loops']['count']
+
+counts = pd.DataFrame(columns={'mutant','loops_per_bead','std_freq'})
+for g,d in count_rep.groupby('mutant'):
+        mean = np.mean(d['freq_loops'].values)
+        std = np.std(d['freq_loops'].values)
+        df = pd.DataFrame({'mutant':g,'loops_per_bead':[mean],'std_freq':[std]})
+        counts = counts.append(df, ignore_index=True)
 
 # Get the reference seq
 ref = vdj.io.endogenous_seqs()['WT12rss']
@@ -37,6 +47,7 @@ ref_idx = ref[1]
 
 # Include the mutant id information
 wt_val = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
+wt_loop_std = counts[counts['mutant']=='WT12rss']['std_freq'].values[0]
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
 wt_dwell = median_dwell[median_dwell['mutant']=='WT12rss']['dwell_time_min'].values[0]
@@ -145,6 +156,9 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                         shift = 0 
                 a.annotate(base , xy=(g + 0.78 + shift, d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
                             size=9,  label='__nolegend__')
+                if j==0:
+                        a.vlines(g + 1, d['loops_per_bead']-d['std_freq'], d['loops_per_bead']+d['std_freq'],
+                                color=colors[base], lw=1.5, label='__nolegend__')
                 if j==2:
                         a.vlines(g + 1, d['diff']-d['std'], d['diff']+d['std'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
@@ -159,6 +173,10 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     base = _d['base']
                     if type(base) != str:
                             base = base[0]
+                    if j==0:
+                            a.vlines(g + 1, _d[v] - _d['std_freq'], _d[v] + _d['std_freq'],
+                                        color=colors[base], lw=1.5, label='__nolegend__',
+                                        zorder=zorder, alpha=0.5)
                     if j==2:
                             a.vlines(g + 1, _d[v] - _d['std'], _d[v]+_d['std'],
                                      color=colors[base], lw=1.5, label='__nolegend__',
@@ -179,6 +197,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
 
                     zorder -= 1
 
+ax[0].vlines(1, wt_val-1*wt_loop_std, wt_val+wt_loop_std, colors='k', lw=2)
 ax[2].vlines(1, -1*wt_std, wt_std, colors='k', lw=2)
  
 # Previous y positions were -0.84 and -0.72
