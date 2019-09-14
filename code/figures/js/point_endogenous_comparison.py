@@ -7,7 +7,7 @@ import bokeh.plotting
 from bokeh import events
 from bokeh.models import (ColumnDataSource, Div, LinearAxis, CustomJS, Text,
                           CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool,
-                          IndexFilter)
+                          IndexFilter, TapTool)
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
 from bokeh.embed import components
@@ -109,18 +109,38 @@ for source in [dwell_all_data, dwell_cut_data, dwell_unloop_data]:
         _df = pd.DataFrame()
         # Determine the mutant
         x, y = np.sort(d['dwell_time_min'].values), np.arange(0, len(d), 1) / len(d)
-        y[-1] = 1
-        _df['dwell_time'] = x
-        _df['ecdf'] = y
+        y[-1] = 1 
+        # Stagger the results so I can recreate a step plot
+        staircase_y = np.empty(2 * len(d)) 
+        staircase_x = np.empty(2 * len(d)) 
+        staircase_y[0] = 0
+        staircase_y[1::2] = y
+        staircase_y[2::2] = y[:-1]
+        staircase_x[::2] = x
+        staircase_x[1::2] = x
+
+        # Generate another point array so points can be plotted on arrays. 
+        point_x = np.zeros(2 * len(d))
+        point_y = np.zeros(2 * len(d))
+        point_x[1::2] = x
+        point_y[1::2] = y
+        point_x[point_x == 0] = -1
+        point_y[point_y == 0] = -1
+
+        # Assemble the dataframe. 
+        _df['dwell_time'] = staircase_x
+        _df['point_x'] = point_x
+        _df['ecdf'] = staircase_y
+        _df['point_y'] = point_y
         _df['mutant'] = g
         _df['color'] = 'slategrey'
+        _df['alpha'] = 1;
         if ('Spac' in g) | ('Hept' in g) | ('Non' in g):
             _df['class'] = 'point'
         else:
             _df['class'] = 'endogenous'
 
-
-        bin_dfs.append(_df)
+        bin_dfs.append(_df)     
     dwell_hist = pd.concat(bin_dfs)
     dfs.append(dwell_hist)
 dwell_dist, cut_dist, unloop_dist = dfs
@@ -135,9 +155,9 @@ dwell_unloop_endog = ColumnDataSource(unloop_dist[unloop_dist['class']== 'endoge
 
 
 # Make blank dwell time cds for plotting. 
-dwell_all_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[]})
-dwell_cut_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[]})
-dwell_unloop_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[]})
+dwell_all_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
+dwell_cut_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
+dwell_unloop_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
 
 pooled_point = ColumnDataSource(pooled_df[pooled_df['class']=='point'])
 rep_point = ColumnDataSource(rep_df[rep_df['class']=='point'])
@@ -201,89 +221,93 @@ sel.js_on_change('value', cb)
 
 # Define the figure canvases
 seq_ax = bokeh.plotting.figure(width=700, height=50, x_range=[0, 30],
-                                tools=[''], toolbar_location=None,
+                                tools=['tap'],
                                 y_range=[-0.01, 0.1])
-                                
+tap_event = seq_ax.select(type=TapTool)                                
+tap_event.callback = cb
 dwell_all_ax = bokeh.plotting.figure(width=600, height=250, x_axis_type='log', 
-                                    x_range=[0.8, 80], 
+                                    x_range=[0.5, 80], y_range=[0, 1],
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='all PCs')
-dwell_unloop_ax = bokeh.plotting.figure(width=300, height=200, x_axis_type='log', 
-                                    x_range=[0.8, 80], 
+dwell_unloop_ax = bokeh.plotting.figure(width=300, height=250, x_axis_type='log', 
+                                    x_range=[0.5, 80], y_range=[0, 1],
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='unlooped PCs')
 
 dwell_cut_ax = bokeh.plotting.figure(width=300, height=250, x_axis_type='log', 
-                                    x_range=[0.8, 80], 
+                                    x_range=[0.5, 80], y_range=[0, 1],
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='cleaved PCs')
 loop_freq_ax = bokeh.plotting.figure(width=700, height=400,
                                     x_axis_label='position of mutation', 
                                     y_axis_label = 'paired complexes per bead',
-                                    x_range=[0, 30], y_range=[0, 0.8])
+                                    x_range=[0, 30], y_range=[0, 1])
 seq_ax.xaxis.visible = False
 seq_ax.yaxis.visible = False
 seq_ax.background_fill_color = None
 seq_ax.outline_line_color = None
-
 # Add the variant sequences
 variant_seq = bokeh.models.glyphs.Text(x='position', y=0, text='base',
 text_color='color', text_font='Courier', text_font_size='28pt')
 seq_ax.add_glyph(seq_source, variant_seq, view=seq_view)
 
 # Plot the ECDFS of the endogenous samples
-dwell_all_ax.step('dwell_time', 'ecdf', line_width=1, color='slategrey', 
+dwell_all_ax.line('dwell_time', 'ecdf', line_width=1, color='slategrey', 
                    source=dwell_all_endog, view=dwell_all_endog_view)
-dwell_all_ax.circle('dwell_time', 'ecdf', line_width=1, fill_color='white', color='slategrey', 
+dwell_all_ax.circle('point_x', 'point_y', line_width=2, line_color='black',  fill_color='slategrey', 
                    source=dwell_all_endog, view=dwell_all_endog_view)
 
-dwell_cut_ax.step('dwell_time', 'ecdf', line_width=1, color='slategrey', 
+dwell_cut_ax.line('dwell_time', 'ecdf', line_width=1, color='slategrey', 
                    source=dwell_cut_endog, view=dwell_cut_endog_view)
-dwell_cut_ax.circle('dwell_time', 'ecdf', line_width=1, fill_color='white', color='slategrey', 
+dwell_cut_ax.circle('point_x', 'point_y', line_width=2, line_color='black', fill_color='slategrey', 
                    source=dwell_cut_endog, view=dwell_cut_endog_view)
 
-dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, color='slategrey', 
+dwell_unloop_ax.line('dwell_time', 'ecdf', line_width=1, color='slategrey', 
                    source=dwell_unloop_endog, view=dwell_unloop_endog_view)
-dwell_unloop_ax.circle('dwell_time', 'ecdf', line_width=1, fill_color='white', color='slategrey', 
+dwell_unloop_ax.circle('point_x', 'point_y', line_width=2, line_color='white', fill_color='slategrey', 
                    source=dwell_unloop_endog, view=dwell_unloop_endog_view)
 
 
 # Plot the looping freqs for endogenous
 loop_freq_ax.triangle('position', 'loops_per_bead', source=rep_endog, 
                       view=rep_endog_view, color='slategrey', alpha=0.75, 
-                      size=8)
+                      size=8, legend='replicate results')
 loop_freq_ax.circle('position', 'loops_per_bead', source=pooled_endog, 
                       view=pooled_endog_view,
-                      line_color='slategrey',fill_color='white',  
-                      size=10)
+                      fill_color='slategrey', line_color='black',  
+                      size=10, legend='pooled results', line_width=2)
 
 #
 # # Plot the dwell distribution for the point mutants. 
-dwell_all_ax.multi_line('xs', 'ys', source=dwell_all_blank, color='c', line_width=1)                   
-dwell_cut_ax.multi_line('xs', 'ys', source=dwell_cut_blank, color='c', line_width=1)                   
-dwell_unloop_ax.multi_line('xs', 'ys', source=dwell_unloop_blank, color='c', line_width=1)                   
+dwell_all_ax.multi_line('xs', 'ys', source=dwell_all_blank, color='c', line_width=1, alpha='alpha')                   
+dwell_cut_ax.multi_line('xs', 'ys', source=dwell_cut_blank, color='c', line_width=1, alpha='alpha')                   
+dwell_unloop_ax.multi_line('xs', 'ys', source=dwell_unloop_blank, color='c', line_width=1, alpha='alpha')                   
 
-dwell_cut_ax.circle('dwell_time', 'ecdf', line_width=1, 
+dwell_cut_ax.circle('point_x', 'point_y', line_width=1, 
                    source=dwell_cut_point, view=dwell_cut_point_view,
-                   color='color', alpha=0.5)
+                   color='color', alpha='alpha')
 #
-dwell_unloop_ax.circle('dwell_time', 'ecdf', line_width=1, 
+dwell_unloop_ax.circle('point_x', 'point_y', line_width=1, 
                    source=dwell_unloop_point, view=dwell_unloop_point_view,
-                   color='color', alpha=0.5)
+                   color='color', alpha='alpha')
+
+dwell_all_ax.circle('point_x', 'point_y', line_width=1, 
+                   source=dwell_all_point, view=dwell_all_point_view,
+                   color='color', alpha='alpha')
 
 loop_freq_ax.triangle('position', 'loops_per_bead', source=rep_point, 
                       view=rep_point_view, color='color', alpha=0.5, 
-                      size=8)
+                      size=8, legend='replicate results', line_width=1)
 loop_freq_ax.circle('position', 'loops_per_bead', source=pooled_point, 
                       view=pooled_point_view,
-                      line_color='color', fill_color='white',  
-                      size=10)
+                      line_color='black', fill_color='color',  
+                      size=10, legend='pooled results', line_width=1)
 
 
 # dwell_cut_ax.step('dwell_time', 'ecdf', line_width=1, 
 #                    source=dwell_cut_point, view=dwell_cut_point_view,
 #                    color='color')
- dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, 
+#  dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, 
 #                    source=dwell_cut_point, view=dwell_cut_point_view,
 #                    color='color')
 
@@ -331,6 +355,11 @@ theme_json = {'attrs':
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
+
+
+# FOrmat legend details. 
+loop_freq_ax.legend.click_policy = 'hide'
+# loop_freq_ax.legend.title_text = 'click to hide'
 bokeh.io.save(lay)
 
 
