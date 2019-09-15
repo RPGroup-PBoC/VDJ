@@ -1,12 +1,6 @@
 
-    // Determine the selection and assign to group filters.
-
-
-
     // Determine which point mutation is clicked
     var clicked_base = 0
-    clicked_base = seq_source.data['mutant'][seq_source.selected['1d'].indices[0]];
-    console.log(clicked_base)
     var mut = endog_sel.value;
     endog_filter.group = mut;
     target_filter.group = mut;
@@ -24,14 +18,30 @@
         var mutation = seq_source.data['mutant'][i]
         if (endo === mut && mutation !== "No Mutation") {
             points.push(seq_source.data['mutant'][i]);
-            colors.push(seq_source.data['color'][i]);
+            if (hover_mut !== 'None' & hover_mut!== 'No Mutation' & hover_mut !== undefined) {
+                if (mutation === hover_mut) { 
+                    console.log('hover mut found')
+                    colors.push(seq_source.data['color'][i])
+                }
+                else { 
+                    console.log('hover mut not found')
+                colors.push('#c2c2c2');
+                }
+            }
+        else { 
+            console.log('hover mut not selected')
+            colors.push(seq_source.data['color'][i])
+            }
         }
     
     }
 
     // Define arrays for updating the endogenous plots
-    var endog_data = [rep_endog, pooled_endog, dwell_all_endog, dwell_cut_endog, dwell_unloop_endog]
-    var endog_views = [rep_endog_view, pooled_endog_view, dwell_all_endog_view, dwell_cut_endog_view, dwell_unloop_endog_view]
+    var endog_data = [rep_endog, pooled_endog, dwell_all_endog, 
+                      dwell_cut_endog, dwell_unloop_endog, post_endog]
+    var endog_views = [rep_endog_view, pooled_endog_view, dwell_all_endog_view, 
+                        dwell_cut_endog_view, dwell_unloop_endog_view,
+                        post_endog_view]
 
     // Push updates of the endogenous case
     for (var i = 0; i < endog_views.length; i++) { 
@@ -54,12 +64,12 @@
             var point_mutant = point_data[i].data['mutant'][j];
             if (points.includes(point_mutant) === true) { 
                 indices.push(j) 
-                point_data[i].data['color'][j] = colors[points.indexOf(point_mutant)];
+                point_data[i].data['display_color'][j] = colors[points.indexOf(point_mutant)];
             }
             if (point_mutant === clicked_base | clicked_base === 0 | clicked_base === 'No Mutation' | clicked_base === undefined) {
                 var set_alpha = 1
             }
-            else { var set_alpha = 0.2}
+            else { var set_alpha = 1}
             alphas.push(set_alpha)
         }
         // Add the indices to the corresponding filter. 
@@ -71,9 +81,9 @@
     }
 
     // Process dwell times
-    var dwell_data = [dwell_all_point, dwell_cut_point, dwell_unloop_point];
-    var dwell_views = [dwell_all_blank, dwell_cut_blank, dwell_unloop_blank]
-    for (var i = 0; i < dwell_data.length; i++) { 
+    var multi_data = [dwell_all_point, dwell_cut_point, dwell_unloop_point, post_point];
+    var multi_views = [dwell_all_blank, dwell_cut_blank, dwell_unloop_blank, post_blank]
+    for (var i = 0; i < multi_data.length; i++) { 
         var xs = [];
         var ys = [];
         var alphas = [];
@@ -84,13 +94,13 @@
             if (target_point === clicked_base | clicked_base === 0 | clicked_base === 'No Mutation') {
                 var set_alpha = 1;
             }
-            else { var set_alpha=0.25;}
-            for (var k = 0; k < dwell_data[i].data['mutant'].length; k++) { 
-                var point_mutant = dwell_data[i].data['mutant'][k];
+            else { var set_alpha=1;}
+            for (var k = 0; k < multi_data[i].data['mutant'].length; k++) { 
+                var point_mutant = multi_data[i].data['mutant'][k];
 
                     if (target_point === point_mutant) { 
-                        point_xs.push(dwell_data[i].data['dwell_time'][k]);
-                        point_ys.push(dwell_data[i].data['ecdf'][k]) ;
+                        point_xs.push(multi_data[i].data['x_val'][k]);
+                        point_ys.push(multi_data[i].data['y_val'][k]) ;
                     }
 
                    
@@ -99,15 +109,15 @@
             ys.push(point_ys);
             alphas.push(set_alpha)
         }
-        console.log(alphas)
 
  
         // Update the displayed data source with the correct multiline
         // parameters
-        dwell_views[i].data['xs'] = xs;
-        dwell_views[i].data['ys'] = ys;
-        dwell_views[i].data['mutant'] = points;
-        dwell_views[i].data['c'] = colors;
-        dwell_views[i].data['alpha'] = alphas;
-        dwell_views[i].change.emit();
+        multi_views[i].data['xs'] = xs;
+        multi_views[i].data['ys'] = ys;
+        multi_views[i].data['mutant'] = points;
+        multi_views[i].data['c'] = colors;
+        multi_views[i].data['alpha'] = alphas;
+        multi_views[i].change.emit();
+
     }
