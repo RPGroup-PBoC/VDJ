@@ -12,8 +12,10 @@ data = pd.read_csv('../../data/compiled_looping_events.csv', sep=',')
 # Need to group by mutant, Ca and HMGB1 concentration
 bs_df = pd.DataFrame(columns=['mean','bs_low','bs_high',
                             'mutant','salt','hmgb1'])
-tqdm.pandas(desc='mutant progress')
-for g,d in data.groupby(['mutant', 'salt', 'hmgb1']).progress_apply():
+mutant_count=0
+for g,d in data.groupby(['mutant', 'salt', 'hmgb1']):
+    mutant_count += 1
+    print(mutant_count)
     sampling = np.zeros(1000000)
     for n in range(0, 1000000, 1):
         sampling[n] = np.sum(d['n_loops'].sample(n=len(d),replace=True)) / len(d)
