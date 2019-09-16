@@ -7,7 +7,7 @@ import bokeh.plotting
 from bokeh import events
 from bokeh.models import (ColumnDataSource, Div, LinearAxis, CustomJS, Text,
                           CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool,
-                          IndexFilter)
+                          IndexFilter, TapTool)
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
 from bokeh.embed import components
@@ -23,10 +23,10 @@ endog_seqs = vdj.io.endogenous_seqs()
 reference = endog_seqs['reference']
 nt_idx = vdj.io.nucleotide_idx()
 
+# Generate an empty dataframe and a color list from 5' to 3'
 mut_df = pd.DataFrame([])
-colors = bokeh.palettes.Paired11[1:]
+colors = bokeh.palettes.Category10_10
 for key, val in endog_seqs.items():
-    # Find where the reference is different from the endog 
     color_idx = 0   
     for i, b in enumerate(reference[1]):
         if b != val[1][i]:
@@ -49,11 +49,11 @@ for key, val in endog_seqs.items():
 
             # Assemble the mutant dataframe
             mut_info = {'position':i, 'base':base_letter, 'base_idx':base_idx,
-                        'mutant': name, 'endogenous':key, 'color':color}
+                        'point_mutant': name, 'mutant':key, 'color':color, 'display_color':color}
             color_idx += 1
         else:
             mut_info = {'position':i, 'base':reference[0][i], 'base_idx':nt_idx[b],
-                        'mutant':'No Mutation', 'endogenous':key, 
+                        'point_mutant':'No Mutation', 'mutant':key, 
                         'color':'#c2c2c2'}
         mut_df = mut_df.append(mut_info, ignore_index=True)
 seq_source = ColumnDataSource(mut_df)
@@ -62,13 +62,40 @@ seq_source = ColumnDataSource(mut_df)
 # Load the data sets
 loops = pd.read_csv('../../../data/compiled_looping_events.csv')
 dwell_all_data = pd.read_csv('../../../data/compiled_dwell_times.csv')
+post_data = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
+post_data['color'] = 'slategrey'
+
+# Restrict the posterior distributions.
+post_data = post_data[(post_data['hmgb1']==80) & (post_data['salt']=='Mg')]
+
+dfs = []
+for g, d in post_data.groupby('mutant'):
+    # Determine the class of mutant.
+    if ('Spac' in g) | ('Hept' in g) | ('Non' in g):
+        parsed_seq = vdj.io.mutation_parser(g) 
+        mut_class = 'point'
+    else:
+        mut_class = 'endogenous'
+    d = d.copy()
+    d['class'] = mut_class
+    d['alpha'] = 1
+    dfs.append(d)
+post_data = pd.concat(dfs)
+
+# Split into endogenous and point mutations. 
+post_endog = post_data[post_data['class']=='endogenous'] 
+post_point = post_data[post_data['class']=='point'] 
+
+# Rename the x and y such that I can loop effectively. 
+post_point.rename(columns={'probability':'x_val', 'posterior':'y_val'}, 
+                    inplace=True)
 
 # Process the looping data into statistics
 loops = loops[(loops['hmgb1']==80) & (loops['salt']=='Mg')]
 pooled_df = pd.DataFrame()
 rep_df = pd.DataFrame()
 for g, d in loops.groupby('mutant'):
-    # Determine the class of mutant.
+    # Determine the class of mutant. 
     if ('Spac' in g) | ('Hept' in g) | ('Non' in g):
         parsed_seq = vdj.io.mutation_parser(g) 
         mut_class = 'point'
@@ -79,18 +106,18 @@ for g, d in loops.groupby('mutant'):
         position = [29]
     if len(position) == 1:
         pooled_df = pooled_df.append({'mutant': g, 'class':mut_class,
-            'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx']),
+            'y_val':d['n_loops'].sum() / len(d['bead_idx']),
             'n_beads':len(d['bead_idx']), 'n_loops':d['n_loops'].sum(),
-            'position':position[0], 'color': 'slategrey'},
+            'x_val':position[0], 'color': 'slategrey', 'alpha':1},
             ignore_index=True)
         for _g, _d in d.groupby(['replicate']):
             rep_df = rep_df.append({'mutant':g, 'class':mut_class,
-            'loops_per_bead':_d['n_loops'].sum() / len(_d['bead_idx']),
+            'y_val':_d['n_loops'].sum() / len(_d['bead_idx']),
             'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum(),
-            'position': position[0], 'color': 'slategrey'},
+            'x_val': position[0], 'color': 'slategrey', 'alpha':1},
             ignore_index=True)
-pooled_df['y'] = 0.5 
-rep_df['y'] = np.random.normal(0.5,0.05, len(rep_df))
+
+
 #
 #%% Process all datasets
 # Keep only the HMGB1 = 80 mM and Mg
@@ -109,18 +136,38 @@ for source in [dwell_all_data, dwell_cut_data, dwell_unloop_data]:
         _df = pd.DataFrame()
         # Determine the mutant
         x, y = np.sort(d['dwell_time_min'].values), np.arange(0, len(d), 1) / len(d)
-        y[-1] = 1
-        _df['dwell_time'] = x
-        _df['ecdf'] = y
+        y[-1] = 1 
+        # Stagger the results so I can recreate a step plot
+        staircase_y = np.empty(2 * len(d)) 
+        staircase_x = np.empty(2 * len(d)) 
+        staircase_y[0] = 0
+        staircase_y[1::2] = y
+        staircase_y[2::2] = y[:-1]
+        staircase_x[::2] = x
+        staircase_x[1::2] = x
+
+        # Generate another point array so points can be plotted on arrays. 
+        point_x = np.zeros(2 * len(d))
+        point_y = np.zeros(2 * len(d))
+        point_x[1::2] = x
+        point_y[1::2] = y
+        point_x[point_x == 0] = -1
+        point_y[point_y == 0] = -1
+
+        # Assemble the dataframe. 
+        _df['x_val'] = staircase_x
+        _df['point_x'] = point_x
+        _df['y_val'] = staircase_y
+        _df['point_y'] = point_y
         _df['mutant'] = g
         _df['color'] = 'slategrey'
+        _df['alpha'] = 1;
+        _df['level'] = 'underlay'
         if ('Spac' in g) | ('Hept' in g) | ('Non' in g):
             _df['class'] = 'point'
         else:
             _df['class'] = 'endogenous'
-
-
-        bin_dfs.append(_df)
+        bin_dfs.append(_df)     
     dwell_hist = pd.concat(bin_dfs)
     dfs.append(dwell_hist)
 dwell_dist, cut_dist, unloop_dist = dfs
@@ -133,21 +180,26 @@ dwell_cut_endog = ColumnDataSource(cut_dist[cut_dist['class']=='endogenous'])
 dwell_unloop_point = ColumnDataSource(unloop_dist[unloop_dist['class']== 'point'])
 dwell_unloop_endog = ColumnDataSource(unloop_dist[unloop_dist['class']== 'endogenous'])
 
+# Assemble teh posterior distribution cds
+post_endog = ColumnDataSource(post_endog)
+post_point = ColumnDataSource(post_point)
+post_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
 
 # Make blank dwell time cds for plotting. 
-dwell_all_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[]})
-dwell_cut_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[]})
-dwell_unloop_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[]})
+dwell_all_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
+dwell_cut_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
+dwell_unloop_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'alpha':[]})
 
 pooled_point = ColumnDataSource(pooled_df[pooled_df['class']=='point'])
 rep_point = ColumnDataSource(rep_df[rep_df['class']=='point'])
 pooled_endog = ColumnDataSource(pooled_df[pooled_df['class']=='endogenous'])
 rep_endog = ColumnDataSource(rep_df[rep_df['class']=='endogenous'])
 
+
 #%%
 
 # Define filters
-endog_filter = GroupFilter(column_name='endogenous', group='')
+endog_filter = GroupFilter(column_name='mutant', group='')
 target_filter = GroupFilter(column_name='mutant', group='')
 dwell_all_filter = IndexFilter(indices=[])
 dwell_cut_filter = IndexFilter(indices=[])
@@ -155,28 +207,48 @@ dwell_unloop_filter = IndexFilter(indices=[])
 rep_filter = IndexFilter(indices=[])
 pooled_filter = IndexFilter(indices=[])
 
-# Define  the many, many views
+# Define the many, many, (many) views
 seq_view = CDSView(source=seq_source, filters=[endog_filter])
 dwell_all_endog_view = CDSView(source=dwell_all_endog, filters=[endog_filter])
 dwell_all_point_view = CDSView(source=dwell_all_point, filters=[dwell_all_filter])
+
 dwell_cut_endog_view = CDSView(source=dwell_cut_endog, filters=[endog_filter])
 dwell_cut_point_view = CDSView(source=dwell_cut_point, filters=[dwell_cut_filter])
+
+
 dwell_unloop_endog_view = CDSView(source=dwell_unloop_endog, filters=[endog_filter])
 dwell_unloop_point_view = CDSView(source=dwell_unloop_point, filters=[dwell_unloop_filter])
+
+
 rep_point_view = CDSView(source=rep_point, filters=[rep_filter])
 rep_endog_view = CDSView(source=rep_endog, filters=[endog_filter])
+
 pooled_point_view = CDSView(source=pooled_point, filters=[pooled_filter])
-pooled_endog_view = CDSView(source=pooled_endog, filters=[pooled_filter])
+pooled_endog_view = CDSView(source=pooled_endog, filters=[endog_filter])
+
+
+post_endog_view = CDSView(source=post_endog, filters=[endog_filter])
+post_point_view = CDSView(source=post_point)
 
 # Define the dropdown for the interactivity
-sel = Select(options=list(mut_df['endogenous'].unique()))
+sel = Select(options=list(mut_df['mutant'].unique()))
 
+hover_cb = """
+var hover_mut = seq_source.data['point_mutant'][cb_data.index['1d'].indices[0]];
+"""
 
+sel_cb = """
+var hover_mut = 'None';
+"""
 # Load the callback code
 with open('point_endogenous_comparison.js', 'r') as file:
-    cb_code = file.read()
+    unified_code = file.read()
+    sel_cb_code = sel_cb + unified_code
+    hover_cb_code = hover_cb + unified_code
 
-cb = CustomJS(args={'endog_filter':endog_filter, 'target_filter':target_filter, 
+cbs = []
+for cb in [sel_cb_code, hover_cb_code]:
+    cbs.append(CustomJS(args={'endog_filter':endog_filter, 
                     'dwell_all_filter':dwell_all_filter, 'dwell_cut_filter':dwell_cut_filter,
                     'dwell_unloop_filter':dwell_unloop_filter,
                     'rep_filter':rep_filter, 'pooled_filter':pooled_filter,
@@ -193,34 +265,48 @@ cb = CustomJS(args={'endog_filter':endog_filter, 'target_filter':target_filter,
                     'rep_endog':rep_endog, 'rep_endog_view':rep_endog_view,
                     'pooled_point':pooled_point, 'pooled_point_view':pooled_point_view, 
                     'pooled_endog':pooled_endog, 'pooled_endog_view':pooled_endog_view,
+                    'post_endog': post_endog, 'post_endog_view':post_endog_view,
+                    'post_point':post_point, 'post_view':post_point_view, 
+                    'post_endog': post_endog, 'post_endog_view':post_endog_view,
+                    'post_blank':post_blank,
                     'endog_sel':sel},
-    code=cb_code) 
+        code=cb))
 
+cb, hcb = cbs
 sel.js_on_change('value', cb)
 
 
 # Define the figure canvases
-seq_ax = bokeh.plotting.figure(width=700, height=50, x_range=[0, 30],
-                                tools=[''], toolbar_location=None,
-                                y_range=[-0.01, 0.1])
-                                
-dwell_all_ax = bokeh.plotting.figure(width=600, height=250, x_axis_type='log', 
-                                    x_range=[0.8, 80], 
+seq_ax = bokeh.plotting.figure(width=600, height=80, x_range=[0, 30],
+                                y_range=[-0.01, 0.1], tools=[''],
+                                toolbar_location=None)
+dwell_all_ax = bokeh.plotting.figure(width=400, height=250, x_axis_type='log', 
+                                    x_range=[0.2, 80], y_range=[-0.05, 1.05],
                                     x_axis_label='paired complex dwell time [min]',
-                                    y_axis_label = 'ECDF', title='all PCs')
-dwell_unloop_ax = bokeh.plotting.figure(width=300, height=200, x_axis_type='log', 
-                                    x_range=[0.8, 80], 
+                                    y_axis_label = 'ECDF', title='all PCs',
+                                    tools=['hover'])
+dwell_unloop_ax = bokeh.plotting.figure(width=400, height=250, x_axis_type='log', 
+                                    x_range=[0.5, 80], y_range=[0, 1],
                                     x_axis_label='paired complex dwell time [min]',
-                                    y_axis_label = 'ECDF', title='unlooped PCs')
-
-dwell_cut_ax = bokeh.plotting.figure(width=300, height=250, x_axis_type='log', 
-                                    x_range=[0.8, 80], 
+                                    y_axis_label = 'ECDF', title='unlooped PCs',
+                                    tools=['hover'])
+dwell_cut_ax = bokeh.plotting.figure(width=400, height=250, x_axis_type='log', 
+                                    x_range=[0.5, 80], y_range=[0, 1],
                                     x_axis_label='paired complex dwell time [min]',
-                                    y_axis_label = 'ECDF', title='cleaved PCs')
-loop_freq_ax = bokeh.plotting.figure(width=700, height=400,
+                                    y_axis_label = 'ECDF', title='cleaved PCs',
+                                    tools=['hover'])
+loop_freq_ax = bokeh.plotting.figure(width=600, height=300,
                                     x_axis_label='position of mutation', 
                                     y_axis_label = 'paired complexes per bead',
-                                    x_range=[0, 30], y_range=[0, 0.8])
+                                    x_range=[0, 30], y_range=[0, 1],
+                                    tools=['hover'])
+
+pcut_ax = bokeh.plotting.figure(width=600, height=300, x_axis_label='probability',
+                                y_axis_label='posterior probability',
+                                title = 'PC cleavage probability', x_range=[0,
+                                1])
+
+# Format the sequence axis to not be colorful.
 seq_ax.xaxis.visible = False
 seq_ax.yaxis.visible = False
 seq_ax.background_fill_color = None
@@ -228,70 +314,73 @@ seq_ax.outline_line_color = None
 
 # Add the variant sequences
 variant_seq = bokeh.models.glyphs.Text(x='position', y=0, text='base',
-text_color='color', text_font='Courier', text_font_size='28pt')
-seq_ax.add_glyph(seq_source, variant_seq, view=seq_view)
+text_color='color', text_font='Courier', text_font_size='26pt')
+sequence = seq_ax.add_glyph(seq_source, variant_seq, view=seq_view)
+
+# Add a hover interaction to the seq ax
+hover = HoverTool(tooltips=[('point mutation', '@point_mutant')],
+renderers=[sequence], callback=hcb)
+seq_ax.add_tools(hover)
+
+loop_freq_ax.triangle('x_val', 'y_val', source=rep_endog, 
+                      view=rep_endog_view, color='slategrey', alpha=0.75, 
+                      size=8, legend='replicate results')
+loop_freq_ax.circle('x_val', 'y_val', source=pooled_endog, 
+                      view=pooled_endog_view,
+                      fill_color='slategrey', line_color='black',  
+                      size=7, legend='pooled results', line_width=2)
+
+
 
 # Plot the ECDFS of the endogenous samples
-dwell_all_ax.step('dwell_time', 'ecdf', line_width=1, color='slategrey', 
+dwell_all_ax.line('x_val', 'y_val', line_width=2, color='black', 
+                   source=dwell_all_endog, view=dwell_all_endog_view,
+                   level='overlay')
+dwell_all_ax.circle('point_x', 'point_y', line_width=2, line_color='black',  fill_color='slategrey', 
                    source=dwell_all_endog, view=dwell_all_endog_view)
-dwell_all_ax.circle('dwell_time', 'ecdf', line_width=1, fill_color='white', color='slategrey', 
-                   source=dwell_all_endog, view=dwell_all_endog_view)
 
-dwell_cut_ax.step('dwell_time', 'ecdf', line_width=1, color='slategrey', 
+dwell_cut_ax.line('x_val', 'y_val', line_width=2, color='black', 
                    source=dwell_cut_endog, view=dwell_cut_endog_view)
-dwell_cut_ax.circle('dwell_time', 'ecdf', line_width=1, fill_color='white', color='slategrey', 
+dwell_cut_ax.circle('point_x', 'point_y', line_width=2, line_color='black', fill_color='slategrey', 
                    source=dwell_cut_endog, view=dwell_cut_endog_view)
 
-dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, color='slategrey', 
+dwell_unloop_ax.line('x_val', 'y_val', line_width=2, color='black', 
                    source=dwell_unloop_endog, view=dwell_unloop_endog_view)
-dwell_unloop_ax.circle('dwell_time', 'ecdf', line_width=1, fill_color='white', color='slategrey', 
+dwell_unloop_ax.circle('point_x', 'point_y', line_width=2, color='black', 
                    source=dwell_unloop_endog, view=dwell_unloop_endog_view)
 
 
-# Plot the looping freqs for endogenous
-loop_freq_ax.triangle('position', 'loops_per_bead', source=rep_endog, 
-                      view=rep_endog_view, color='slategrey', alpha=0.75, 
-                      size=8)
-loop_freq_ax.circle('position', 'loops_per_bead', source=pooled_endog, 
-                      view=pooled_endog_view,
-                      line_color='slategrey',fill_color='white',  
-                      size=10)
-
-#
-# # Plot the dwell distribution for the point mutants. 
-dwell_all_ax.multi_line('xs', 'ys', source=dwell_all_blank, color='c', line_width=1)                   
-dwell_cut_ax.multi_line('xs', 'ys', source=dwell_cut_blank, color='c', line_width=1)                   
-dwell_unloop_ax.multi_line('xs', 'ys', source=dwell_unloop_blank, color='c', line_width=1)                   
-
-dwell_cut_ax.circle('dwell_time', 'ecdf', line_width=1, 
-                   source=dwell_cut_point, view=dwell_cut_point_view,
-                   color='color', alpha=0.5)
-#
-dwell_unloop_ax.circle('dwell_time', 'ecdf', line_width=1, 
-                   source=dwell_unloop_point, view=dwell_unloop_point_view,
-                   color='color', alpha=0.5)
-
-loop_freq_ax.triangle('position', 'loops_per_bead', source=rep_point, 
-                      view=rep_point_view, color='color', alpha=0.5, 
-                      size=8)
-loop_freq_ax.circle('position', 'loops_per_bead', source=pooled_point, 
+loop_freq_ax.triangle('x_val', 'y_val', source=rep_point, 
+                      view=rep_point_view, color='color', alpha='alpha', 
+                      size=8, legend='replicate results')
+loop_freq_ax.circle('x_val', 'y_val', source=pooled_point, 
                       view=pooled_point_view,
-                      line_color='color', fill_color='white',  
-                      size=10)
+                      color='color', line_color='black',  
+                      size=10, legend='pooled results', line_width=2,
+                      alpha='alpha')
 
 
-# dwell_cut_ax.step('dwell_time', 'ecdf', line_width=1, 
-#                    source=dwell_cut_point, view=dwell_cut_point_view,
-#                    color='color')
- dwell_unloop_ax.step('dwell_time', 'ecdf', line_width=1, 
-#                    source=dwell_cut_point, view=dwell_cut_point_view,
-#                    color='color')
+# Plot the endogenous posterior distributions
+pcut_ax.line('probability', 'posterior', source=post_endog, view=post_endog_view,
+            line_width=2, color='slategrey', alpha=0.75)
 
+pcut_ax.varea('probability', y1=0, y2='posterior', source=post_endog, view=post_endog_view,
+            color='slategrey', alpha=0.25)
 
+# # Plot the dwell distribution for the point mutants. 
+dwell_all_ax.multi_line('xs', 'ys', source=dwell_all_blank, color='c',
+line_width=3, alpha='alpha') 
+dwell_cut_ax.multi_line('xs', 'ys', source=dwell_cut_blank, color='c',
+line_width=3,
+    alpha='alpha') 
+dwell_unloop_ax.multi_line('xs', 'ys', source=dwell_unloop_blank, color='c',
+line_width=3,
+alpha='alpha')
+pcut_ax.multi_line('xs', 'ys', source=post_blank, line_width=2, color='c',
+alpha='alpha')
 
-dwell_row = bokeh.layouts.row(dwell_unloop_ax, dwell_cut_ax)
-dwell_col = bokeh.layouts.column(dwell_row, dwell_all_ax)
-seq_col = bokeh.layouts.column(sel, seq_ax, loop_freq_ax)
+seq_col = bokeh.layouts.column(sel, seq_ax, loop_freq_ax, pcut_ax)
+dwell_col = bokeh.layouts.column(dwell_unloop_ax, dwell_cut_ax, dwell_all_ax)
 lay = bokeh.layouts.row(seq_col, dwell_col)
 
 # Set the theme. 
@@ -331,6 +420,11 @@ theme_json = {'attrs':
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
+
+
+# FOrmat legend details. 
+loop_freq_ax.legend.click_policy = 'hide'
+# loop_freq_ax.legend.title_text = 'click to hide'
 bokeh.io.save(lay)
 
 
