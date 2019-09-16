@@ -1,0 +1,43 @@
+---
+layout: default
+---
+
+<aside class="sidebar">
+  <header>
+    <div class="about">
+      <div class="cover-author-image">
+        <a href="{{site.baseurl}}/"><img src="{{site.baseurl}}/assets/img/{% if site.author-img %}{{site.author-img}}{% endif %}" alt="{{site.author}}"></a>
+      </div>
+      <div class="author-name">{{site.author}}</div>
+      <div class="sidebar-links">
+      <hr>
+      <p><a href="{{site.baseurl}}/index.html">About</a></p>
+      <hr>
+      <p><a href="{{site.baseurl}}/endogenous_mutants">Endogenous RSS Explorer</a></p>
+      <hr>
+      <p><a href="{{site.baseurl}}/point_mutants">Synthetic RSS Explorer</a></p>
+        <hr>
+
+      <p><a href="{{site.baseurl}}/comparison">Synthetic-Endogenous RSS Comparison</a></p>
+      <hr>
+      <p><a href="{{site.baseurl}}/people">People</a></p>
+      <hr>
+      <p><a href="{{site.baseurl}}/data">Data</a></p>
+      <hr>
+      <p><a href="{{site.baseurl}}/code">Code</a></p>
+      <hr>
+      </div>
+    </div>
+  </header> <!-- End Header -->
+
+   </section> <!-- End Section Contact -->
+    <div class="copyright">
+      <!-- <p>{{site.time | date: '%Y'}} &copy; {{site.author}}</p> -->
+    </div>
+    <center>
+    </center>
+  </footer> <!-- End Footer -->
+</aside> <!-- End Sidebar -->
+<div class="content-box clearfix">
+  {{ content }}
+</div>
