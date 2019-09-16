@@ -35,7 +35,7 @@ count_rep['freq_loops'] = count_rep['n_loops']['sum'] / count_rep['n_loops']['co
 
 counts = pd.DataFrame(columns={'mutant','loops_per_bead','std_freq'})
 for g,d in count_rep.groupby('mutant'):
-        mean = np.mean(d['freq_loops'].values)
+        mean = np.average(d['freq_loops'].values, weights=d['n_loops']['count'].values)
         std = np.std(d['freq_loops'].values)
         df = pd.DataFrame({'mutant':g,'loops_per_bead':[mean],'std_freq':[std]})
         counts = counts.append(df, ignore_index=True)
