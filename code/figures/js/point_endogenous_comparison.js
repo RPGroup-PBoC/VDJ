@@ -20,7 +20,6 @@ for (var i = 0; i < seq_source.data['mutant'].length ; i++) {
     // Determine the point mutant at that position.
     var mutation = seq_source.data['point_mutant'][i]
 
-
     // If the endogenous mutation is the same as the selection and is not the 
     // same as the reference, push the piont mutant to the array 
     if (endo === mut && mutation !== "No Mutation") {
@@ -47,7 +46,28 @@ for (var i = 0; i < seq_source.data['mutant'].length ; i++) {
     }
 }
                    
- 
+
+// Update the legend.
+var  leg_colors = ['slategrey'];
+var  leg_mutant = [mut];
+var  leg_alphas = [1];
+var  leg_xs = [[-10, -9]];
+var  leg_ys = [[-10, -9]];
+
+for (var i = 0; i < colors.length; i++) {
+    leg_colors.push(colors[i]);
+    leg_mutant.push(points[i])
+    leg_alphas.push(alphas[i]);
+    leg_xs.push([-10, -9])
+    leg_ys.push([-10, -9])
+}
+leg_source.data['xs'] = leg_xs;
+leg_source.data['ys'] = leg_ys;
+leg_source.data['c'] = leg_colors;
+leg_source.data['mutant'] = leg_mutant;
+leg_source.data['alpha'] = leg_alphas;
+leg_source.change.emit();
+
 // Define arrays of the endogenous plots for easy iteration
 var endog_data = [rep_endog, 
                   pooled_endog, 
