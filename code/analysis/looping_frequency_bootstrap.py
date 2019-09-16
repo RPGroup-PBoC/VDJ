@@ -17,9 +17,9 @@ for g,d in data.groupby(['mutant', 'salt', 'hmgb1']):
     mutant_count += 1
     print(mutant_count)
     sampling = np.random.choice(d['n_loops'].values,size=(len(d),10**6),replace=True)
-    loop_freq = np.sum(sampling, axis=1) / len(d)
+    loop_freq = np.sum(sampling, axis=0) / len(d)
     bs_low, bs_high = vdj.stats.compute_hpd(loop_freq, mass_frac=0.95)
-    mean = np.mean(sampling)
+    mean = np.mean(loop_freq)
     df = pd.DataFrame({'mean':[mean], 
                         'bs_low':[bs_low], 
                         'bs_high':[bs_high]})
