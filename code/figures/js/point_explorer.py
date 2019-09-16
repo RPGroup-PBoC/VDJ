@@ -449,12 +449,15 @@ ax_loop.tools.append(HoverTool(renderers=[pool_fig],
                 tooltips=[('mutant', 'V4-57-1'), ('kind', 'pooled result'),
                           ('# of beads', '@n_beads'), ('# observed PCs', '@n_loops')]))
                
-ax_dwell_unlooped.step('dwell', 'ecdf',  color='slategrey', line_width=1, alpha=1, source=unlooped_dist_ref)
-ax_dwell_unlooped.circle('dwell', 'ecdf',  size=4, fill_color='white', color='slategrey', alpha=1, source=unlooped_dist_ref)
-ax_dwell_cut.step('dwell', 'ecdf',  color='slategrey', alpha=0.8, source=cut_dist_ref)
-ax_dwell_cut.circle('dwell', 'ecdf',  size=4, fill_color='white', color='slategrey', alpha=1, source=cut_dist_ref)
-ax_dwell_all.step('dwell', 'ecdf',  color='slategrey', alpha=0.8, source=dwell_dist_ref)
-ax_dwell_all.circle('dwell', 'ecdf', size=4, fill_color='white', color='slategrey', alpha=1, source=dwell_dist_ref)
+ax_dwell_unlooped.step('dwell', 'ecdf',  color='slategrey', line_width=2,
+alpha=1, source=unlooped_dist_ref)
+# ax_dwell_unlooped.circle('dwell', 'ecdf',  size=4, fill_color='white', color='slategrey', alpha=1, source=unlooped_dist_ref)
+ax_dwell_cut.step('dwell', 'ecdf',  color='slategrey', alpha=0.8,
+source=cut_dist_ref, line_width=2)
+# ax_dwell_cut.circle('dwell', 'ecdf',  size=4, fill_color='white', color='slategrey', alpha=1, source=cut_dist_ref)
+ax_dwell_all.step('dwell', 'ecdf',  color='slategrey', alpha=0.8,
+source=dwell_dist_ref, line_width=2)
+# ax_dwell_all.circle('dwell', 'ecdf', size=4, fill_color='white', color='slategrey', alpha=1, source=dwell_dist_ref)
 
 
 ax_cut.line('probability', 'posterior', source=post_ref, color='slategrey',
@@ -478,18 +481,18 @@ ax_loop.tools.append(HoverTool(renderers=[mut_pooled],
                           ('# of beads', '@n_beads'), ('# observed PCs', '@n_loops')]))
 
 ax_dwell_unlooped.step('dwell', 'ecdf',color='dodgerblue', alpha=1,
-                 source=unlooped_dist_source, view=unlooped_view, line_width=1)
-ax_dwell_unlooped.circle('dwell', 'ecdf', size=4, color='dodgerblue',
-                 alpha=1, source=unlooped_dist_source, view=unlooped_view,
-                 fill_color='white')
+                 source=unlooped_dist_source, view=unlooped_view, line_width=2)
+# ax_dwell_unlooped.circle('dwell', 'ecdf', size=4, color='dodgerblue',
+                #  alpha=1, source=unlooped_dist_source, view=unlooped_view,
+                #  fill_color='white')
 ax_dwell_cut.step('dwell', 'ecdf',color='dodgerblue', alpha=1,
-                 source=cut_dist_source, view=cut_view, line_width=1)
-ax_dwell_cut.circle('dwell', 'ecdf', size=4, fill_color='white', color='dodgerblue',
-                 alpha=0.8, source=cut_dist_source, view=cut_view)
+                 source=cut_dist_source, view=cut_view, line_width=2)
+# ax_dwell_cut.circle('dwell', 'ecdf', size=4, fill_color='white', color='dodgerblue',
+                #  alpha=0.8, source=cut_dist_source, view=cut_view)
 ax_dwell_all.step('dwell', 'ecdf',color='dodgerblue', alpha=1,
-                 source=dwell_dist_source, view=dwell_view, line_width=1)
-ax_dwell_all.circle('dwell', 'ecdf', size=4, fill_color='white', color='dodgerblue', alpha=0.8,
-                 source=dwell_dist_source, view=dwell_view)
+                 source=dwell_dist_source, view=dwell_view, line_width=2)
+# ax_dwell_all.circle('dwell', 'ecdf', size=4, fill_color='white', color='dodgerblue', alpha=0.8,
+                #  source=dwell_dist_source, view=dwell_view)
 
 ax_cut.line('probability', 'posterior', source=post_dist_source, color='dodgerblue',
             view=post_view)

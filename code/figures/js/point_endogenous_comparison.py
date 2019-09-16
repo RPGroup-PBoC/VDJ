@@ -302,23 +302,24 @@ dwell_cut_ax = bokeh.plotting.figure(width=400, height=250, x_axis_type='log',
                                     x_axis_label='paired complex dwell time [min]',
                                     y_axis_label = 'ECDF', title='cleaved PCs',
                                     tools=[''])
-loop_freq_ax = bokeh.plotting.figure(width=600, height=350,
+loop_freq_ax = bokeh.plotting.figure(width=550, height=350,
                                     x_axis_label='reference nucleotide', 
                                     y_axis_label = 'paired complexes per bead',
-                                    x_range=[0, 30], y_range=[0, 1],
-                                    tools=[''])
-pcut_ax = bokeh.plotting.figure(width=600, height=350, x_axis_label='probability',
+                                    x_range=[0, 32], y_range=[0, 1],
+                                    tools=[''], toolbar_location=None)
+pcut_ax = bokeh.plotting.figure(width=550, height=350, x_axis_label='probability',
                                 y_axis_label='posterior probability',
-                                title = 'PC cleavage probability', x_range=[0, 1])
+                                    title = 'PC cleavage probability',
+                                    x_range=[0, 1],
+                                tools=[''], toolbar_location=None)
 
 # Define a legend axis and blank it 
-leg_ax = bokeh.plotting.figure(width=1100, height=30, tools=[''],
+leg_ax = bokeh.plotting.figure(width = 150, height= 700, tools=[''],
 toolbar_location=None, x_range=[0, 1], y_range=[0, 1]) 
 
 leg_ax.multi_line('xs', 'ys', color='c', line_width=10, legend='mutant', 
                   source=leg_source, alpha='alpha')
 leg_ax.legend.location = 'center'
-leg_ax.legend.orientation = 'horizontal'
 leg_ax.legend.background_fill_color = None
 leg_ax.legend.label_text_font_size = '10pt'
 
@@ -331,10 +332,11 @@ for ax in [seq_ax, leg_ax]:
 
 # Set the ticker for the x axis o the sequence
 ticks = np.arange(1, 30, 1)
-loop_freq_ax.ray(29, 0, angle=np.pi/2,length=20, line_color='white', line_width=15, alpha=0.5)
+ticks[-1] += 2
+loop_freq_ax.ray(31, 0, angle=np.pi/2,length=20, line_color='white', line_width=15, alpha=0.5)
 loop_freq_ax.xaxis.ticker = ticks
 renamed_ticks = {int(t):s for t, s in zip(ticks, list(reference[0]))}
-renamed_ticks[29] = 'endo'
+renamed_ticks[31] = 'endo'
 loop_freq_ax.xaxis.major_label_overrides = renamed_ticks
 
 # Add the variant sequences
@@ -343,10 +345,10 @@ text_color='color', text_font='Courier', text_font_size='26pt')
 sequence = seq_ax.add_glyph(seq_source, variant_seq, view=seq_view)
 
 # Add a hover interaction to the seq ax
-loop_freq_ax.triangle('x_val', 'y_val', source=rep_endog, 
+loop_freq_ax.triangle(31, 'y_val', source=rep_endog, 
                       view=rep_endog_view, color='slategrey', alpha=0.75, 
                       size=8)
-loop_freq_ax.circle('x_val', 'y_val', source=pooled_endog, 
+loop_freq_ax.circle(31, 'y_val', source=pooled_endog, 
                       view=pooled_endog_view,
                       fill_color='slategrey', line_color='black',  
                       size=10, line_width=1)
@@ -395,12 +397,12 @@ sel.js_on_change('value', js_cbs[0])
 
 
 spacer = Div(text='<br/>')
-sel_row = bokeh.layouts.row(sel, seq_ax)
+sel_row = bokeh.layouts.row(sel, seq_ax, sizing_mode='scale_width')
 loop_col = bokeh.layouts.column(spacer, loop_freq_ax, spacer, pcut_ax)
 dwell_col = bokeh.layouts.column(dwell_unloop_ax, dwell_cut_ax, dwell_all_ax)
-complete_row = bokeh.layouts.row(loop_col, dwell_col)
+complete_row = bokeh.layouts.row(leg_ax, loop_col, dwell_col)
 
-lay = bokeh.layouts.column(leg_ax, sel_row, complete_row)
+lay = bokeh.layouts.column(sel_row, complete_row)
 
 # Set the theme. 
 theme_json = {'attrs':
