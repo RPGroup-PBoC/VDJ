@@ -30,3 +30,5 @@ for g,d in data.groupby(['mutant', 'salt', 'hmgb1']):
 bs_df = bs_df[['mutant', 'salt', 'hmgb1', 'mean', 'bs_low', 'bs_high']]
 #%%
 bs_df.to_csv('../../data/compiled_loop_freq_bs.csv')
+
+#%%
