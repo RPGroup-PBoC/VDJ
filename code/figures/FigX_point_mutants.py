@@ -37,8 +37,10 @@ ref_idx = ref[1]
 wt_val = counts[counts['mutant']=='WT12rss']['mean'].values[0]
 wt_loop_low = counts[counts['mutant']=='WT12rss']['bs_low'].values[0]
 wt_loop_high = counts[counts['mutant']=='WT12rss']['bs_high'].values[0]
+
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
+
 wt_dwell = median_dwell[median_dwell['mutant']=='WT12rss']['dwell_time_min'].values[0]
 wt_dwell_25 = dwell_25[dwell_25['mutant']=='WT12rss']['dwell_time_min'].values[0]
 wt_dwell_75 = dwell_75[dwell_75['mutant']=='WT12rss']['dwell_time_min'].values[0]
@@ -49,8 +51,9 @@ for m in counts['mutant'].unique():
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
     cut_data.loc[cut_data['mutant']==m, 'n_muts'] = seq['n_muts']
     median_dwell.loc[median_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
-    median_dwell.loc[median_dwell['mutant']==m, 'dwell_25'] = dwell_25[dwell_25['mutant']==m]['dwell_time_min'].values[0]
-    median_dwell.loc[median_dwell['mutant']==m, 'dwell_75'] = dwell_75[dwell_75['mutant']==m]['dwell_time_min'].values[0]
+    if m in median_dwell['mutant'].unique():
+        median_dwell.loc[median_dwell['mutant']==m, 'dwell_25'] = dwell_25[dwell_25['mutant']==m]['dwell_time_min'].values[0]
+        median_dwell.loc[median_dwell['mutant']==m, 'dwell_75'] = dwell_75[dwell_75['mutant']==m]['dwell_time_min'].values[0]
 
     # Find the x and mutation identity
     loc = np.argmax(ref_idx != seq['seq_idx'])
@@ -71,10 +74,10 @@ for m in counts['mutant'].unique():
     counts.loc[counts['mutant']==m, 'rel_diff'] = _d['mean'].values[0] - wt_val 
 
 # Keep the single point mutants
-points = counts[counts['n_muts'] == 1].copy()
-points_cut = cut_data[cut_data['n_muts'] == 1].copy()
+points = counts[(counts['n_muts'] == 1) & (counts['mutant'] != 'V4-55')].copy()
+points_cut = cut_data[(cut_data['n_muts'] == 1) & (cut_data['mutant'] != 'V4-55')].copy()
 points_cut['diff'] = points_cut['mode'] - wt_cut
-points_dwell = median_dwell[median_dwell['n_muts']==1].copy()
+points_dwell = median_dwell[(median_dwell['n_muts']==1) & (median_dwell['mutant'] != 'V4-55')].copy()
 
 for m in points_cut['mutant'].unique():
         seq = vdj.io.mutation_parser(m)
@@ -118,7 +121,8 @@ fig, ax = plt.subplots(4, 1, figsize=(8.2, 9), facecolor='white')
 plt.subplots_adjust(hspace=0.2)
 
 colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
-shift = {'A':0,  'T':0, 'C':0, 'G':0.0}
+shift = {'A':0, 'T':0, 'C':0, 'G':0}
+hshift = {'A':-0.2,  'T':0.2, 'C':-0.1, 'G':0.1}
 points.sort_values('rel_diff', inplace=True)
 
 for j, p in enumerate([points, points_dwell, points_cut]): 
@@ -132,7 +136,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 vshift = 0.15
         else:
                 a = ax[2]
-                v = 'diff'
+                v = 'mode'
                 vshift = 0.04
 
         for g, d in p.groupby('pos'):
@@ -141,23 +145,23 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 base = d['base'].unique()
                 if type(base) != str:
                         base = base[0]
-                a.plot(g + 1, d[v], marker='o', color=colors[base], lw=0.75, 
+                a.plot(g + 1 + hshift[base], d[v], marker='o', color=colors[base], lw=0.75, 
                         ms=10, linestyle='none', label='__nolegend__', 
                         markerfacecolor='white', alpha=0.8)
                 if (base == 'T') | (base == 'A'):
                         shift = 0.05
                 else:
                         shift = 0 
-                a.annotate(base , xy=(g + 0.78 + shift, d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
+                a.annotate(base , xy=(g + 0.78 + shift + hshift[base], d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
                             size=9,  label='__nolegend__')
                 if j==0:
-                        a.vlines(g + 1, d['bs_low'], d['bs_high'],
+                        a.vlines(g + 1 + hshift[base], d['bs_low'], d['bs_high'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==1:
-                        a.vlines(g + 1, d['dwell_25'], d['dwell_75'],
+                        a.vlines(g + 1 + hshift[base], d['dwell_25'], d['dwell_75'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==2:
-                        a.vlines(g + 1, d['diff']-d['std'], d['diff']+d['std'],
+                        a.vlines(g + 1 + hshift[base], d['mode']-d['std'], d['mode']+d['std'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
 #                else:
 #                        a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
@@ -171,15 +175,15 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     if type(base) != str:
                             base = base[0]
                     if j==0:
-                            a.vlines(g + 1, _d['bs_low'], _d['bs_high'],
+                            a.vlines(g + 1 + hshift[base], _d['bs_low'], _d['bs_high'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
                                         zorder=zorder, alpha=0.5)
                     elif j==1:
-                            a.vlines(g + 1, _d['dwell_25'], _d['dwell_75'],
+                            a.vlines(g + 1 + hshift[base], _d['dwell_25'], _d['dwell_75'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
                                         zorder=zorder, alpha=0.5)
                     elif j==2:
-                            a.vlines(g + 1, _d[v] - _d['std'], _d[v]+_d['std'],
+                            a.vlines(g + 1 + hshift[base], _d[v] - _d['std'], _d[v]+_d['std'],
                                      color=colors[base], lw=1.5, label='__nolegend__',
                                      zorder=zorder, alpha=0.5)
 #                    else:
@@ -190,29 +194,30 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     else:
                         shift = 0 
         
-                    a.plot(g + 1, _d[v], marker='o', color=colors[base], lw=0.75, 
+                    a.plot(g + 1 + hshift[base], _d[v], marker='o', color=colors[base], lw=0.75, 
                         ms=10, linestyle='none', label='__nolegend__', 
                         markerfacecolor='white', zorder=zorder, alpha=0.8)
-                    a.annotate(base , xy=(g + 0.78 + shift, _d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
+                    a.annotate(base , xy=(g + 0.78 + shift + hshift[base], _d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
                            size=9,  label='__nolegend__', zorder=zorder)
 
                     zorder -= 1
 wt_x = np.linspace(0, 30, 1000)
 ax[0].fill_between(wt_x, wt_loop_low, wt_loop_high, facecolor='grey', alpha=0.4)
-ax[2].vlines(1, -1*wt_std, wt_std, colors='k', lw=2)
+ax[1].vlines(1, wt_dwell_25, wt_dwell_75, color='k', lw=1.5)
+ax[2].fill_between(wt_x, wt_cut-wt_std, wt_cut+wt_std, facecolor='grey', alpha=0.4)
  
 # Previous y positions were -0.84 and -0.72
-line1 = lines.Line2D([7.5, 7.5], [-0.1, -0.02], clip_on=False, alpha=1,
+line1 = lines.Line2D([7.5, 7.5], [-0.12, -0.02], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line2 = lines.Line2D([19.5, 19.5], [-0.1, -0.02], clip_on=False, alpha=1,
+line2 = lines.Line2D([19.5, 19.5], [-0.12, -0.02], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line3 = lines.Line2D([7.5, 7.5], [0.52, 0.6], clip_on=False, alpha=1,
+line3 = lines.Line2D([7.5, 7.5], [0.62, 0.7], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line4 = lines.Line2D([19.5, 19.5], [0.52, 0.6], clip_on=False, alpha=1,
+line4 = lines.Line2D([19.5, 19.5], [0.62, 0.7], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line5 = lines.Line2D([7.5, 7.5], [-2.2, -2.8], clip_on=False, alpha=1,
+line5 = lines.Line2D([7.5, 7.5], [-0.2, -1.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line6 = lines.Line2D([19.5, 19.5], [-2.2, -2.8], clip_on=False, alpha=1,
+line6 = lines.Line2D([19.5, 19.5], [-0.2, -1.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
 
@@ -220,15 +225,14 @@ for n in range(0,3):
         _ = ax[n].set_xticks(np.arange(1, 29))
         ax[n].set_xlim([0.5, 28.5])
         ax[n].vlines(0.5, -0.65, 1.0, linewidth=4, zorder=0) #, color='#f5e3b3')
-        if n==0:
-                ax[n].hlines(wt_val, 0, 29, color='k', linestyle=':')
-        elif n==1:
-                ax[n].hlines(wt_dwell, 0, 29, color='k', linestyle=':')
-        else:
-                ax[n].hlines(0, 0, 29, color='k', linestyle=':')
         for i in range(1, 29, 2):
                 ax[n].axvspan(i-0.5, i+0.5, color='white',
                                 alpha=0.65, linewidth=0, zorder=-1)
+
+ax[0].hlines(wt_val, 0, 29, color='k', linestyle=':')
+ax[1].hlines(wt_dwell, 0, 29, color='k', linestyle=':')
+ax[2].hlines(wt_cut, 0, 29, color='k', linestyle=':')
+
 
 _ = ax[0].set_xticklabels([])
 _ = ax[2].set_xticklabels([])
@@ -245,15 +249,15 @@ ax[0].text(-0.5, -0.06, 'ref:', ha='center', va='center', fontsize=10)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
-ax[0].set_ylim([-0.01, 0.5])
-ax[1].set_ylim([0, 5])
-ax[2].set_ylim([-0.55, 0.7])
+ax[0].set_ylim([-0.01, 0.6])
+ax[1].set_ylim([0, 8])
+ax[2].set_ylim([0, 1.0])
 ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
 ax[2].set_xlim([0.7, 28.5])
 ax[0].set_ylabel('loop frequency', fontsize=12)
-ax[1].set_ylabel('change in median\ndwell time [min]', fontsize=12)
-ax[2].set_ylabel('change in\ncutting probability', fontsize=12)
+ax[1].set_ylabel('median dwell time [min]', fontsize=12)
+ax[2].set_ylabel('cutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
 ax[0].set_title('Spacer         ') # Spaces are ad-hoc positioning
 ax[0].set_title('Nonamer', loc='right')
