@@ -17,6 +17,8 @@ dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
 #%%
 # Compute the median dwell time
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
+dwell_25 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.25).reset_index()
+dwell_75 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.75).reset_index()
 
 # Load all cutting probability estimates taking gaussian approximation.
 cut_data = pd.read_csv('../../data/pooled_cutting_probability.csv')
@@ -38,12 +40,17 @@ wt_loop_high = counts[counts['mutant']=='WT12rss']['bs_high'].values[0]
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
 wt_dwell = median_dwell[median_dwell['mutant']=='WT12rss']['dwell_time_min'].values[0]
+wt_dwell_25 = dwell_25[dwell_25['mutant']=='WT12rss']['dwell_time_min'].values[0]
+wt_dwell_75 = dwell_75[dwell_75['mutant']=='WT12rss']['dwell_time_min'].values[0]
 
 for m in counts['mutant'].unique():
+    print(m)
     seq = vdj.io.mutation_parser(m)
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
     cut_data.loc[cut_data['mutant']==m, 'n_muts'] = seq['n_muts']
     median_dwell.loc[median_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
+    median_dwell.loc[median_dwell['mutant']==m, 'dwell_25'] = dwell_25[dwell_25['mutant']==m]['dwell_time_min'].values[0]
+    median_dwell.loc[median_dwell['mutant']==m, 'dwell_75'] = dwell_75[dwell_75['mutant']==m]['dwell_time_min'].values[0]
 
     # Find the x and mutation identity
     loc = np.argmax(ref_idx != seq['seq_idx'])
@@ -121,7 +128,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 vshift = 0.019
         elif j == 1:
                 a = ax[1]
-                v = 'rel_diff'
+                v = 'dwell_time_min'
                 vshift = 0.15
         else:
                 a = ax[2]
@@ -146,7 +153,10 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 if j==0:
                         a.vlines(g + 1, d['bs_low'], d['bs_high'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
-                if j==2:
+                elif j==1:
+                        a.vlines(g + 1, d['dwell_25'], d['dwell_75'],
+                                color=colors[base], lw=1.5, label='__nolegend__')
+                elif j==2:
                         a.vlines(g + 1, d['diff']-d['std'], d['diff']+d['std'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
 #                else:
@@ -164,7 +174,11 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                             a.vlines(g + 1, _d['bs_low'], _d['bs_high'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
                                         zorder=zorder, alpha=0.5)
-                    if j==2:
+                    elif j==1:
+                            a.vlines(g + 1, _d['dwell_25'], _d['dwell_75'],
+                                        color=colors[base], lw=1.5, label='__nolegend__',
+                                        zorder=zorder, alpha=0.5)
+                    elif j==2:
                             a.vlines(g + 1, _d[v] - _d['std'], _d[v]+_d['std'],
                                      color=colors[base], lw=1.5, label='__nolegend__',
                                      zorder=zorder, alpha=0.5)
@@ -207,7 +221,9 @@ for n in range(0,3):
         ax[n].set_xlim([0.5, 28.5])
         ax[n].vlines(0.5, -0.65, 1.0, linewidth=4, zorder=0) #, color='#f5e3b3')
         if n==0:
-                ax[0].hlines(wt_val, 0, 29, color='k', linestyle=':')
+                ax[n].hlines(wt_val, 0, 29, color='k', linestyle=':')
+        elif n==1:
+                ax[n].hlines(wt_dwell, 0, 29, color='k', linestyle=':')
         else:
                 ax[n].hlines(0, 0, 29, color='k', linestyle=':')
         for i in range(1, 29, 2):
@@ -230,7 +246,7 @@ ax[0].text(-0.5, -0.06, 'ref:', ha='center', va='center', fontsize=10)
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
 ax[0].set_ylim([-0.01, 0.5])
-ax[1].set_ylim([-2, 3])
+ax[1].set_ylim([0, 5])
 ax[2].set_ylim([-0.55, 0.7])
 ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
