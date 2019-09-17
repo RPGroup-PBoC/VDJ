@@ -55,11 +55,27 @@ muts[6] = 'V4-57-1'
 muts[0] = "DFL16.1-3'"
 muts[1] = "DFL16.1-5'"
 
+usage = {m:i for m, i in zip(muts, np.arange(1, 13))}
+#usage = {3:' (6.5±0.6%)', 4:' (6.1±0.5%)',
+#        5:' (6.5±0.5%)', 6:' (6.0±0.6%)',
+#        7:' (0.22%)',8:' (2.7±0.6%)',
+#        9:' (3.4±0.8%)', 10:' (0.0%)', 
+#        11:' (6.8±0.5%)', 12:' (5.5%)'}
+usage = {3:' (6.5%)', 4:' (6.1%)',
+        5:' (6.5%)', 6:' (6.0%)',
+        7:' (0.22%)',8:' (2.7%)',
+        9:' (3.4%)', 10:' (0.0%)', 
+        11:' (6.8%)', 12:' (5.5%)'}
+use = list(usage.keys())
+axlab = muts.copy()
+for n in usage:
+        axlab[n-1] = axlab[n-1] + usage[n]
+
 # Format and add labels
 for a in ax:
     a.yaxis.set_tick_params(labelsize=8)
 ax[-1].set_xticks(np.arange(1, 13))
-ax[-1].set_xticklabels(muts, rotation=90, fontsize=8)
+ax[-1].set_xticklabels(axlab, rotation=90, fontsize=8)
 ax[0].set_ylabel('looping frequency', fontsize=8)
 ax[1].set_ylabel('dwell time [min]', fontsize=8)
 ax[2].set_ylabel('cutting probability', fontsize=8)
