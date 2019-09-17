@@ -9,11 +9,12 @@ vdj.viz.plotting_style()
 # Load and trim the various datasets. 
 cuts = pd.read_csv('../../data/pooled_cutting_probability.csv')
 cuts = cuts[(cuts['salt']=='Mg') & (cuts['hmgb1']==80)]
+
 dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
 dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
-loops = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
-counts = loops[(loops['salt']=='Mg') & (loops['hmgb1']==80)]
 
+bs_loops = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
+counts = bs_loops[(bs_loops['salt']=='Mg') & (bs_loops['hmgb1']==80)]
 #%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
 dwell_25 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.25).reset_index()
@@ -104,8 +105,8 @@ for g, d in endo_counts.groupby('mutant'):
     else:
             face = 'w'
  
-    ax[0].vlines(map[g], d['bs_low'], d['bs_high'], color='dodgerblue', lw=1)
-    ax[0].plot(map[g], d['mean'], marker='o', markeredgecolor='dodgerblue', 
+    ax[0].vlines(map[g], d['bs_95_low'], d['bs_95_high'], color='dodgerblue', lw=1)
+    ax[0].plot(map[g], d['loops_per_bead'], marker='o', markeredgecolor='dodgerblue', 
                 markerfacecolor=face, ms=5)
 
 

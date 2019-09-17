@@ -34,9 +34,9 @@ ref_seq = ref[0]
 ref_idx = ref[1]
 
 # Include the mutant id information
-wt_val = counts[counts['mutant']=='WT12rss']['mean'].values[0]
-wt_loop_low = counts[counts['mutant']=='WT12rss']['bs_low'].values[0]
-wt_loop_high = counts[counts['mutant']=='WT12rss']['bs_high'].values[0]
+wt_val = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
+wt_loop_low = counts[counts['mutant']=='WT12rss']['bs_95_low'].values[0]
+wt_loop_high = counts[counts['mutant']=='WT12rss']['bs_95_high'].values[0]
 
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
@@ -46,7 +46,6 @@ wt_dwell_25 = dwell_25[dwell_25['mutant']=='WT12rss']['dwell_time_min'].values[0
 wt_dwell_75 = dwell_75[dwell_75['mutant']=='WT12rss']['dwell_time_min'].values[0]
 
 for m in counts['mutant'].unique():
-    print(m)
     seq = vdj.io.mutation_parser(m)
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
     cut_data.loc[cut_data['mutant']==m, 'n_muts'] = seq['n_muts']
@@ -63,20 +62,9 @@ for m in counts['mutant'].unique():
     median_dwell.loc[median_dwell['mutant']==m, 'pos'] = loc
     median_dwell.loc[median_dwell['mutant']==m, 'base'] = mut
 
-# Compute the difference in the dwell time
-median_dwell['rel_diff'] = median_dwell['dwell_time_min'] - wt_dwell
-for m in counts['mutant'].unique():
-    _d = counts[counts['mutant']==m]
-    if _d['mean'].values[0] < wt_val:
-        val = 1 - _d['mean'] / wt_val
-    else:
-        val = _d['mean'] / wt_val - 1
-    counts.loc[counts['mutant']==m, 'rel_diff'] = _d['mean'].values[0] - wt_val 
-
 # Keep the single point mutants
 points = counts[(counts['n_muts'] == 1) & (counts['mutant'] != 'V4-55')].copy()
 points_cut = cut_data[(cut_data['n_muts'] == 1) & (cut_data['mutant'] != 'V4-55')].copy()
-points_cut['diff'] = points_cut['mode'] - wt_cut
 points_dwell = median_dwell[(median_dwell['n_muts']==1) & (median_dwell['mutant'] != 'V4-55')].copy()
 
 for m in points_cut['mutant'].unique():
@@ -86,7 +74,6 @@ for m in points_cut['mutant'].unique():
         points_cut.loc[points_cut['mutant']==m, 'pos'] = loc
         points_cut.loc[points_cut['mutant']==m, 'base'] = mut
         _d = points_cut[points_cut['mutant']==m]
-        points_cut.loc[points_cut['mutant']==m, 'rel_diff'] = _d['mode'].values[0] - wt_cut
 
 posterior_list = ['WT12rss', '12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', '12SpacG10T']
 posterior_shift = {'WT12rss': 0, 
@@ -123,12 +110,11 @@ plt.subplots_adjust(hspace=0.2)
 colors = {'A':'#E10C00', 'T':'#38C2F2', 'C':'#278C00', 'G':'#5919FF'}
 shift = {'A':0, 'T':0, 'C':0, 'G':0}
 hshift = {'A':-0.2,  'T':0.2, 'C':-0.1, 'G':0.1}
-points.sort_values('rel_diff', inplace=True)
 
 for j, p in enumerate([points, points_dwell, points_cut]): 
         if j == 0:
                 a = ax[0]
-                v = 'mean'
+                v = 'loops_per_bead'
                 vshift = 0.019
         elif j == 1:
                 a = ax[1]
@@ -155,7 +141,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 a.annotate(base , xy=(g + 0.78 + shift + hshift[base], d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
                             size=9,  label='__nolegend__')
                 if j==0:
-                        a.vlines(g + 1 + hshift[base], d['bs_low'], d['bs_high'],
+                        a.vlines(g + 1 + hshift[base], d['bs_95_low'], d['bs_95_high'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==1:
                         a.vlines(g + 1 + hshift[base], d['dwell_25'], d['dwell_75'],
@@ -175,7 +161,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     if type(base) != str:
                             base = base[0]
                     if j==0:
-                            a.vlines(g + 1 + hshift[base], _d['bs_low'], _d['bs_high'],
+                            a.vlines(g + 1 + hshift[base], _d['bs_95_low'], _d['bs_95_high'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
                                         zorder=zorder, alpha=0.5)
                     elif j==1:
