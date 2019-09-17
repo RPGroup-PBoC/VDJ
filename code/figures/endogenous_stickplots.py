@@ -11,8 +11,8 @@ cuts = pd.read_csv('../../data/pooled_cutting_probability.csv')
 cuts = cuts[(cuts['salt']=='Mg') & (cuts['hmgb1']==80)]
 dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
 dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
-loops = pd.read_csv('../../data/compiled_looping_events.csv')
-loops = loops[(loops['salt']=='Mg') & (loops['hmgb1']==80)]
+loops = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
+counts = loops[(loops['salt']=='Mg') & (loops['hmgb1']==80)]
 
 #%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
@@ -23,9 +23,6 @@ dwell_quartiles['mutant'] = median_dwell['mutant']
 dwell_quartiles['median_dwell_min'] = median_dwell['dwell_time_min']
 dwell_quartiles['quartile_low'] = dwell_25['dwell_time_min']
 dwell_quartiles['quartile_high'] = dwell_75['dwell_time_min']
-
-counts = loops.groupby(['mutant'])[['n_loops']].agg(('sum', 'count')).reset_index()
-counts['loops_per_bead'] = counts['n_loops']['sum'] / counts['n_loops']['count']
 
 cuts.rename(columns={'mode':'mean_p_cut'}, inplace=True)
 dfs = [counts, dwell, cuts]
@@ -91,8 +88,8 @@ for g, d in endo_counts.groupby('mutant'):
     else:
             face = 'w'
  
-#    ax[0].vlines(map[g], 0, d['loops_per_bead'], color='dodgerblue', lw=1)
-    ax[0].plot(map[g], d['loops_per_bead'], marker='o', markeredgecolor='dodgerblue', 
+    ax[0].vlines(map[g], d['bs_low'], d['bs_high'], color='dodgerblue', lw=1)
+    ax[0].plot(map[g], d['mean'], marker='o', markeredgecolor='dodgerblue', 
                 markerfacecolor=face, ms=5)
 
 
