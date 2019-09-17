@@ -6,10 +6,12 @@ import bokeh.io
 import bokeh.plotting
 from bokeh import events
 from bokeh.models import (ColumnDataSource, Div, LinearAxis, CustomJS, 
-                          CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool)
+                          CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool,
+                          Segment, ColorBar, LinearColorMapper, FixedTicker)
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
 from bokeh.embed import components
+import bokeh.palettes
 import vdj.io
 import vdj.stats
 bokeh.plotting.output_file('./endogenous_voyager.html')
@@ -22,13 +24,13 @@ bokeh.plotting.output_file('./endogenous_voyager.html')
 # Load the necessary data sets
 dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
 posteriors = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
-loops = pd.read_csv('../../../data/compiled_looping_events.csv')
+# loops = pd.read_csv('../../../data/compiled_looping_events.csv')
+loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
 
 # Identify the endogenous muts
 dfs  = []
 for i, df in enumerate([dwell_times, posteriors, loops]):
     # Rename the point mutant 12SpacC1A to  the endogenous mutant V4-55
-    df.loc[df['mutant']=='12SpacC1A', 'mutant'] = 'V4-55'
     for g, d in df.groupby(['mutant']):
         if ('12Spac' not in g) & ('12Hept' not in g) & ('12Non' not in g):
             mut_class = 'endogenous'
@@ -43,30 +45,13 @@ cut_dwells = dwell_times[dwell_times['cut']==1]
 unloop_dwells = dwell_times[dwell_times['cut']==0]
 
 
-# %%
-# ##############################################################################
-# COMPUTE POOLED v REPLICATE LOOP FREQUENCIES
-# ##############################################################################
-pooled_df = pd.DataFrame()
-rep_df = pd.DataFrame()
 
 
-for g, d in loops.groupby('mutant'):
-    pooled_df = pooled_df.append({'mutant': g, 
-        'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx']),
-        'n_beads':len(d['bead_idx']), 'n_loops':d['n_loops'].sum()},
-        ignore_index=True)
-    for _g, _d in d.groupby(['replicate']):
-        rep_df = rep_df.append({'mutant':g,
-            'loops_per_bead':_d['n_loops'].sum() / len(_d['bead_idx']),
-            'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum()},
-            ignore_index=True)
 #%%
 # ##############################################################################
 # GENERATE HISTOGRAMS OF DWELL TIMES 
 # ##############################################################################
 # Generate the histogrammed dwell times.
-bins = np.linspace(0, dwell_times['dwell_time_min'].max(), 25)
 dfs = []
 for source in [dwell_times, cut_dwells, unloop_dwells]: 
     bin_dfs = []
@@ -82,39 +67,6 @@ for source in [dwell_times, cut_dwells, unloop_dwells]:
     dwell_hist = pd.concat(bin_dfs)
     dfs.append(dwell_hist)
 dwell_dist, cut_dist, unloop_dist = dfs
-
-# %%
-# ##############################################################################
-#  DEFINE INVARIANT / VARIANT SEQUENCE MARKER
-# ##############################################################################
-# Find the invariable positions in the sequence
-ind = np.zeros((28, 5))
-seq = vdj.io.endogenous_seqs()
-nt_idx = vdj.io.nucleotide_idx()
-
-for g, d in df.groupby('mutant'):
-    mut_seq = list(seq[g][0])
-    for i, b, in enumerate(mut_seq):
-        ind[i][nt_idx[b]] += 1
-
-invar_pos = np.where(ind == len(df['mutant'].unique()))[0]
-invar_base = [nt_idx[i] for i in np.where(ind == len(df['mutant'].unique()))[1]]
-invariant = ColumnDataSource(dict(pos=invar_pos, 
-                                  y= np.zeros(len(df['mutant'].unique())),
-                                  base=invar_base))
-
-# Set up a source for the variant positions
-var_dict = {'pos':[], 'base':[], 'mutant':[], 'y1':[], 'y2':[]}
-for g, d in df.groupby(['mutant']):
-    mut_seq = list(seq[g][0])
-    for i, b in enumerate(mut_seq):
-        if i not in invar_pos:
-            var_dict['pos'].append(i)
-            var_dict['base'].append(b)
-            var_dict['y1'].append(1)
-            var_dict['y2'].append(2)
-            var_dict['mutant'].append(g)
-
 
 
 # ##############################################################################
@@ -138,56 +90,50 @@ mut_filter2 = GroupFilter(column_name="mutant", group=mut_sel2.value)
 # Define the sources
 leg_source = ColumnDataSource({'xs':[[-10, -1], [-10, -1]], 
                                'ys':[[-10, -1], [-10, -1]], 
-                               'c':['slategrey', 'dodgerblue'], 'mutant':['None Selecte', 'None Selected']})
-variant1 = ColumnDataSource(var_dict)
+                               'c':['slategrey', 'dodgerblue'], 'mutant':['None Selected', 'None Selected']})
+
 dwell_all_source1 = ColumnDataSource(dwell_dist)
 dwell_cut_source1 = ColumnDataSource(cut_dist)
 dwell_unloop_source1 = ColumnDataSource(unloop_dist)
 post_source1 = ColumnDataSource(posteriors)
-pooled_source1 = ColumnDataSource(pooled_df)
-rep_source1 = ColumnDataSource(rep_df)
-variant2 = ColumnDataSource(var_dict)
+loop_source1 = ColumnDataSource(loops)
 dwell_all_source2 = ColumnDataSource(dwell_dist)
 dwell_cut_source2 = ColumnDataSource(cut_dist)
 dwell_unloop_source2 = ColumnDataSource(unloop_dist)
 cut_source2 = ColumnDataSource(cut_dist)
 post_source2 = ColumnDataSource(posteriors)
-pooled_source2 = ColumnDataSource(pooled_df)
-rep_source2 = ColumnDataSource(rep_df)
+loop_source2 = ColumnDataSource(loops)
 
 # Define the Views
-seq_view1 = CDSView(source=variant1, filters=[mut_filter1])
-seq_view2 = CDSView(source=variant2, filters=[mut_filter2])
 dwell_all_view1 = CDSView(source=dwell_all_source1, filters=[mut_filter1])
 dwell_all_view2 = CDSView(source=dwell_all_source2, filters=[mut_filter2])
 dwell_cut_view1 = CDSView(source=dwell_cut_source1, filters=[mut_filter1])
 dwell_cut_view2 = CDSView(source=dwell_cut_source2, filters=[mut_filter2])
 dwell_unloop_view1 = CDSView(source=dwell_unloop_source1, filters=[mut_filter1])
 dwell_unloop_view2 = CDSView(source=dwell_unloop_source2, filters=[mut_filter2])
-pooled_loop_view1 = CDSView(source=pooled_source1, filters=[mut_filter1])
-pooled_loop_view2 = CDSView(source=pooled_source2, filters=[mut_filter2])
-rep_loop_view1 = CDSView(source=rep_source1, filters=[mut_filter1])
-rep_loop_view2 = CDSView(source=rep_source2, filters=[mut_filter2])
 post_view1 = CDSView(source=post_source1, filters=[mut_filter1])
 post_view2 = CDSView(source=post_source2, filters=[mut_filter2])
+loop_view1 = CDSView(source=loop_source1, filters=[mut_filter1])
+loop_view2 = CDSView(source=loop_source2, filters=[mut_filter2])
+
 
 #%% 
 # ##############################################################################
 # DEFINE THE CANVASES
 # ##############################################################################
-ax_seq = bokeh.plotting.figure(height=100, width=600, y_range=[0, 4], tools=[''])   
 ax_leg = bokeh.plotting.figure(height=80, width=600, tools =[''], toolbar_location=None, x_range=[0, 1], y_range=[0, 1])
-ax_loop = bokeh.plotting.figure(height=140, width=600, 
+
+ax_loop = bokeh.plotting.figure(height=140, width=800, 
                                 x_axis_label='paired complexes per bead\n   ',
                                 x_range=[-0.05, 0.95], y_range=[-0.8, 0.8], tools=[''])
-ax_dwell_all = bokeh.plotting.figure(height=200, width=600, x_axis_label='paired complex dwell time [min]',
+ax_dwell_all = bokeh.plotting.figure(height=300, width=400, x_axis_label='paired complex dwell time [min]',
                                 y_axis_label='ECDF', tools=[''], x_axis_type='log')
-ax_dwell_cut = bokeh.plotting.figure(height=200, width=300,x_axis_label='paired complex dwell time [min]',
+ax_dwell_cut = bokeh.plotting.figure(height=300, width=400,x_axis_label='paired complex dwell time [min]',
                                 y_axis_label='ECDF', tools=[''], x_axis_type='log')
-ax_dwell_unloop = bokeh.plotting.figure(height=200, width=300, x_axis_label='paired complex dwell time [min]',
+ax_dwell_unloop = bokeh.plotting.figure(height=300, width=400, x_axis_label='paired complex dwell time [min]',
                                 y_axis_label='ECDF', tools=[''], x_axis_type='log')
 
-ax_cut = bokeh.plotting.figure(height=200, width=600, x_axis_label='cutting probability',
+ax_cut = bokeh.plotting.figure(height=300, width=400, x_axis_label='cutting probability',
                                y_axis_label='posterior probability', tools=[''])
 
 # Add legend entries
@@ -200,21 +146,9 @@ ax_leg.legend.background_fill_color = None
 ax_leg.xaxis.visible = False
 ax_leg.yaxis.visible = False
 
-description1 = Div(text="""<center>Select an RSS</center>""")
-description2 = Div(text="""<center>Select an RSS</center>""")
-
-for a in [ax_seq, ax_loop, ax_dwell_all, ax_dwell_cut, ax_dwell_unloop, ax_cut]:
+for a in [ax_loop, ax_dwell_all, ax_dwell_cut, ax_dwell_unloop, ax_cut]:
     a.toolbar.logo = None
 # Set features of the plots
-ax_seq.xaxis.visible = False
-ax_seq.yaxis.visible = False 
-ax_seq.xgrid.visible = False
-ax_seq.ygrid.visible = False
-ax_seq.background_fill_color = None
-ax_seq.border_fill_color = None
-ax_seq.outline_line_color = None
-ax_seq.grid.visible = False
-ax_seq.title.text_font_style = 'bold'
 ax_loop.yaxis.visible = False
 
 # Add titles
@@ -224,47 +158,78 @@ ax_dwell_cut.title.text = 'cleaved PCs'
 ax_dwell_all.title.text = 'all PCs'
 ax_cut.title.text = 'paired complex cleavage probability'
 
-# Add hover tooltips to the loop plot 
-tooltips = [('mutant', '@mutant'), ('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
-ax_loop.add_tools(HoverTool(tooltips=tooltips))
-
 # Define the layout
 selections = bokeh.layouts.row(mut_sel1, mut_sel2)
-descriptions = bokeh.layouts.row(description1, description2)
 dwell_row = bokeh.layouts.row(ax_dwell_unloop, ax_dwell_cut)
+final_row = bokeh.layouts.row(ax_dwell_all, ax_cut)
+col = bokeh.layouts.column(ax_loop, dwell_row, final_row)
 spacer = Div(text="<br/>")
-lay = bokeh.layouts.column(selections, ax_leg, ax_loop, dwell_row, ax_dwell_all, ax_cut)
-lay.sizing_mode = 'scale_width'
+lay = bokeh.layouts.column(selections, ax_leg, col)
+# lay.sizing_mode = 'scale_width'
 # ############################################################################## # POPULATE CANVASES
 # ############################################################################## 
-# Sequence
-invar_glyph = bokeh.models.glyphs.Text(x='pos', y='y', text='base', text_font='Courier',
-                                    text_color='#95a3b2', text_font_size='28px')
-var_glyph1 = bokeh.models.glyphs.Text(x='pos', y='y1', text='base', text_font='Courier',
-                                    text_color='dodgerblue', text_font_size='28px', 
-                                    text_alpha=0.8)
-var_glyph2 = bokeh.models.glyphs.Text(x='pos', y='y2', text='base', text_font='Courier',
-                                    text_color='tomato', text_font_size='28px', 
-                                    text_alpha=0.8)
-ax_seq.add_glyph(invariant, invar_glyph)
-ax_seq.add_glyph(variant1, var_glyph1, view=seq_view1)
-ax_seq.add_glyph(variant2, var_glyph2, view=seq_view2)
-
 # Loops per bead
-ax_loop.triangle(x='loops_per_bead', y=0.5, source=rep_source1,
-                view=rep_loop_view1, color='dodgerblue',
-                alpha=0.5, size=8)
-ax_loop.triangle(x='loops_per_bead', y=-0.5, source=rep_source2,
-                view=rep_loop_view2, color='slategrey', 
-                alpha=0.5, size=8)
+colors1 = bokeh.palettes.Greys9[1:-2]
+colors2 = bokeh.palettes.Blues9[1:-2]
 
-ax_loop.circle(x='loops_per_bead', y=0.5, source=pooled_source1,
-                view=pooled_loop_view1, fill_color='white', line_color='dodgerblue', 
-                size=10)
 
-ax_loop.circle(x='loops_per_bead', y=-0.5, source=pooled_source2,
-                view=pooled_loop_view2, fill_color='white', line_color='slategrey', 
-                size=10)
+# Define colorbars
+linear_mapper1 = LinearColorMapper(palette=colors1, low=5, high=99)
+linear_mapper2 = LinearColorMapper(palette=colors2, low=5, high=99)
+ticker = FixedTicker(ticks=[10, 25, 50, 75 ,95])
+labels = {10:'10%', 25:'25%', 50:'50%', 75:'75%', 95:'95%'}
+bar1 = ColorBar(color_mapper=linear_mapper1, ticker=ticker,
+                location=(0, 0), border_line_color=None,
+                major_label_overrides=labels, label_standoff=10, width=150, orientation='horizontal',
+                title='confidence interval')
+bar2 = ColorBar(color_mapper=linear_mapper2, ticker=ticker,
+                location=(0, 0), border_line_color=None,
+                major_label_overrides=labels, label_standoff=10, width=150, orientation='horizontal',
+                title='confidence interval') 
+ax_leg.add_layout(bar1, 'left')
+ax_leg.add_layout(bar2, 'right')
+
+
+percentile_source1 = []
+perc_view1 = []
+perc_view2 = []
+percentile_source2 = []
+
+percs = list(np.sort(loops['percentile'].unique()))
+percs.reverse()
+
+mut1_circ = ax_loop.triangle(name='mut1', x='loops_per_bead', y=0.5, source=loop_source1,
+                view=loop_view1, fill_color='white', line_color='slategrey', 
+                size=10, level='overlay', legend='observed frequency')
+mut2_circ = ax_loop.triangle(name='mut2', x='loops_per_bead', y=-0.5, source=loop_source2,
+                view=loop_view2, fill_color='white', line_color='dodgerblue', 
+                size=10, level='overlay', legend='observed frequency')
+
+# # Add hover tooltips to the loop plot 
+# tooltips = [('mutant', '@mutant'), ('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
+# ax_loop.add_tools(HoverTool(renderers=[mut1_circ, mut2_circ], 
+#                   names=['mut1', 'mut2'], tooltips=tooltips))
+
+for i, p in enumerate(percs):
+    print(p)
+
+    d = loops[loops['percentile']==p]
+    _source1 = ColumnDataSource(d)
+    _source2 = ColumnDataSource(d)
+    _view1 = CDSView(source=_source1, filters=[mut_filter1])
+    _view2 = CDSView(source=_source2, filters=[mut_filter2])
+    percentile_source1.append(_source1)
+    percentile_source2.append(_source2)
+    perc_view1.append(_view1)
+    perc_view2.append(_view2)
+
+    band1 = Segment(x0='low', x1='high', y0=0.5, y1=0.5, 
+                    line_color=colors1[-1 * (i+1)], line_width=25) 
+    band2 = Segment(x0='low', x1='high', y0=-0.5, y1=-0.5, 
+                    line_color=colors2[-1 * (i+1)], line_width=25) 
+        
+    ax_loop.add_glyph(_source1, band1, view=_view1)
+    ax_loop.add_glyph(_source2, band2, view=_view2)
 
 
 # Add the histogram
@@ -299,21 +264,20 @@ ax_cut.varea(x='probability', y1=0, y2='posterior', fill_color='dodgerblue',
 # ##############################################################################
 # Set up the callback
 args = {'sel1':mut_sel1, 'filter1':mut_filter1, 'sel2':mut_sel2, 'filter2':mut_filter2,
-        'seq_view1':seq_view1, 'seq_view2':seq_view2, 
-        'pooled_view1':pooled_loop_view1, 'pooled_view2':pooled_loop_view2, 
-        'rep_view1':rep_loop_view1, 'rep_view2':rep_loop_view2,
+        'loop_view1':loop_view1, 'loop_view2':loop_view2, 
         'dwell_all_view1':dwell_all_view1, 'dwell_all_view2':dwell_all_view2,
         'dwell_cut_view1':dwell_cut_view1, 'dwell_cut_view2':dwell_cut_view2,
         'dwell_unloop_view1':dwell_unloop_view1, 'dwell_unloop_view2':dwell_unloop_view2,
         'post_view1':post_view1, 'post_view2':post_view2,
-        'seq_data1':variant1,  'seq_data2':variant2, 
-        'pooled_data1':pooled_source1, 'pooled_data2':pooled_source2, 
-        'rep_data1':rep_source1, 'rep_data2':rep_source2,
+        'loop_data1':loop_source1, 'loop_data2':loop_source2,
         'dwell_cut_data1':dwell_cut_source1, 'dwell_cut_data2':dwell_cut_source2, 
         'dwell_unloop_data1':dwell_unloop_source1, 'dwell_unloop_data2':dwell_unloop_source2, 
         'dwell_all_data1':dwell_all_source1, 'dwell_all_data2':dwell_all_source2, 
         'post_data1':post_source1, 'post_data2':post_source2,
-        'description1':description1, 'description2':description2, 
+        'percentile_source1': percentile_source1,
+        'percentile_source2': percentile_source2,
+        'percentile_view1': perc_view1,
+        'percentile_view2': perc_view2,
         'leg_source':leg_source}
 
 callback = CustomJS(args=args, code="""
@@ -321,10 +285,24 @@ callback = CustomJS(args=args, code="""
   var mut2 = sel2.value;
   filter1.group = mut1;
   filter2.group = mut2;
-  var views1 = [seq_view1, pooled_view1, rep_view1, dwell_all_view1, dwell_cut_view1, dwell_unloop_view1, post_view1]; 
-  var views2 = [seq_view2, pooled_view2, rep_view2, dwell_all_view2, dwell_cut_view2, dwell_unloop_view2, post_view2];
-  var data1 = [seq_data1, pooled_data1, rep_data1, dwell_all_data1, dwell_cut_data1, dwell_unloop_data1, post_data1];
-  var data2 = [seq_data2, pooled_data2, rep_data2, dwell_all_data2, dwell_cut_data2, dwell_unloop_data2, post_data2];
+
+  // Iterate through each percentile. 
+  for (var i = 0; i < percentile_source1.length; i++ ) {
+      var perc1 = percentile_source1[i];
+      var perc2 = percentile_source2[i];
+      percentile_view1[i].filters[0] = filter1;
+      percentile_view2[i].filters[0] = filter2;
+      perc1.data.view = percentile_view1[i];
+      perc2.data.view = percentile_view2[i];
+      perc1.change.emit();
+      perc2.change.emit();
+
+  }
+
+  var views1 = [loop_view1, dwell_all_view1, dwell_cut_view1, dwell_unloop_view1, post_view1]; 
+  var views2 = [loop_view2, dwell_all_view2, dwell_cut_view2, dwell_unloop_view2, post_view2];
+  var data1 = [loop_data1, dwell_all_data1, dwell_cut_data1, dwell_unloop_data1, post_data1];
+  var data2 = [loop_data2, dwell_all_data2, dwell_cut_data2, dwell_unloop_data2, post_data2];
   for (var i = 0; i < views1.length; i++) { 
        views1[i].filters[0] = filter1;
        data1[i].data.view = views1[i];
@@ -356,7 +334,7 @@ else if (mut2 === 'DFL161') {
     var desc2 = "DFL16.1-5'";
 }
 else if (mut2 === 'DFL1613') {
-    var desc1 = "DFL16.1-3'";
+    var desc2 = "DFL16.1-3'";
 }
 else if (mut2 === 'nan') {
     var  desc2 = "None Selected";

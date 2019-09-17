@@ -23,7 +23,7 @@ import bokeh.palettes
 # Load the necessary data sets
 dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
 posteriors = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
-loops = pd.read_csv('../../../data/compiled_looping_events.csv')
+loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
 pcuts = pd.read_csv('../../../data/pooled_cutting_probability.csv')
 
 # Keep the data from the reference sequence
@@ -56,43 +56,8 @@ cut_dwells = dwell_times[dwell_times['cut']==1]
 unlooped_dwells = dwell_times[dwell_times['cut']==0]
 post_dist_source = ColumnDataSource(posteriors)
 #%%
-# ##############################################################################
-# COMPUTE POOLED v REPLICATE LOOP FREQUENCIES
-# ##############################################################################
-pooled_df = pd.DataFrame()
-rep_df = pd.DataFrame()
-for g, d in loops.groupby('mutant'):
-    pooled_df = pooled_df.append({'mutant': g, 
-        'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx']),
-        'n_beads':len(d['bead_idx']), 'n_loops':d['n_loops'].sum()},
-        ignore_index=True)
-    for _g, _d in d.groupby(['replicate']):
-        rep_df = rep_df.append({'mutant':g,
-            'loops_per_bead':_d['n_loops'].sum() / len(_d['bead_idx']),
-            'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum()},
-            ignore_index=True)
-pooled_df['y'] =0.5 
-rep_df['y'] = np.random.normal(0.5,0.05, len(rep_df))
-
-# Assemble into sources
-pooled_dist_source = ColumnDataSource(pooled_df)
-rep_dist_source = ColumnDataSource(rep_df)
-
-# Do the same for the reference
-pooled_ref = pd.DataFrame()#
-rep_ref = pd.DataFrame()
-for g, d in loops_ref.groupby('mutant'):
-    pooled_ref = pooled_ref.append({'mutant': g, 
-        'loops_per_bead':d['n_loops'].sum() / len(d['bead_idx']),
-        'n_beads':len(d['bead_idx']), 'n_loops':d['n_loops'].sum()},
-        ignore_index=True)
-    for _g, _d in d.groupby(['replicate']):
-        rep_ref = rep_ref.append({'mutant':g,
-            'loops_per_bead':_d['n_loops'].sum() / len(_d['bead_idx']),
-            'n_beads':len(_d['bead_idx']), 'n_loops':_d['n_loops'].sum()},
-            ignore_index=True)
-pooled_ref['y'] = 0
-rep_ref['y'] = np.random.normal(0,0.05, len(rep_ref))
+loop_source = ColumnDataSource(loops)
+loop_ref_source = ColumnDataSource(loops_ref)
 
 #%%
 # ##############################################################################
@@ -110,10 +75,6 @@ for source in [dwell_times, cut_dwells, unlooped_dwells]:
         _df = pd.DataFrame()
         _df['dwell'] = x
         _df['ecdf'] = y
-        # _df['top'] = hist
-        # _df['bottom'] = 0
-        # _df['left'] = bins[1:]
-        # _df['right'] = bins[:-1]
         _df['mutant'] = g
         bin_dfs.append(_df)
     dwell_dist = pd.concat(bin_dfs)
@@ -135,11 +96,6 @@ for source in [dwell_ref, cut_ref, unlooped_ref]:
         _df = pd.DataFrame()
         _df['dwell'] = x
         _df['ecdf'] = y
-        # _
-        # _df['top'] = hist
-        # _df['bottom'] = 0
-        # _df['left'] = bins[1:]
-        # _df['right'] = bins[:-1]
         _df['mutant'] = g
         bin_dfs.append(_df)
     dwell_dist = pd.concat(bin_dfs)
@@ -180,8 +136,7 @@ dwell_source = ColumnDataSource(dwell_mat)
 # COMPUTE THE DIFFERENCE IN LOOP FREQUENCY
 # ##############################################################################
 pooled_loop_mat = pd.DataFrame()
-rep_loop_mat = {}
-for g, d in pooled_df.groupby(['mutant']):
+for g, d in loops.groupby(['mutant']):
     mut_seq = vdj.io.mutation_parser(g)
     if g != 'WT12rss':
         # Parse the mutation
@@ -227,7 +182,7 @@ pcut_source = ColumnDataSource(pcut_mat)
 ax_loop_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
             toolbar_location=None)
 ax_loop = bokeh.plotting.figure(height=120, width=600, x_axis_label='paired complexes per bead',
-            y_range=[-0.3, 0.8], x_range=[-0.1, 0.95], toolbar_location=None)
+            y_range=[-0.8, 0.8], x_range=[-0.1, 0.95], toolbar_location=None)
 
 ax_dwell_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
                 toolbar_location=None)
@@ -275,12 +230,37 @@ ax_leg.outline_line_color  =None
 
 # Insert interactivity
 mut_filter = GroupFilter(column_name="mutant", group='')
-rep_view = CDSView(source=rep_dist_source, filters=[mut_filter])
-pooled_view = CDSView(source=pooled_dist_source, filters=[mut_filter])
+loop_view = CDSView(source=loop_source, filters=[mut_filter])
 dwell_view = CDSView(source=dwell_dist_source, filters=[mut_filter])
 unlooped_view = CDSView(source=unlooped_dist_source, filters=[mut_filter])
 cut_view = CDSView(source=cut_dist_source, filters=[mut_filter])
 post_view = CDSView(source=post_dist_source, filters=[mut_filter])
+
+percentile_source = []
+perc_view = []
+
+percs = list(np.sort(loops['percentile'].unique()))
+percs.reverse()
+
+ax_loop.triangle(x='loops_per_bead', y=-0.5, source=loop_ref_source,
+                fill_color='white', line_color='slategrey', 
+                size=10, level='overlay', legend='observed frequency')
+ax_loop.triangle(x='loops_per_bead', y=0.5, source=loop_source,
+                view=loop_view, fill_color='white', line_color='dodgerblue', 
+                size=10, level='overlay', legend='observed frequency')
+
+for i, p in enumerate(percs):
+    d = loops[loops['percentile']==p]
+    _source = ColumnDataSource(d)
+    _view = CDSView(source=_source1, filters=[mut_filter])
+    percentile_source.append(_source)
+    perc_view.append(_view)
+
+    band1 = Segment(x0='low', x1='high', y0=0.5, y1=0.5, 
+                    line_color=colors1[-1 * (i+1)], line_width=25) 
+        
+    ax_loop.add_glyph(_source1, band1, view=_view1)
+
 
 
 
@@ -320,8 +300,13 @@ reset_code = """
 
 draw = """
 mut_filter.group = mut;
-views = [rep_view, pooled_view, dwell_view, cut_view, unlooped_view, pcut_view];
-data = [rep_data, pooled_data, dwell_data, cut_data, unlooped_data, pcut_data];
+
+// Update the percentiles
+
+
+
+views = [loop_view, dwell_view, cut_view, unlooped_view, pcut_view];
+data = [loop_data, dwell_data, cut_data, unlooped_data, pcut_data];
 
 for (var i = 0; i < views.length; i++) {
     views[i].filters[0] = mut_filter;
