@@ -68,11 +68,11 @@ ax[2].set_ylabel('cutting probability', fontsize=8)
 for a in ax:
     a.set_xlim([0, len(muts) + 1])
 
-ax[0].set_yticks([0,0.1, 0.2, 0.3, 0.4, 0.5])
+ax[0].set_yticks([0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
 ax[2].set_yticks([0, 0.2,  0.4, 0.6, 0.8, 1])
 ax[1].set_yticks([0, 4, 8, 12, 16, 20])
-ax[0].set_ylim([0, 0.5])
-ax[1].set_ylim([0, 20])
+ax[0].set_ylim([0, 0.65])
+ax[1].set_ylim([0, 18])
 ax[2].set_ylim([0, 1])
 
 # Add stripes to separate the endogenous mutants
@@ -115,7 +115,7 @@ for g, d in endo_dwell.groupby('mutant'):
 #        ax[1].vlines(map[g], 0, d['dwell_time_min'], color='tomato', lw=1)
         ax[1].plot(map[g], quartiles[0], marker='o', markeredgecolor='tomato', 
                 markerfacecolor=face, ms=5)
-        ax[1].vlines(map[g], quartiles[0]-quartiles[1], quartiles[0]+quartiles[2],
+        ax[1].vlines(map[g], quartiles[1], quartiles[2],
                         color='tomato', lw=2)
 
 # Cutting probability
