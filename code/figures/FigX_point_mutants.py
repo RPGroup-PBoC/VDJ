@@ -183,8 +183,8 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                            size=9,  label='__nolegend__', zorder=zorder)
 
                     zorder -= 1
-
-ax[0].vlines(1, wt_loop_low, wt_loop_high, colors='k', lw=2)
+wt_x = np.linspace(0, 30, 1000)
+ax[0].fill_between(wt_x, wt_loop_low, wt_loop_high, facecolor='grey', alpha=0.4)
 ax[2].vlines(1, -1*wt_std, wt_std, colors='k', lw=2)
  
 # Previous y positions were -0.84 and -0.72
