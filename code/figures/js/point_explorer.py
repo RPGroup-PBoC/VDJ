@@ -43,7 +43,7 @@ dfs  = []
 for i, df in enumerate([dwell_times, posteriors, loops, pcuts]):
     for g, d in df.groupby(['mutant']):
         n_muts = vdj.io.mutation_parser(g)['n_muts']
-        if n_muts > 1: 
+        if (n_muts > 1) | (g == 'V4-55'): 
             mut_class = 'endogenous'
         else:
             mut_class = 'point' 
@@ -473,9 +473,6 @@ ax_cut.varea('probability', 0, 'posterior', source=post_ref, fill_color='slategr
 # Add the point mutant features.
 mut_rep = ax_loop.triangle('loops_per_bead', 0.5, color='dodgerblue', alpha=0.5, 
                  source=loop_source, view=loop_view, size=8)
-ax_loop.tools.append(HoverTool(renderers=[mut_rep],
-                tooltips=[('mutant', '@mutant'), ('kind', 'replicate result'),
-                          ('# of beads', '@n_beads'), ('# observed PCs', '@n_loops')]))
  
 ax_dwell_unlooped.step('dwell', 'ecdf',color='dodgerblue', alpha=1,
                  source=unlooped_dist_source, view=unlooped_view, line_width=2)
