@@ -47,6 +47,7 @@ for (var i = 0; i < seq_source.data['mutant'].length ; i++) {
 }
                    
 
+
 // Update the legend.
 var  leg_colors = ['slategrey'];
 var  leg_mutant = [mut];
@@ -56,7 +57,7 @@ var  leg_ys = [[-10, -9]];
 
 for (var i = 0; i < colors.length; i++) {
     leg_colors.push(colors[i]);
-    leg_mutant.push(points[i])
+    leg_mutant.push(points[i].slice(2))
     leg_alphas.push(alphas[i]);
     leg_xs.push([-10, -9])
     leg_ys.push([-10, -9])
@@ -68,15 +69,21 @@ leg_source.data['mutant'] = leg_mutant;
 leg_source.data['alpha'] = leg_alphas;
 leg_source.change.emit();
 
+// Update the endogenous percentiles
+for (var i = 0; i < endog_percs.length; i++ ) {
+    var perc = endog_percs[i];
+    endog_percs_view[i].filters[0] = endog_filter;
+    perc.data.view = endog_percs_view[i];
+    perc.change.emit();
+}
+
 // Define arrays of the endogenous plots for easy iteration
-var endog_data = [rep_endog, 
-                  pooled_endog, 
+var endog_data = [loop_endog,
                   dwell_all_endog, 
                   dwell_cut_endog, 
                   dwell_unloop_endog, 
                   post_endog]
-var endog_views = [rep_endog_view, 
-                   pooled_endog_view, 
+var endog_views = [loop_endog_view,
                    dwell_all_endog_view, 
                    dwell_cut_endog_view, 
                    dwell_unloop_endog_view,
@@ -89,22 +96,39 @@ for (var i = 0; i < endog_views.length; i++) {
    endog_data[i].change.emit();}
 
 // Define arrays for iteration over all of the point mutants
-var point_data = [rep_point, 
-                  pooled_point,
+var point_data = [loop_point,  
                   dwell_unloop_point,
                   dwell_cut_point, 
                   dwell_all_point];
-var point_views = [rep_point_view,
-                   pooled_point_view,
+var point_views = [loop_point_view,
                    dwell_unloop_point_view,
                    dwell_cut_point_view,
                    dwell_all_point_view];
-var point_filters = [rep_filter, 
-                     pooled_filter, 
+var point_filters = [loop_filter,
                      dwell_unloop_filter, 
                      dwell_cut_filter,
                      dwell_all_filter];
                      
+
+// Update the point percentiles
+for (var i = 0; i < point_percs.length; i++ ) {
+    var indices = []
+    var perc = point_percs[i];
+    for (var j = 0; j < point_percs[i].data['mutant'].length; j++) {
+        var perc_mut = perc.data['mutant'][j]
+
+        if (points.includes(perc_mut) === true) { 
+           indices.push(j) ;
+           perc.data['color'][j] = colors[points.indexOf(perc_mut)];
+           }
+    }
+    point_percs_filters[i].indices = indices;
+    point_percs_view[i].filters[0] = point_percs_filters[i];
+    perc.data.view = endog_percs_view[i];
+    perc.change.emit();
+}
+
+
 
 // Iterate through each point mutant data source
 for (var i = 0; i < point_data.length; i++) { 

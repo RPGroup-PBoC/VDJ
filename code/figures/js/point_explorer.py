@@ -187,17 +187,17 @@ ax_loop = bokeh.plotting.figure(height=120, width=600, x_axis_label='paired comp
 ax_dwell_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
                 toolbar_location=None)
 
-ax_dwell_unlooped = bokeh.plotting.figure(height=200, width=275,
-        x_axis_label='paired complex dwell time [min]', y_axis_label='ECDF',
+ax_dwell_unlooped = bokeh.plotting.figure(height=200, width=185,
+        x_axis_label='dwell time [min]', y_axis_label='ECDF',
         tools=[''], toolbar_location=None, x_axis_type='log', title='unlooped PCs',
         x_range=[0.50, 80])
-ax_dwell_cut = bokeh.plotting.figure(height=200, width=275, 
-        x_axis_label='paired complex dwell time [min]', y_axis_label='ECDF',
+ax_dwell_cut = bokeh.plotting.figure(height=200, width=185, 
+        x_axis_label='dwell time [min]', y_axis_label='ECDF',
         tools=[''], toolbar_location=None, x_axis_type='log', title='cleaved PCs',
         x_range=[0.50, 80])
 
-ax_dwell_all = bokeh.plotting.figure(height=270, width=600,
-        x_axis_label='paired complex dwell time [min]', y_axis_label='ECDF',
+ax_dwell_all = bokeh.plotting.figure(height=200, width=185,
+        x_axis_label='dwell time [min]', y_axis_label='ECDF',
         tools=[''], toolbar_location=None, x_axis_type='log', title='all PCs',
         x_range=[0.50, 80])
 ax_cut_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
@@ -209,8 +209,8 @@ ax_cut = bokeh.plotting.figure(height=200, width=600,
 
 
 # Add a blank legend plot. 
-ax_leg = bokeh.plotting.figure(height=80, width=600, tools=[''], toolbar_location=None)
-ax_leg2 = bokeh.plotting.figure(height=80, width=600, tools=[''], toolbar_location=None)
+ax_leg = bokeh.plotting.figure(height=50, width=600, tools=[''], toolbar_location=None)
+ax_leg2 = bokeh.plotting.figure(height=60, width=600, tools=[''], toolbar_location=None)
 ax_leg.rect([], [], width=1, height=1, fill_color='white', line_color='black', legend='reference nucleotide')
 ax_leg.circle([], [], fill_color='#f5e3b3', line_color='black', size=15, legend='reference nucleotide')
 ax_leg.x([], [], color='black', size=10, legend='not measured')
@@ -221,11 +221,11 @@ ax_leg.title.text_font_style = "normal"
 ax_leg.legend.spacing = 50 
 ax_leg.legend.location='center'
 ax_leg.legend.orientation = 'horizontal'
-ax_leg.background_fill_color = 'white'
 ax_leg.legend.background_fill_color='white'
-ax_leg.outline_line_color  =None
 
 for a in [ax_leg, ax_leg2]:
+    a.outline_line_color = None
+    a.background_fill_color = 'white'
     a.xaxis.visible = False
     a.yaxis.visible = False
     a.xgrid.visible = False
@@ -281,7 +281,7 @@ var mut = loop_source.data['mutant'][mut_ind];
 """
 
 dwell_sel_code = """
-var mut_ind = dwell_source.selected[1d'].indices[0];
+var mut_ind = dwell_source.selected['1d'].indices[0];
 var mut = dwell_source.data['mutant'][mut_ind];
 """
 
@@ -294,7 +294,6 @@ sel_code = """
 var sources = [loop_source, cut_source, dwell_source];
 for (var i = 0; i < sources.length; i++) {
     sources[i].selected['1d'].indices[0] = mut_ind;
-    console.log(sources[i].selected['1d'].indices)
     sources[i].change.emit();
 } 
 """
@@ -380,12 +379,15 @@ ax_cut_mat.title.text = "paired complex cleavage probability"
 
 # Define the layout
 spacer = Div(text="<br/>") #To give a little wiggle room between plots
-loop_plots = bokeh.layouts.column(ax_leg2, ax_loop_mat, ax_loop, spacer)
+leg_row = bokeh.layouts.row(ax_leg, reset)
+loop_plots = bokeh.layouts.column(ax_loop_mat, ax_loop, spacer)
 cut_plots = bokeh.layouts.column(ax_cut_mat, ax_cut, spacer)
-dwell_row = bokeh.layouts.row(ax_dwell_unlooped, ax_dwell_cut)    
-dwell_plots = bokeh.layouts.column(ax_dwell_mat, dwell_row, ax_dwell_all)
-col1 = bokeh.layouts.column(ax_loop_mat, ax_loop, spacer, ax_cut_mat, ax_cut)
-lay = bokeh.layouts.gridplot([[ax_leg, reset], [col1, dwell_plots]])
+dwell_row = bokeh.layouts.row(ax_dwell_unlooped, ax_dwell_cut, ax_dwell_all)    
+col1 = bokeh.layouts.column(ax_loop_mat, ax_loop, ax_cut_mat, ax_cut,
+ax_dwell_mat, dwell_row)
+
+lay = bokeh.layouts.column(reset, ax_leg, ax_loop_mat, ax_leg2, ax_loop, ax_dwell_mat,
+dwell_row, ax_cut_mat, ax_cut)
 
                            
 
@@ -417,15 +419,16 @@ linear_mapper2 = LinearColorMapper(palette=colors2, low=5, high=99)
 ticker = FixedTicker(ticks=[10, 25, 50, 75 ,95])
 labels = {10:'10%', 25:'25%', 50:'50%', 75:'75%', 95:'95%'}
 bar1 = ColorBar(color_mapper=linear_mapper1, ticker=ticker,
-                location=(1, 1), border_line_color=None,
-                major_label_overrides=labels, label_standoff=10, width=150, orientation='horizontal',
-                title='confidence interval')
+                location=(50, -10), border_line_color=None,
+                major_label_overrides=labels, label_standoff=5, width=150, height=10,
+                title='', background_fill_alpha=0, orientation='horizontal')
 bar2 = ColorBar(color_mapper=linear_mapper2, ticker=ticker,
-                location=(1, 1), border_line_color=None,
-                major_label_overrides=labels, label_standoff=10, width=150, orientation='horizontal',
-                title='confidence interval') 
-ax_leg2.add_layout(bar1, 'left')
-ax_leg2.add_layout(bar2, 'right')
+                location=(275, -10), border_line_color=None,
+                major_label_overrides=labels, label_standoff=5, width=150, height=10,
+                title='', background_fill_alpha=0, orientation='horizontal') 
+ax_leg2.add_layout(bar1)
+ax_leg2.add_layout(bar2)
+ax_leg2.title.text = 'confidence interval'
 
 
 
