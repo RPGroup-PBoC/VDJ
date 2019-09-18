@@ -25,4 +25,4 @@ plugins:
 paginate: 8
 paginate_path: "/page/:num"
 
-exclude: ["node_modules", "gulpfile.js", "package.json", "yarn.lock", "data_files"]
+exclude: ["data", "code", "vdj", "vdj.egg-info","node_modules", "gulpfile.js", "package.json", "yarn.lock", "data_files"]
