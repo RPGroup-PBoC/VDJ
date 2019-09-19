@@ -75,6 +75,8 @@ def mutation_parser(mut_id):
     elif 'non' in mut_id.lower():
         seq = ref[19:]
         region = 'non'
+    elif 'cod' in mut_id.lower():
+        return {'seq':-1, 'seq_idx':3, 'n_muts':1}
     else:
         try:
             new_seq = seqs[mut_id]
