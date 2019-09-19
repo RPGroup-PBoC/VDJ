@@ -58,8 +58,9 @@ ax.vlines(0.73, offset_dict["DFL16.1-3'"], offset_dict["DFL16.1-3'"] + 0.025,
         color='k', lw=2)
 ax.hlines(offset_dict["DFL16.1-3'"], 0.7, 0.73, lw=2)
 ax.hlines(offset_dict["DFL16.1-3'"] + 0.025, 0.7, 0.73, lw=2)
-ax.text(0.74, offset_dict["DFL16.1-3'"] + 0.0125, '$\propto$probability', fontsize=12)
+ax.text(0.74, offset_dict["DFL16.1-3'"] + 0.012, '$\propto$probability', fontsize=12)
 ax.set_xlim([0.0, 1.0])
+ax.set_yticklabels([])
 ax.set_xlabel('$p_{cut}$', fontsize=14)
 plt.savefig('./SiFigX_endogenous_posterior_ridgeplot.pdf',
             facecolor='white', bbox_inches='tight')
