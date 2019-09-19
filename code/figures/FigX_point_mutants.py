@@ -8,11 +8,11 @@ import vdj.io
 vdj.viz.plotting_style()
 # Load the data with long-form looping events and restrict to relevant sets.
 data = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
-counts = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
+counts = data[(data['salt']=='Mg') & (data['hmgb1']==80) & (counts['percentile']==95.0) & (counts['mutant']!='12CodC6A')]
 
 # Load the dwell times
 dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
-dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
+dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80) & (dwell['mutant']!='12CodC6A')]
 
 #%%
 # Compute the median dwell time
@@ -22,11 +22,11 @@ dwell_75 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.75).reset_index(
 
 # Load all cutting probability estimates taking gaussian approximation.
 cut_data = pd.read_csv('../../data/pooled_cutting_probability.csv')
-cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg')]
+cut_data = cut_data[(cut_data['hmgb1'] == 80) & (cut_data['salt']=='Mg') & (cut_data['mutant']!='12CodC6A')]
 
 # Load the precomputed posterior distributioons
 cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv')
-cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg')]
+cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg') & (cut_posts['mutant']!='12CodC6A')]
 
 # Get the reference seq
 ref = vdj.io.endogenous_seqs()['WT12rss']
@@ -35,8 +35,8 @@ ref_idx = ref[1]
 
 # Include the mutant id information
 wt_val = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
-wt_loop_low = counts[counts['mutant']=='WT12rss']['bs_95_low'].values[0]
-wt_loop_high = counts[counts['mutant']=='WT12rss']['bs_95_high'].values[0]
+wt_loop_low = counts[counts['mutant']=='WT12rss']['low'].values[0]
+wt_loop_high = counts[counts['mutant']=='WT12rss']['high'].values[0]
 
 wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
@@ -75,6 +75,7 @@ for m in points_cut['mutant'].unique():
         points_cut.loc[points_cut['mutant']==m, 'base'] = mut
         _d = points_cut[points_cut['mutant']==m]
 
+#%%
 posterior_list = ['WT12rss', '12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', '12SpacG10T']
 posterior_shift = {'WT12rss': 0, 
                    '12HeptC3G': 0.1, 
@@ -119,11 +120,11 @@ for j, p in enumerate([points, points_dwell, points_cut]):
         elif j == 1:
                 a = ax[1]
                 v = 'dwell_time_min'
-                vshift = 0.15
+                vshift = 0.25
         else:
                 a = ax[2]
                 v = 'mode'
-                vshift = 0.04
+                vshift = 0.03
 
         for g, d in p.groupby('pos'):
             d = d.copy()
@@ -139,9 +140,9 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 else:
                         shift = 0 
                 a.annotate(base , xy=(g + 0.78 + shift + hshift[base], d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
-                            size=9,  label='__nolegend__')
+                            size=9,  label='__nolegend__', clip_on=False)
                 if j==0:
-                        a.vlines(g + 1 + hshift[base], d['bs_95_low'], d['bs_95_high'],
+                        a.vlines(g + 1 + hshift[base], d['low'], d['high'],
                                 color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==1:
                         a.vlines(g + 1 + hshift[base], d['dwell_25'], d['dwell_75'],
@@ -161,7 +162,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     if type(base) != str:
                             base = base[0]
                     if j==0:
-                            a.vlines(g + 1 + hshift[base], _d['bs_95_low'], _d['bs_95_high'],
+                            a.vlines(g + 1 + hshift[base], _d['low'], _d['high'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
                                         zorder=zorder, alpha=0.5)
                     elif j==1:
@@ -184,7 +185,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                         ms=10, linestyle='none', label='__nolegend__', 
                         markerfacecolor='white', zorder=zorder, alpha=0.8)
                     a.annotate(base , xy=(g + 0.78 + shift + hshift[base], _d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
-                           size=9,  label='__nolegend__', zorder=zorder)
+                           size=9,  label='__nolegend__', zorder=zorder, clip_on=False)
 
                     zorder -= 1
 wt_x = np.linspace(0, 30, 1000)
@@ -231,7 +232,7 @@ ax[0].add_line(line4)
 ax[1].add_line(line5)
 ax[1].add_line(line6)
 
-ax[0].text(-0.5, -0.06, 'ref:', ha='center', va='center', fontsize=10)
+ax[0].text(-0.5, -0.07, 'ref:', ha='center', va='center', fontsize=10)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax[0].set_xlabel(None)
@@ -242,7 +243,7 @@ ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
 ax[2].set_xlim([0.7, 28.5])
 ax[0].set_ylabel('loop frequency', fontsize=12)
-ax[1].set_ylabel('median dwell time [min]', fontsize=12)
+ax[1].set_ylabel('median dwell\ntime [min]', fontsize=12)
 ax[2].set_ylabel('cutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
 ax[0].set_title('Spacer         ') # Spaces are ad-hoc positioning
