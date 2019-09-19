@@ -1,0 +1,50 @@
+# ##############################################################################
+#
+# ORIGIN:
+#   This study
+# 
+# NOTES:
+#   This file contains the summary statistics for the estimation of the
+#   exponential waiting time of each mutant in each condition. These values are 
+#   computed from the numerical sampling of the posterior distribution.
+#
+# COLUMN DESCRIPTIONS:
+#   parameter: (string)
+#       Identity of the parameter. The only reported parameter is tau.
+#   dimension: (integer, 1)  
+#       Dimension of the parameter. All values are 1 as this was not sampled as
+#       a hierarchical model.
+#   mean: (float)
+#       Mean value of the posterior samples for the parameter.
+#   mode: (float)
+#       Mode of the posterior samples. This is computed as the value of the
+#       parameter when the value of the log posterior is maximized.
+#   median: (float)
+#       Median of the posterior samples for the parameter.
+#   hpd_min: (float)
+#       Lower bound of the narrowest window of the posterior samples which
+#       contains the corresponding fraction of the probability mass.
+#   hpd_max: (float)
+#       Upper bound of the narrowest window of the posterior samples which
+#       contains the corresponding fraction of the probability mass.
+#   mass_fraction: (float, 0.95)
+#       The mass fraction for which `hpd_min` and `hpd_max` are computed. 
+#   mutant: (string)
+#       The name of the mutant. Endogenous sequences are denoted by either a
+#       "V", "DFL", or "WT" at the beginning of the name. Point mutants are prefixed with a
+#       "12"  and followed by an abbreviated region of the mutant, "Hept" for
+#       heptamer, "Spac" for spacer, or "Non" for nonamer. The mutations are given as
+#       the original nucleotide at that position, the index of that nucleotide from the
+#       beginning of the sequence region, and the identity of the mutation. For example,
+#       A mutation in the 4th position of the spacer region from a cytosine to thymine
+#       would be denoted as "12SpacC4T".
+#   seq: (string)
+#       Sequence for that particular mutant.
+#   n_muts: (integer):
+#       Number of mutations the corresponding mutant is separated from the 
+#       reference sequence V4-57-1, annotated as "WT12rss".
+#   salt: (string)
+#       Identity of the bivalent ion which stabilizes the RAG-DNA interaction.
+#       Mg corresponds to magnesium 2+ and Ca to calcium 2+. DNA cleavage is not
+#       possible in the presence of calcium and absence of magnesium.
+# ##############################################################################

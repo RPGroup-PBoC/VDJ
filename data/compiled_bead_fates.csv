@@ -1,4 +1,39 @@
-n_beads,n_cuts,replicate,mutant,date,salt,hmgb1
+# ##############################################################################
+# 
+# ORIGIN:
+#   This study.
+# 
+# NOTES:
+#   This file contains information regarding the fraction of observed paired
+#   complexes which lead to a cleavage event.
+#
+# COLUMN DESCRIPTIONS:
+#   n_loops: (integer)
+#       The number of observed paired complexes in the given experiment and replicate.
+#   n_cuts: (integer)
+#       The number of observed cleavage events in the given experiment and
+#       replicate.
+#   replicate: (integer)
+#       Integer identifier of the experimental replicate.
+#   mutant: (string)
+#       The name of the mutant. Endogenous sequences are denoted by either a
+#       "V", "DFL", or "WT" at the beginning of the name. Point mutants are prefixed with a
+#       "12"  and followed by an abbreviated region of the mutant, "Hept" for
+#       heptamer, "Spac" for spacer, or "Non" for nonamer. The mutations are given as
+#       the original nucleotide at that position, the index of that nucleotide from the
+#       beginning of the sequence region, and the identity of the mutation. For example,
+#       A mutation in the 4th position of the spacer region from a cytosine to thymine
+#       would be denoted as "12SpacC4T".
+#   date: (integer)
+#       Date of the experiment in YYMMDD format. 
+#   salt: (string)
+#       Identity of the bivalent cation used to stabilize the RAG-DNA
+#       interaction. Mg corresponds to magnesium 2+ and Ca for calcium 2+. DNA cleavage
+#       is not possible in the presence of calcium and absence of magnesium.
+#   hmgb1: (float)
+#       Concentration of HMGB1 in the reaction buffer in nM.
+# ##############################################################################
+n_loops,n_cuts,replicate,mutant,date,salt,hmgb1
 1,0,1,12SpacC1A,181005,Mg,80
 6,2,2,12SpacC1A,181005,Mg,80
 3,2,3,12SpacC1A,181005,Mg,80
@@ -93,6 +128,10 @@ n_beads,n_cuts,replicate,mutant,date,salt,hmgb1
 1,0,6,12HeptC3G,161002,Mg,80
 6,0,7,12HeptC3G,161002,Mg,80
 4,0,8,12HeptC3G,161002,Mg,80
+0,0,1,V10-96,180405,Mg,80
+3,1,2,V10-96,180405,Mg,80
+4,3,3,V10-96,180405,Mg,80
+4,2,4,V10-96,180405,Mg,80
 19,8,1,WT12rss,190411,Mg,80
 9,3,2,WT12rss,190411,Mg,80
 8,3,3,WT12rss,190411,Mg,80
@@ -287,10 +326,13 @@ n_beads,n_cuts,replicate,mutant,date,salt,hmgb1
 2,1,42,12SpacG11T,190516,Mg,80
 11,0,43,12SpacG11T,190516,Mg,80
 0,0,44,12SpacG11T,190516,Mg,80
-0,0,1,V10-96,180405,Mg,80
-3,1,2,V10-96,180405,Mg,80
-4,3,3,V10-96,180405,Mg,80
-4,2,4,V10-96,180405,Mg,80
+1,1,1,12CodC6A,170816,Mg,80
+3,2,2,12CodC6A,170816,Mg,80
+4,2,3,12CodC6A,170816,Mg,80
+2,1,4,12CodC6A,170816,Mg,80
+2,1,5,12CodC6A,170816,Mg,80
+3,1,6,12CodC6A,170816,Mg,80
+4,2,7,12CodC6A,170816,Mg,80
 15,0,1,12SpacG11T,190613,Ca,160
 40,0,2,12SpacG11T,190613,Ca,160
 20,0,3,12SpacG11T,190613,Ca,160

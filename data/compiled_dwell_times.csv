@@ -8,24 +8,33 @@
 #   unlooping event. 
 #   
 # COLUMN DESCRIPTIONS:
-#   dwell_time_min: 
+#   dwell_time_min: (float) 
 #        The lifetime of the paired complex state (dwell time) in minutes
-#   cut: 
+#   cut: (integer)
 #        Boolean (1, 0) report of whether the paired complex lead to a cleavage
 #        event or not. A cleavage event is denoted by 1 and an unlooping event 
 #        denoted by 0.
-#   replicate: 
+#   replicate: (integer)
 #       An integer representation of a unique experimental replicate.
-#   date:
+#   mutant: (string)
+#       The name of the mutant. Endogenous sequences are denoted by either a
+#       "V", "DFL", or "WT" at the beginning of the name. Point mutants are prefixed with a
+#       "12"  and followed by an abbreviated region of the mutant, "Hept" for
+#       heptamer, "Spac" for spacer, or "Non" for nonamer. The mutations are given as
+#       the original nucleotide at that position, the index of that nucleotide from the
+#       beginning of the sequence region, and the identity of the mutation. For example,
+#       A mutation in the 4th position of the spacer region from a cytosine to thymine
+#       would be denoted as "12SpacC4T".
+#   date: (integer)
 #       The date of the experiment in YYMMDD format. 
-#   salt:
+#   salt: (string)
 #       The bivalent cation used to stabilize the RAG-DNA interaction. Mg
 #       corresponds to magnesium 2+ and Ca corresponds to calcium 2+. Cleavage is
 #        inhibited in the calcium condition.
-#   hmgb1:
+#   hmgb1: (float)
 #       Concentration of HMGB1 in the reaction buffer which stabilizes RAG-DNA 
 #       binding. All concentrations are given in nM
-# ##############################################################################   
+# ##############################################################################
 dwell_time_min,cut,replicate,mutant,date,salt,hmgb1
 1.8927777777777777,0,1,12SpacC1A,181005,Mg,80
 7.725,1,2,12SpacC1A,181005,Mg,80
@@ -447,6 +456,17 @@ dwell_time_min,cut,replicate,mutant,date,salt,hmgb1
 1.8927777777777777,0,8,12HeptC3G,161002,Mg,80
 1.6927777777777777,0,8,12HeptC3G,161002,Mg,80
 1.7,0,8,12HeptC3G,161002,Mg,80
+3.8338888888888887,0,2,V10-96,180405,Mg,80
+10.205,1,2,V10-96,180405,Mg,80
+0.7166666666666667,0,2,V10-96,180405,Mg,80
+7.582777777777777,0,3,V10-96,180405,Mg,80
+4.403888888888889,1,3,V10-96,180405,Mg,80
+25.029444444444444,1,3,V10-96,180405,Mg,80
+15.170555555555556,1,3,V10-96,180405,Mg,80
+4.121666666666667,1,4,V10-96,180405,Mg,80
+6.475555555555555,1,4,V10-96,180405,Mg,80
+0.8861111111111111,0,4,V10-96,180405,Mg,80
+37.26277777777778,0,4,V10-96,180405,Mg,80
 1.9505555555555556,1,1,WT12rss,190411,Mg,80
 0.7822222222222223,0,1,WT12rss,190411,Mg,80
 10.620555555555555,1,1,WT12rss,190411,Mg,80
@@ -1380,17 +1400,25 @@ dwell_time_min,cut,replicate,mutant,date,salt,hmgb1
 1.2316666666666667,0,43,12SpacG11T,190516,Mg,80
 8.011666666666667,0,43,12SpacG11T,190516,Mg,80
 0.7294444444444445,0,43,12SpacG11T,190516,Mg,80
-3.8338888888888887,0,2,V10-96,180405,Mg,80
-10.205,1,2,V10-96,180405,Mg,80
-0.7166666666666667,0,2,V10-96,180405,Mg,80
-7.582777777777777,0,3,V10-96,180405,Mg,80
-4.403888888888889,1,3,V10-96,180405,Mg,80
-25.029444444444444,1,3,V10-96,180405,Mg,80
-15.170555555555556,1,3,V10-96,180405,Mg,80
-4.121666666666667,1,4,V10-96,180405,Mg,80
-6.475555555555555,1,4,V10-96,180405,Mg,80
-0.8861111111111111,0,4,V10-96,180405,Mg,80
-37.26277777777778,0,4,V10-96,180405,Mg,80
+5.556111111111111,1,1,12CodC6A,170816,Mg,80
+1.0066666666666666,1,2,12CodC6A,170816,Mg,80
+0.7383333333333333,0,2,12CodC6A,170816,Mg,80
+2.2,1,2,12CodC6A,170816,Mg,80
+2.095,1,3,12CodC6A,170816,Mg,80
+1.6794444444444445,0,3,12CodC6A,170816,Mg,80
+0.985,0,3,12CodC6A,170816,Mg,80
+1.1605555555555556,1,3,12CodC6A,170816,Mg,80
+0.7827777777777778,0,4,12CodC6A,170816,Mg,80
+0.8338888888888889,1,4,12CodC6A,170816,Mg,80
+8.879444444444445,1,5,12CodC6A,170816,Mg,80
+1.5038888888888888,0,5,12CodC6A,170816,Mg,80
+0.9055555555555556,0,6,12CodC6A,170816,Mg,80
+3.14,0,6,12CodC6A,170816,Mg,80
+20.897777777777776,1,6,12CodC6A,170816,Mg,80
+1.0905555555555555,1,7,12CodC6A,170816,Mg,80
+1.4555555555555555,1,7,12CodC6A,170816,Mg,80
+0.7733333333333333,0,7,12CodC6A,170816,Mg,80
+9.110555555555555,0,7,12CodC6A,170816,Mg,80
 49.87111111111111,0,1,12SpacG11T,190613,Ca,160
 3.385,0,1,12SpacG11T,190613,Ca,160
 4.254444444444444,0,2,12SpacG11T,190613,Ca,160
