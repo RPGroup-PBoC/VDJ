@@ -1,6 +1,6 @@
 
 # Probing the Sequence-Dependent Dynamics of Endogenous and Synthetic RSSs in V(D)J Recombination 
----
+
 Welcome to the GitHub repository for our work on V(D)J recombination! This
 repository contains the entire project history as well as curated scripts to
 ensure computational reproducibility. The following sections will describe this
@@ -10,7 +10,7 @@ quickly as we can.
 
 
 ## Branches
----
+
 This repository contains three unique branches -- `master`, `gh-pages`, and
 `publication` (where you are now). The `master` branch is the primary branch of
 the project and contains the entire history of our thought process including
@@ -24,7 +24,7 @@ the work in this paper and can be installed locally.
 
 
 ## Installation
----
+
 To reproduce this work, you must install the `vdj` python module -- a homegrown
 software package written explicitly for this work. The various components are
 described in `README.md` files within the `vdj` folder. To install this package
@@ -52,7 +52,7 @@ in the root directory. When installed, a new folder `vdj.egg-info` will appear.
 
 
 ## Repository Architecture
----
+
 This repository is broken up into several directories and subdirectories. Please
 see each directory individually for important notes. Below, we summarize the
 contents of each folder. 
@@ -111,7 +111,7 @@ material of [Johnson *et al.* Nucleic Acids Research 40 (16)
 
 All creative works (writing, figures, etc) are licensed under a [Creative
 Commons CC-BY 4.0 license](http://creativecommons.org/licenses/by/4.0/). All
-software is distributed under the standard license as follows:
+software is distributed under the standard MIT license as follows:
 
 ```
 Copyright 2019 The Authors 
