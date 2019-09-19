@@ -45,6 +45,7 @@ posterior_offset = np.linspace(0, 0.025 * (len(muts) - 1), len(muts))
 offset_dict = {m:p for m, p in zip(muts, posterior_offset)}
 
 fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+ax.set_facecolor('white')
 for mut, d in endo_cuts.groupby(['mutant']):
     ax.fill_between(d['probability'], 0 + offset_dict[mut], 
                     d['posterior'] + offset_dict[mut],
