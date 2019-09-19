@@ -1,12 +1,10 @@
-*.pdf
 *.DS_*tore
 *.png
 *.aux
 *__pycache__
-*egg*
+*.egg*
 *.tif*
 *.pkl
 *checkpoints*
 *.mat
-data/*samples.csv
-data/*ppc*.csv
+*.vscode

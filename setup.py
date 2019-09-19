@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os import path
 
-__version__ = '0.0.01'
+__version__ = '0.1.9'
 
 setup(
     name='vdj',
@@ -9,7 +9,7 @@ setup(
     description='Python utilities used for analysis of vdj data.',
     license='MIT',
     classifiers=[
-        'Development Status :: 0 - mega-alpha',
+        'Development Status :: beta ',
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3',
     ],
