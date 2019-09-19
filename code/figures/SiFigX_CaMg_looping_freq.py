@@ -34,8 +34,10 @@ for mut in muts:
     if muts[mut]!=2:
         ax[muts[mut]].set_xticklabels([])
 
-    ax[muts[mut]].scatter(ca_loops, 0.06, color='green', label=r'Ca$^{2+}$')
-    ax[muts[mut]].scatter(mg_loops, 0.03, color='rebeccapurple', label=r'Mg$^{2+}$')
+    ax[muts[mut]].scatter(ca_loops, 0.06, s=100, marker='^', 
+                        color='white', edgecolor='green', zorder=10)
+    ax[muts[mut]].scatter(mg_loops, 0.03, s=100, marker='^', 
+                        color='white', edgecolor='rebeccapurple', zorder=10)
     
     for g,d in camg_data[camg_data['mutant']==mut].groupby(['percentile','salt']):
         if g[1]=='Ca':
