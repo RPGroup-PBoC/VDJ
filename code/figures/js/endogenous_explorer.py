@@ -24,7 +24,6 @@ bokeh.plotting.output_file('./endogenous_voyager.html')
 # Load the necessary data sets
 dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
 posteriors = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
-# loops = pd.read_csv('../../../data/compiled_looping_events.csv')
 loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
 
 # Identify the endogenous muts
