@@ -4,6 +4,8 @@ import pandas as pd
 import bokeh.io
 import bokeh.layouts
 import bokeh.plotting
+from bokeh.models import ColumnDataSource
+from bokeh.models.glyphs import Text
 import matplotlib.patches as patches
 import vdj.io
 import vdj.viz
@@ -95,27 +97,43 @@ column = bokeh.layouts.column(top_row, dwell_row)
 bokeh.io.show(column)
 
 #%%
-ax_conf_int = bokeh.plotting.figure(height=100, width=210)
+ax_conf_int = bokeh.plotting.figure(height=50, width=570, 
+                                    x_range=[0.125, 0.805], y_range=[0, 0.1])
+ax_conf_int.xaxis.visible = False
+ax_conf_int.yaxis.visible = False
+ax_conf_int.background_fill_color = 'white'
+
 ax_loop = bokeh.plotting.figure(height=200, width=210, 
-                            x_range=[0.1,0.65], y_range=[0.0,0.35],
-                            y_axis_label='looping frequency')
+                                x_range=[0.1,0.65], y_range=[0.0,0.35],
+                                y_axis_label='looping frequency')
 ax_loop.xaxis.visible=False
-ax_loop.yaxis.ticker = [0, 0.1, 0.2, 0.3]
+ax_loop.yaxis.ticker=[0, 0.1, 0.2, 0.3]
 
 ax_dwell_cut = bokeh.plotting.figure(height=190, width=210, x_axis_type='log',
                                     x_range=[0.5,80], y_axis_label='ECDFs',
                                     x_axis_label='dwell time [min]')
 ax_dwell_unloop = bokeh.plotting.figure(height=190, width=180, x_axis_type='log',
-                                x_range=[0.5, 80], x_axis_label='dwell time [min]')
+                                    x_range=[0.5, 80], x_axis_label='dwell time [min]')
 ax_dwell_all = bokeh.plotting.figure(height=190, width=180, x_axis_type='log',
-                                x_range=[0.5, 80], x_axis_label='dwell time [min]')
+                                    x_range=[0.5, 80], x_axis_label='dwell time [min]')
 
 ax_posts = bokeh.plotting.figure(height=200, width=360, 
                                 x_range=[0, 1.0], x_axis_label='cutting probability',
                                 y_axis_label='posterior')
+ax_posts.yaxis.ticker = [0, 0.01, 0.02]
 
 seqs = {'V4-55':0.25, '12SpacC1A':0.5}
 colors = {'V4-55':'slategrey', '12SpacC1A':'dodgerblue'}
+
+ci_widths = np.arange(0.03, 0.03 * (len(loop['percentile'].unique()) + 1), 0.03)
+ci_centers = np.arange(0.015, 0.015 * (len(loop['percentile'].unique()) + 1), 0.015)
+ci_text = np.arange(0.015, 0.015 + 0.030 * (len(loop['percentile'].unique())), 0.03)
+ci_y = 0.08
+ci_perc = np.sort(loop['percentile'].unique())
+ci_df = pd.DataFrame({'percentile':ci_perc, 'y':ci_y, 'text':ci_text, 
+                    'center':ci_centers, 'width':ci_widths})
+ci_df['perc_text'] = list(str(int(perc)) for perc in ci_perc)
+text_source = ColumnDataSource(ci_df)
 
 for seq in seqs:
     ax_loop.triangle(seqs[seq], loop[loop['mutant']==seq]['loops_per_bead'], 
@@ -123,6 +141,10 @@ for seq in seqs:
     for g,d in loop[loop['mutant']==seq].groupby('percentile'):
         ax_loop.rect(seqs[seq], (d['high'] + d['low']) / 2, 0.15,
                     d['high'] - d['low'], color=colors[seq], alpha=0.2)
+        ax_conf_int.rect(seqs[seq] + ci_df[ci_df['percentile']==g]['center'], 0.05,
+                        ci_df[ci_df['percentile']==g]['width'], 0.025, color=colors[seq],
+                        alpha=0.2)
+        Text(x='ci_text', y='y', text='perc_text', source=text_source)
     ax_dwell_cut.line(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         line_width=2, line_color=colors[seq])
@@ -141,7 +163,10 @@ for seq in seqs:
 
 top_row = bokeh.layouts.row(ax_loop, ax_posts)
 dwell_row = bokeh.layouts.row(ax_dwell_cut, ax_dwell_unloop, ax_dwell_all)
-column = bokeh.layouts.column(top_row, dwell_row)
+column = bokeh.layouts.column(ax_conf_int, top_row, dwell_row)
 bokeh.io.show(column)
+
+#%%
+
 
 #%%
