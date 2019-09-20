@@ -46,10 +46,11 @@ dwell_dist, cut_dist, unloop_dist = dfs
 
 #%%
 ax_conf_int = bokeh.plotting.figure(height=100, width=570)
-ax_loop = bokeh.plotting.figure(height=200, width=570, 
-                            x_range=[0,0.35], y_range=[0.1,0.65],
-                            x_axis_label='looping frequency')
-ax_loop.yaxis.visible=False
+ax_loop = bokeh.plotting.figure(height=200, width=210, 
+                            x_range=[0.1,0.65], y_range=[0.0,0.35],
+                            y_axis_label='looping frequency')
+ax_loop.xaxis.visible=False
+ax_loop.yaxis.ticker = [0, 0.1, 0.2, 0.3]
 
 ax_dwell_cut = bokeh.plotting.figure(height=190, width=210, x_axis_type='log',
                                     x_range=[0.5,80], y_axis_label='ECDFs',
@@ -59,7 +60,7 @@ ax_dwell_unloop = bokeh.plotting.figure(height=190, width=180, x_axis_type='log'
 ax_dwell_all = bokeh.plotting.figure(height=190, width=180, x_axis_type='log',
                                 x_range=[0.5, 80], x_axis_label='dwell time [min]')
 
-ax_posts = bokeh.plotting.figure(height=200, width=570, 
+ax_posts = bokeh.plotting.figure(height=200, width=360, 
                                 x_range=[0, 1.0], x_axis_label='cutting probability',
                                 y_axis_label='posterior')
 
@@ -67,11 +68,11 @@ seqs = {'V4-57-1 (ref)':0.25, '12CodC6A':0.5}
 colors = {'V4-57-1 (ref)':'slategrey', '12CodC6A':'dodgerblue'}
 
 for seq in seqs:
-    ax_loop.triangle(loop[loop['mutant']==seq]['loops_per_bead'], seqs[seq], 
+    ax_loop.triangle(seqs[seq], loop[loop['mutant']==seq]['loops_per_bead'], 
                     size=15, fill_color='white', line_color=colors[seq], level='overlay')
     for g,d in loop[loop['mutant']==seq].groupby('percentile'):
-        ax_loop.rect((d['high'] + d['low']) / 2, seqs[seq], d['high'] - d['low'], 
-                    0.15, color=colors[seq], alpha=0.15)
+        ax_loop.rect(seqs[seq], (d['high'] + d['low']) / 2, 0.15,
+                    d['high'] - d['low'], color=colors[seq], alpha=0.2)
     ax_dwell_cut.line(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         line_width=2, line_color=colors[seq])
@@ -88,16 +89,18 @@ for seq in seqs:
                 0, cut_posts[cut_posts['mutant']==seq]['posterior'],
                 color=colors[seq], alpha=0.4)
 
+top_row = bokeh.layouts.row(ax_loop, ax_posts)
 dwell_row = bokeh.layouts.row(ax_dwell_cut, ax_dwell_unloop, ax_dwell_all)
-column = bokeh.layouts.column(ax_loop, dwell_row, ax_posts)
+column = bokeh.layouts.column(top_row, dwell_row)
 bokeh.io.show(column)
 
 #%%
-ax_conf_int = bokeh.plotting.figure(height=100, width=570)
-ax_loop = bokeh.plotting.figure(height=200, width=570, 
-                            x_range=[0,0.35], y_range=[0.1,0.65],
-                            x_axis_label='looping frequency')
-ax_loop.yaxis.visible=False
+ax_conf_int = bokeh.plotting.figure(height=100, width=210)
+ax_loop = bokeh.plotting.figure(height=200, width=210, 
+                            x_range=[0.1,0.65], y_range=[0.0,0.35],
+                            y_axis_label='looping frequency')
+ax_loop.xaxis.visible=False
+ax_loop.yaxis.ticker = [0, 0.1, 0.2, 0.3]
 
 ax_dwell_cut = bokeh.plotting.figure(height=190, width=210, x_axis_type='log',
                                     x_range=[0.5,80], y_axis_label='ECDFs',
@@ -107,7 +110,7 @@ ax_dwell_unloop = bokeh.plotting.figure(height=190, width=180, x_axis_type='log'
 ax_dwell_all = bokeh.plotting.figure(height=190, width=180, x_axis_type='log',
                                 x_range=[0.5, 80], x_axis_label='dwell time [min]')
 
-ax_posts = bokeh.plotting.figure(height=200, width=570, 
+ax_posts = bokeh.plotting.figure(height=200, width=360, 
                                 x_range=[0, 1.0], x_axis_label='cutting probability',
                                 y_axis_label='posterior')
 
@@ -115,11 +118,11 @@ seqs = {'V4-55':0.25, '12SpacC1A':0.5}
 colors = {'V4-55':'slategrey', '12SpacC1A':'dodgerblue'}
 
 for seq in seqs:
-    ax_loop.triangle(loop[loop['mutant']==seq]['loops_per_bead'], seqs[seq], 
+    ax_loop.triangle(seqs[seq], loop[loop['mutant']==seq]['loops_per_bead'], 
                     size=15, fill_color='white', line_color=colors[seq], level='overlay')
     for g,d in loop[loop['mutant']==seq].groupby('percentile'):
-        ax_loop.rect((d['high'] + d['low']) / 2, seqs[seq], d['high'] - d['low'], 
-                    0.15, color=colors[seq], alpha=0.15)
+        ax_loop.rect(seqs[seq], (d['high'] + d['low']) / 2, 0.15,
+                    d['high'] - d['low'], color=colors[seq], alpha=0.2)
     ax_dwell_cut.line(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         line_width=2, line_color=colors[seq])
@@ -136,8 +139,9 @@ for seq in seqs:
                 0, cut_posts[cut_posts['mutant']==seq]['posterior'],
                 color=colors[seq], alpha=0.4)
 
+top_row = bokeh.layouts.row(ax_loop, ax_posts)
 dwell_row = bokeh.layouts.row(ax_dwell_cut, ax_dwell_unloop, ax_dwell_all)
-column = bokeh.layouts.column(ax_loop, dwell_row, ax_posts)
+column = bokeh.layouts.column(top_row, dwell_row)
 bokeh.io.show(column)
 
 #%%
