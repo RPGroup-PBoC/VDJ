@@ -1,16 +1,12 @@
 #%%
 import numpy as np
 import pandas as pd
-import bokeh.io
-import bokeh.layouts
-import bokeh.plotting
-from bokeh.models import ColumnDataSource
-from bokeh.models.glyphs import Text
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.gridspec as gridspec
 import vdj.io
 import vdj.viz
-vdj.viz.plotting_style_bokeh()
-bokeh.io.output_notebook()
+vdj.viz.plotting_style()
 
 # Upload data on coding flank-relevant RSSs
 cf_muts = ['WT12rss', '12CodC6A', '12SpacC1A', 'V4-55']
@@ -47,54 +43,56 @@ for source in [dwell, dwell_cut, dwell_unloop]:
 dwell_dist, cut_dist, unloop_dist = dfs
 
 #%%
-ax_conf_int = bokeh.plotting.figure(height=100, width=570)
-ax_loop = bokeh.plotting.figure(height=200, width=210, 
-                            x_range=[0.1,0.65], y_range=[0.0,0.35],
-                            y_axis_label='looping frequency')
-ax_loop.xaxis.visible=False
-ax_loop.yaxis.ticker = [0, 0.1, 0.2, 0.3]
+fig = plt.figure(constrained_layout=False, figsize=(9,6))
+fig.xticklabels([])
+fig.set_yticklabels([])
+gs_ci = fig.add_gridspec(nrows=1, ncols=3)
+ax_conf_int = fig.add_subplot(gs_ci[:, :])
 
-ax_dwell_cut = bokeh.plotting.figure(height=190, width=210, x_axis_type='log',
-                                    x_range=[0.5,80], y_axis_label='ECDFs',
-                                    x_axis_label='dwell time [min]')
-ax_dwell_unloop = bokeh.plotting.figure(height=190, width=180, x_axis_type='log',
-                                x_range=[0.5, 80], x_axis_label='dwell time [min]')
-ax_dwell_all = bokeh.plotting.figure(height=190, width=180, x_axis_type='log',
-                                x_range=[0.5, 80], x_axis_label='dwell time [min]')
+gs = fig.add_gridspec(2, 3)
+ax_loop = fig.add_subplot(gs[0,0])
+ax_loop.set_xticklabels([])
+ax_loop.set_xlim([0.2, 0.7])
+ax_loop.set_ylim([0, 0.3])
+ax_loop.set_yticklabels([0, 0.1, 0.2, 0.3])
 
-ax_posts = bokeh.plotting.figure(height=200, width=360, 
-                                x_range=[0, 1.0], x_axis_label='cutting probability',
-                                y_axis_label='posterior')
+ax_posts = fig.add_subplot(gs[0,1:])
+
+ax_dwell_cut = fig.add_subplot(gs[1,0])
+ax_dwell_cut.set_xscale('log')
+
+ax_dwell_unloop = fig.add_subplot(gs[1,1])
+ax_dwell_unloop.set_xscale('log')
+
+ax_dwell_all = fig.add_subplot(gs[1,2])
+ax_dwell_all.set_xscale('log')
 
 seqs = {'V4-57-1 (ref)':0.25, '12CodC6A':0.5}
 colors = {'V4-57-1 (ref)':'slategrey', '12CodC6A':'dodgerblue'}
 
 for seq in seqs:
-    ax_loop.triangle(seqs[seq], loop[loop['mutant']==seq]['loops_per_bead'], 
-                    size=15, fill_color='white', line_color=colors[seq], level='overlay')
+    ax_loop.scatter(seqs[seq], loop[loop['mutant']==seq]['loops_per_bead'].values[0], 
+                    s=15, color='white', edgecolor=colors[seq], zorder=10)
     for g,d in loop[loop['mutant']==seq].groupby('percentile'):
-        ax_loop.rect(seqs[seq], (d['high'] + d['low']) / 2, 0.15,
-                    d['high'] - d['low'], color=colors[seq], alpha=0.2)
-    ax_dwell_cut.line(cut_dist[cut_dist['mutant']==seq]['x'], 
+        rect = patches.Rectangle([seqs[seq], d['low']], 0.15,
+                                d['high'].values[0] - d['low'].values[0],
+                                color=colors[seq], alpha=0.2)
+        ax_loop.add_patch(rect)
+    ax_dwell_cut.plot(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
-                        line_width=2, line_color=colors[seq])
-    ax_dwell_unloop.line(unloop_dist[unloop_dist['mutant']==seq]['x'], 
+                        lw=2, color=colors[seq])
+    ax_dwell_unloop.plot(unloop_dist[unloop_dist['mutant']==seq]['x'], 
                         unloop_dist[unloop_dist['mutant']==seq]['y'],
-                        line_width=2, line_color=colors[seq])
-    ax_dwell_all.line(dwell_dist[dwell_dist['mutant']==seq]['x'], 
+                        lw=2, color=colors[seq])
+    ax_dwell_all.plot(dwell_dist[dwell_dist['mutant']==seq]['x'], 
                         dwell_dist[dwell_dist['mutant']==seq]['y'],
-                        line_width=2, line_color=colors[seq])
-    ax_posts.line(cut_posts[cut_posts['mutant']==seq]['probability'],
-                cut_posts[cut_posts['mutant']==seq]['posterior'],
-                line_width=2, line_color=colors[seq])
-    ax_posts.varea(cut_posts[cut_posts['mutant']==seq]['probability'],
-                0, cut_posts[cut_posts['mutant']==seq]['posterior'],
-                color=colors[seq], alpha=0.4)
-
-top_row = bokeh.layouts.row(ax_loop, ax_posts)
-dwell_row = bokeh.layouts.row(ax_dwell_cut, ax_dwell_unloop, ax_dwell_all)
-column = bokeh.layouts.column(top_row, dwell_row)
-bokeh.io.show(column)
+                        lw=2, color=colors[seq])
+    ax_posts.plot(cut_posts[cut_posts['mutant']==seq]['probability'],
+                    cut_posts[cut_posts['mutant']==seq]['posterior'],
+                    lw=2, color=colors[seq])
+    ax_posts.fill_between(cut_posts[cut_posts['mutant']==seq]['probability'],
+                            0, cut_posts[cut_posts['mutant']==seq]['posterior'],
+                            color=colors[seq], alpha=0.4)
 
 #%%
 ax_conf_int = bokeh.plotting.figure(height=50, width=570, 
