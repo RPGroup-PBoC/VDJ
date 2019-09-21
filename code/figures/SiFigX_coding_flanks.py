@@ -144,7 +144,7 @@ for seq in seqs:
         ax_conf_int.rect(seqs[seq] + ci_df[ci_df['percentile']==g]['center'], 0.05,
                         ci_df[ci_df['percentile']==g]['width'], 0.025, color=colors[seq],
                         alpha=0.2)
-        Text(x='ci_text', y='y', text='perc_text', source=text_source)
+#        Text(x='ci_text', y='y', text='perc_text', source=text_source)
     ax_dwell_cut.line(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         line_width=2, line_color=colors[seq])
