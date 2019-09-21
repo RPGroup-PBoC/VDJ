@@ -243,7 +243,7 @@ ax[0].set_xlim([0.7, 28.5])
 ax[1].set_xlim([0.7, 28.5])
 ax[2].set_xlim([0.7, 28.5])
 ax[0].set_ylabel('loop frequency', fontsize=12)
-ax[1].set_ylabel('median dwell\ntime [min]', fontsize=12)
+ax[1].set_ylabel('dwell time [min]', fontsize=12)
 ax[2].set_ylabel('cutting probability', fontsize=12)
 ax[0].set_title('Heptamer', loc='left')
 ax[0].set_title('Spacer         ') # Spaces are ad-hoc positioning

@@ -8,13 +8,13 @@ vdj.viz.plotting_style()
 
 # Load and trim the various datasets. 
 cuts = pd.read_csv('../../data/pooled_cutting_probability.csv')
-cuts = cuts[(cuts['salt']=='Mg') & (cuts['hmgb1']==80)]
+cuts = cuts[(cuts['salt']=='Mg') & (cuts['hmgb1']==80) & (cuts['mutant']!='12CodC6A')]
 
 dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
-dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80)]
+dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80) & (dwell['mutant']!='12CodC6A')]
 
 bs_loops = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
-counts = bs_loops[(bs_loops['salt']=='Mg') & (bs_loops['hmgb1']==80)]
+counts = bs_loops[(bs_loops['salt']=='Mg') & (bs_loops['hmgb1']==80) & (bs_loops['mutant']!='12CodC6A') & (bs_loops['percentile']==95.0)]
 #%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
 dwell_25 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.25).reset_index()
@@ -105,7 +105,7 @@ for g, d in endo_counts.groupby('mutant'):
     else:
             face = 'w'
  
-    ax[0].vlines(map[g], d['bs_95_low'], d['bs_95_high'], color='dodgerblue', lw=1)
+    ax[0].vlines(map[g], d['low'], d['high'], color='dodgerblue', lw=1)
     ax[0].plot(map[g], d['loops_per_bead'], marker='o', markeredgecolor='dodgerblue', 
                 markerfacecolor=face, ms=5)
 
@@ -133,7 +133,7 @@ for g, d in endo_dwell.groupby('mutant'):
         ax[1].plot(map[g], quartiles[0], marker='o', markeredgecolor='tomato', 
                 markerfacecolor=face, ms=5)
         ax[1].vlines(map[g], quartiles[1], quartiles[2],
-                        color='tomato', lw=2)
+                        color='tomato', lw=1)
 
 # Cutting probability
 for g, d in endo_cuts.groupby('mutant'):
