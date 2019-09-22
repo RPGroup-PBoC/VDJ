@@ -8,7 +8,7 @@
 #   unlooping event. 
 #   
 # COLUMN DESCRIPTIONS:
-#   dwell_time_min: (float) 
+#   dwell_time_min: (float)
 #        The lifetime of the paired complex state (dwell time) in minutes
 #   cut: (integer)
 #        Boolean (1, 0) report of whether the paired complex lead to a cleavage
