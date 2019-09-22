@@ -43,41 +43,64 @@ for source in [dwell, dwell_cut, dwell_unloop]:
 dwell_dist, cut_dist, unloop_dist = dfs
 
 #%%
-fig = plt.figure(constrained_layout=False, figsize=(9,6))
-fig.xticklabels([])
-fig.set_yticklabels([])
-gs_ci = fig.add_gridspec(nrows=1, ncols=3)
+fig = plt.figure()
+ax = plt.gca()
+ax.get_xaxis().set_ticks([])
+ax.get_yaxis().set_ticks([])
+ax.set_facecolor('white')
+
+gs_ci = gridspec.GridSpec(1, 3)
 ax_conf_int = fig.add_subplot(gs_ci[:, :])
+gs_ci.tight_layout(fig, rect=[0, 1.5, 1.5, 1.75])
+ax_conf_int.set_xlim([0, 1.0])
+ax_conf_int.set_xticklabels([])
+ax_conf_int.set_yticklabels([])
+ax_conf_int.set_facecolor('white')
 
-gs = fig.add_gridspec(2, 3)
-ax_loop = fig.add_subplot(gs[0,0])
+gs = gridspec.GridSpec(1, 3, hspace=0.2, wspace=0.4)
+ax_loop = fig.add_subplot(gs[0])
 ax_loop.set_xticklabels([])
-ax_loop.set_xlim([0.2, 0.7])
+ax_loop.set_xlim([0.125, 0.625])
 ax_loop.set_ylim([0, 0.3])
-ax_loop.set_yticklabels([0, 0.1, 0.2, 0.3])
+ax_loop.set_yticklabels([0, '', 0.1, '', 0.2, '', 0.3])
+ax_loop.set_ylabel('looping frequency', fontsize=12)
 
-ax_posts = fig.add_subplot(gs[0,1:])
+ax_posts = fig.add_subplot(gs[1:])
+ax_posts.set_xlabel('cutting probability', fontsize=12)
+ax_posts.set_ylabel('posterior distribution', fontsize=12)
 
-ax_dwell_cut = fig.add_subplot(gs[1,0])
+gs.tight_layout(fig, rect=[0, 0.75, 1.5, 1.55])
+
+gs2 = gridspec.GridSpec(1, 3)
+ax_dwell_cut = fig.add_subplot(gs2[0])
 ax_dwell_cut.set_xscale('log')
+ax_dwell_cut.set_xlabel('dwell time [min]', fontsize=12)
+ax_dwell_cut.set_ylabel('ECDF', fontsize=12)
 
-ax_dwell_unloop = fig.add_subplot(gs[1,1])
+ax_dwell_unloop = fig.add_subplot(gs2[1])
 ax_dwell_unloop.set_xscale('log')
+ax_dwell_unloop.set_xlabel('dwell time [min]', fontsize=12)
+ax_dwell_unloop.set_yticklabels([])
 
-ax_dwell_all = fig.add_subplot(gs[1,2])
+ax_dwell_all = fig.add_subplot(gs2[2])
 ax_dwell_all.set_xscale('log')
+ax_dwell_all.set_xlabel('dwell time [min]', fontsize=12)
+ax_dwell_all.set_yticklabels([])
+
+gs2.tight_layout(fig, rect=[0, 0, 1.5, 0.8])
 
 seqs = {'V4-57-1 (ref)':0.25, '12CodC6A':0.5}
 colors = {'V4-57-1 (ref)':'slategrey', '12CodC6A':'dodgerblue'}
 
 for seq in seqs:
     ax_loop.scatter(seqs[seq], loop[loop['mutant']==seq]['loops_per_bead'].values[0], 
-                    s=15, color='white', edgecolor=colors[seq], zorder=10)
+                    s=150, marker='^', color='white', edgecolor=colors[seq], zorder=10)
     for g,d in loop[loop['mutant']==seq].groupby('percentile'):
-        rect = patches.Rectangle([seqs[seq], d['low']], 0.15,
+        rect = patches.Rectangle([seqs[seq] - 0.075, d['low']], 0.15,
                                 d['high'].values[0] - d['low'].values[0],
                                 color=colors[seq], alpha=0.2)
         ax_loop.add_patch(rect)
+        rect2 = patches.Rectangle([])
     ax_dwell_cut.plot(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
