@@ -14,9 +14,8 @@ from bokeh.models.widgets import Select
 from bokeh.embed import components
 import vdj.io
 import vdj.stats
-bokeh.plotting.output_file('./point_endogenous_comparison.html')
-# bokeh.io.output_notebook()
-
+bokeh.plotting.output_file('../../figures/interactives/point_endogenous_comparison.html', 
+                            mode='inline')
 
 # Start by trying to figure out the details of picking the point mutants that
 # make up the reference
@@ -64,9 +63,9 @@ seq_source = ColumnDataSource(mut_df)
 
 # %%
 # Load the data sets
-loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
-dwell_all_data = pd.read_csv('../../../data/compiled_dwell_times.csv')
-post_data = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
+loops = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv', comment='#')
+dwell_all_data = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
+post_data = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv', comment='#')
 post_data['color'] = 'slategrey'
 
 # Restrict the posterior distributions.

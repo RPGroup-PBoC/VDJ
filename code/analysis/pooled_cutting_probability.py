@@ -12,7 +12,7 @@ def log_posterior(N, n, p):
     return binom_coeff  + bernoulli
 
 # Load the fates
-data = pd.read_csv('../../data/compiled_bead_fates.csv')
+data = pd.read_csv('../../data/compiled_bead_fates.csv', comment='#')
 
 # Get the mutant info
 mut_info = {m:vdj.io.mutation_parser(m) for m in data['mutant'].unique()}
@@ -20,21 +20,12 @@ mut_info = {m:vdj.io.mutation_parser(m) for m in data['mutant'].unique()}
 # Compute the pooled statistics
 pooled = data.groupby(['mutant', 'salt', 'hmgb1']).agg(('sum')).reset_index()
 pooled = pooled[['mutant', 'salt', 'hmgb1', 'n_beads', 'n_cuts']]
-pooled['mode'] = pooled['n_cuts'].values / pooled['n_beads']
+pooled['mean'] = pooled['n_cuts'].values / pooled['n_beads']
 pooled['std'] = np.sqrt((pooled['n_cuts'].values * (pooled['n_beads'] -\
                  pooled['n_cuts'])) / pooled['n_beads'].values**3)
 for m, seq in mut_info.items():
     pooled.loc[pooled['mutant']==m, 'n_muts'] = seq['n_muts']
 pooled.to_csv('../../data/pooled_cutting_probability.csv', index=False)
-
-# Compute the hierarchical stats
-hier = data.copy()
-hier['mode'] = hier['n_cuts'].values / hier['n_beads']
-hier['std'] = (hier['n_cuts'].values * (hier['n_beads'] -\
-             hier['n_cuts'].values)) / hier['n_beads']**3
-for m, seq in mut_info.items():
-    hier.loc[hier['mutant']==m, 'n_muts'] = seq['n_muts']
-hier.to_csv('../../data/independent_cutting_probability.csv', index=False)
 
 #%%
 # Compute the posteriors for the pooled statistics

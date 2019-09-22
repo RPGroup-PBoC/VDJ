@@ -14,7 +14,8 @@ from bokeh.embed import components
 import bokeh.palettes
 import vdj.io
 import vdj.stats
-bokeh.plotting.output_file('./endogenous_voyager.html')
+bokeh.plotting.output_file('../../figures/interactives/endogenous_sequence_exporer.html',
+                        mode='inline')
 
 
 #%%
@@ -22,9 +23,9 @@ bokeh.plotting.output_file('./endogenous_voyager.html')
 # LOAD DATA SETS AND RESTRICT TO ENDOGENOUS
 # ##############################################################################
 # Load the necessary data sets
-dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
-posteriors = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
-loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
+dwell_times = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
+posteriors = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv', comment='#')
+loops = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv', comment='#')
 
 # Identify the endogenous muts
 dfs  = []
@@ -204,14 +205,7 @@ mut2_circ = ax_loop.triangle(name='mut2', x='loops_per_bead', y=-0.5, source=loo
                 view=loop_view2, fill_color='white', line_color='dodgerblue', 
                 size=10, level='overlay', legend='observed frequency')
 
-# # Add hover tooltips to the loop plot 
-# tooltips = [('mutant', '@mutant'), ('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
-# ax_loop.add_tools(HoverTool(renderers=[mut1_circ, mut2_circ], 
-#                   names=['mut1', 'mut2'], tooltips=tooltips))
-
 for i, p in enumerate(percs):
-    print(p)
-
     d = loops[loops['percentile']==p]
     _source1 = ColumnDataSource(d)
     _source2 = ColumnDataSource(d)

@@ -22,9 +22,9 @@ import bokeh.palettes
 
 # Load the necessary data sets
 dwell_times = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
-posteriors = pd.read_csv('../../data/cutting_probability_posteriors.csv', comment='#')
-loops = pd.read_csv('../../data/compiled_looping_frequency_bootstrap_summary.csv', comment='#')
-pcuts = pd.read_csv('../../data/cutting_probability_summary.csv', comment='#')
+posteriors = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv', comment='#')
+loops = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv', comment='#')
+pcuts = pd.read_csv('../../data/pooled_cutting_probability.csv', comment='#')
 
 # Keep the data from the reference sequence
 dwell_ref = dwell_times[(dwell_times['mutant']=='WT12rss') & 
@@ -42,13 +42,16 @@ pcut_ref = pcuts[(pcuts['mutant']=='WT12rss') &
 dfs  = []
 for i, df in enumerate([dwell_times, posteriors, loops, pcuts]):
     for g, d in df.groupby(['mutant']):
-        n_muts = vdj.io.mutation_parser(g)['n_muts']
-        if (n_muts > 1) | (g == 'V4-55'): 
-            mut_class = 'endogenous'
+        if g == '12CodC6A':
+            pass
         else:
-            mut_class = 'point' 
+            n_muts = vdj.io.mutation_parser(g)['n_muts']
+            if (n_muts > 1) | (g == 'V4-55'): 
+                mut_class = 'endogenous'j
+            else:
+                mut_class = 'point' 
 
-        df.loc[df['mutant']==g, 'class'] = mut_class
+            df.loc[df['mutant']==g, 'class'] = mut_class
     df = df[(df['class']=='point') & (df['salt']=='Mg') & (df['hmgb1']==80)]
     dfs.append(df)
 dwell_times, posteriors, loops, pcuts = dfs
@@ -157,7 +160,7 @@ loop_source = ColumnDataSource(pooled_loop_mat)
 # ##############################################################################
 # COMPUTE THE DIFFERENCE IN CUTTING PROBABILITY
 # ##############################################################################
-mean_cut_ref = pcut_ref['mode'].values[0]
+mean_cut_ref = pcut_ref['mean'].values[0]
 pcut_mat = pd.DataFrame()
 for g, d in pcuts.groupby(['mutant']):
     mut_seq = vdj.io.mutation_parser(g)
@@ -167,7 +170,7 @@ for g, d in pcuts.groupby(['mutant']):
         base = mut_seq['seq'][loc]
 
         # Populate the data frame
-        val = d['mode'].values[0]
+        val = d['mean'].values[0]
         diff = val - mean_cut_ref
         pcut_mat = pcut_mat.append(
                  {'mutant': g,
@@ -557,12 +560,9 @@ theme_json = {'attrs':
 
                 'offset': 2,
             }}}
-bokeh.plotting.output_file('../../figures/point_mutation_explorer.html', 
-                            resources=bokeh.resources.INLINE)
+bokeh.plotting.output_file('../../figures/interactives/point_mutation_explorer.html', 
+                            mode='inline')
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
 bokeh.io.save(lay)
-
-
-#%%

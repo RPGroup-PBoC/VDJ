@@ -36,7 +36,7 @@
 #       The number of mutations the corresponding mutant is away from the
 #       reference sequence V4-57-1
 # ##############################################################################
-mutant,salt,hmgb1,n_loops,n_cuts,mode,std,n_muts
+mutant,salt,hmgb1,n_loops,n_cuts,mean,std,n_muts
 12CodC6A,Mg,80,19,10,0.5263157894736842,0.11454888159631764,1.0
 12HeptA4T,Ca,80,85,0,0.0,0.0,1.0
 12HeptA4T,Mg,80,134,52,0.3880597014925373,0.04209702453147293,1.0
