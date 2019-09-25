@@ -1,5 +1,21 @@
-# -*- coding: utf-8 -*-
-#%% 
+"""
+Calcuation of the PC cleavage probability
+--------------------------------------------------------------------------------
+Author: Griffin Chure
+Last Modified: September 25, 2019
+License: MIT
+
+Description
+--------------------------------------------------------------------------------
+This script comptues the probability of cleavage for each sequence studied
+and numerically evaluates the posterior distribution over a range of cleavage
+probabilities.
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be executed in the `code/analysis` directory and
+loads the relevant data files via a relative path.
+"""
 import numpy as np
 import pandas as pd
 from scipy.special import gammaln, logsumexp
@@ -27,7 +43,6 @@ for m, seq in mut_info.items():
     pooled.loc[pooled['mutant']==m, 'n_muts'] = seq['n_muts']
 pooled.to_csv('../../data/pooled_cutting_probability.csv', index=False)
 
-#%%
 # Compute the posteriors for the pooled statistics
 prob_range = np.linspace(1E-5, 1 - 1E-5, 200)
 posts = []
@@ -53,12 +68,3 @@ for g, d in pooled.groupby(['mutant', 'salt', 'hmgb1']):
 pooled_posts = pd.concat(posts).reset_index()
 pooled_posts.to_csv('../../data/pooled_cutting_probability_posteriors.csv', 
                    index=False)
-
-
-
-_post
-
-#%%
-
-
-#%%
