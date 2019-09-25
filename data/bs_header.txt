@@ -1,0 +1,40 @@
+ ##############################################################################
+#
+# ORIGIN:
+#   This study.
+#
+# NOTES:
+#   This file contains the summary statistics of the bootstrap analysis for the 
+#   calculated looping frequency, defined as the number of observed loops
+#   divided by the number of tracked beads. All resampling was performed
+#   1,000,000 times. Percentiles are provided as confidence intervals of the  
+#   resampled distributions.
+#
+# COLUMN DESCRIPTIONS:
+#   high: (float)
+#       The upper bound of confidence interval.
+#   hmgb1: (float)
+#       The concentration of HMGB1 in the reaction buffer in nM.
+#   loops_per_bead: (float)
+#       The experimentally observed looping frequency for that particular
+#       mutant.
+#   low: (float)
+#       The lower bound of the confidence interval.
+#   mutant: (string)
+#     The name of the mutant. Endogenous sequences are denoted by either a
+#     "V", "DFL", or "WT" at the beginning of the name. Point mutants are prefixed with a
+#     "12"  and followed by an abbreviated region of the mutant, "Hept" for
+#     heptamer, "Spac" for spacer, or "Non" for nonamer. The mutations are given as
+#     the original nucleotide at that position, the index of that nucleotide from the
+#     beginning of the sequence region, and the identity of the mutation. For example,
+#     A mutation in the 4th position of the spacer region from a cytosine to thymine
+#     would be denoted as "12SpacC4T".
+#   n_beads: (float treated as integer)
+#       The total number of beads tracked in that particular experiment. 
+#   percentile: (float)
+#       The percentile of the calculated confidence interval.
+#   salt: (string)
+#       The identity of the divalent salt in the reaction buffer. Mg corresponds
+#       to magnesium 2+ and Ca for calcium 2+. DNA cleavage is inhibited in the presence
+#       of calcium.
+# ##############################################################################

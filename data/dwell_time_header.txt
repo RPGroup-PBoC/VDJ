@@ -1,0 +1,28 @@
+# ##############################################################################
+# ORIGIN:
+#     This Work
+#
+# NOTES:
+#   This file contains the dwell time information for each observed paired
+#   complex state, regardless of whether it lead to a cleavage event or simple 
+#   unlooping event. 
+#   
+# COLUMN DESCRIPTIONS:
+#   dwell_time_min: 
+#        The lifetime of the paired complex state (dwell time) in minutes
+#   cut: 
+#        Boolean (1, 0) report of whether the paired complex lead to a cleavage
+#        event or not. A cleavage event is denoted by 1 and an unlooping event 
+#        denoted by 0.
+#   replicate: 
+#       An integer representation of a unique experimental replicate.
+#   date:
+#       The date of the experiment in YYMMDD format. 
+#   salt:
+#       The bivalent cation used to stabilize the RAG-DNA interaction. Mg
+#       corresponds to magnesium 2+ and Ca corresponds to calcium 2+. Cleavage is
+#        inhibited in the calcium condition.
+#   hmgb1:
+#       Concentration of HMGB1 in the reaction buffer which stabilizes RAG-DNA 
+#       binding. All concentrations are given in nM
+# ##############################################################################
