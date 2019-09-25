@@ -1,3 +1,63 @@
+- fig: 
+  title: Interactive Endogenous Sequence Explorer
+  file: interactives/endogenous_explorer.py
+  desc: Generates the interactive figure for comparing endogenous RSSs.
+  pic: endo_int_fig.png
+  req:
+    - ds: 
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
+    - ds:
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
+    - ds:
+      title: Summary of cleavage probabilities.
+      dataset: pooled_cutting_probability.csv
+    - ds:
+      title: Posterior distributions for cleavage probabilities.
+      dataset: pooled_cutting_probability_posteriors.csv
+
+- fig: 
+  title: Interactive Synthetic Sequence Explorer
+  file: interactives/point_mutation_explorer.py
+  desc: Generates the interactive figure for examining the effects of single point mutations in the V4-57-1 sequence.
+  pic: point_int_fig.png
+  req:
+    - ds: 
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
+    - ds:
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
+    - ds:
+      title: Summary of cleavage probabilities.
+      dataset: pooled_cutting_probability.csv
+    - ds:
+      title: Posterior distributions for cleavage probabilities.
+      dataset: pooled_cutting_probability_posteriors.csv
+
+- fig: 
+  title: Interactive Comparison of Endogenous and Synthetic RSSs
+  file: interactives/point_endogenous_explorer.py
+  desc: Generates the interactive figure for examining how point mutations in the V4-57-1 sequence compare to other endogenous sequences.
+  pic: point_endo_int_fig.png
+  req:
+    - ds: 
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
+    - ds:
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
+    - ds:
+      title: Summary of cleavage probabilities.
+      dataset: pooled_cutting_probability.csv
+    - ds:
+      title: Posterior distributions for cleavage probabilities.
+      dataset: pooled_cutting_probability_posteriors.csv
+    - ds:
+      title: `JavaScript` file used for interaction
+      dataset: point_endogenous_comparison.js
+
 - fig:
   title: "Fig. 3: TPM data for point mutations introduced at various positions of the reference RSS."
   file: "Fig_point_mutants.py"
