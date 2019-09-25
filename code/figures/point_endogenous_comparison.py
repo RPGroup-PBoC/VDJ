@@ -35,7 +35,7 @@ from bokeh.models.widgets import Select
 from bokeh.embed import components
 import vdj.io
 import vdj.stats
-bokeh.plotting.output_file('../../figures/interactives/point_endogenous_comparison.html', 
+bokeh.plotting.output_file('../../figures/interactives/point_endogenous_comparison.html' 
                             mode='inline')
 
 # Start by trying to figure out the details of picking the point mutants that
@@ -302,8 +302,8 @@ for ax in [seq_ax, leg_ax, bar_ax]:
     ax.outline_line_color = None
 
 # Set the ticker for the x axis o the sequence
-ticks = np.arange(1, 30, 1)
-ticks[-1] += 2
+ticks = np.arange(0, 29, 1)
+ticks[-1] = 31 
 loop_freq_ax.ray(31, 0, angle=np.pi/2,length=25, line_color='white', line_width=15, alpha=0.75)
 loop_freq_ax.xaxis.ticker = ticks
 renamed_ticks = {int(t):s for t, s in zip(ticks, list(reference[0]))}
