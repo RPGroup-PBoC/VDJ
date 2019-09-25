@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
-#%%
+"""
+Calcium/Magnesium Dwell Time Distribution Comparison
+--------------------------------------------------------------------------------
+Author(s): Soichi Hirokawa and Griffin Chure
+Last Modified: September 25, 2019
+License: MIT
+
+Description
+--------------------------------------------------------------------------------
+This script generates the plots seen in the main text that compare the PC
+dwell time distributions between Calcium and Magnesium conditions
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be run from the `code/figures` directory. It accesses the proper CSV file through a relative path to the `data` folder
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,11 +29,11 @@ data = data[(data['mutant']=='WT12rss') | (data['mutant']=='12SpacG11T') |
             (data['mutant']=='12HeptA4T')].copy()
 
 # Load the sampling statistics and restrict
-stats = pd.read_csv('../../data/expon_waiting_time_posterior_summary.csv', comment='#')
+stats = pd.read_csv('../../data/exponential_fitting_summary.csv', 
+                    comment='#')
 stats = stats[(stats['mutant']=='WT12rss') | (stats['mutant']=='12SpacG11T') | 
               (stats['mutant']=='12HeptA4T')]
 
-#%%
 # Set up the figure canvas using gridspec
 fig = plt.figure(figsize=(7, 4))
 gs = GridSpec(6, 6)
@@ -67,7 +82,7 @@ fig.text(0.4, 0.95, '(B)', fontsize=9)
 fig.text(0.65, 0.95, '(C)', fontsize=9)
 
 # Plot the empirical CDFs
-DEADFILTER = 21/60
+DEADFILTER = 21/60 # Minimum time filter of 21 second dwell time
 time_range = np.linspace(0, 80, 500)  - DEADFILTER
 
 for g, d in data.groupby(['mutant']):
@@ -89,16 +104,20 @@ for g, d in data.groupby(['mutant']):
     mg_stats = stats[(stats['mutant']==g) & (stats['salt']=='Mg')]
 
     # Compute the exponential dists 
-    ca_low = 1 - np.exp(-(time_range - DEADFILTER)/ca_stats['hpd_min'].values[0])
-    ca_high = 1 - np.exp(-(time_range - DEADFILTER)/ca_stats['hpd_max'].values[0])
-    mg_low = 1 - np.exp(-(time_range - DEADFILTER)/mg_stats['hpd_min'].values[0])
-    mg_high = 1 - np.exp(-(time_range - DEADFILTER)/mg_stats['hpd_max'].values[0])
+    ca_low = 1 - np.exp(-(time_range - DEADFILTER)/ \
+                ca_stats['hpd_min'].values[0])
+    ca_high = 1 - np.exp(-(time_range - DEADFILTER)/ \
+                ca_stats['hpd_max'].values[0])
+    mg_low = 1 - np.exp(-(time_range - DEADFILTER)/ \
+                mg_stats['hpd_min'].values[0])
+    mg_high = 1 - np.exp(-(time_range - DEADFILTER)/ \
+                mg_stats['hpd_max'].values[0])
 
     # Plot the fits. 
     a[0].fill_between(time_range, ca_low, ca_high, color='green', alpha=0.45,
                     label='fit')
-    a[1].fill_between(time_range, mg_low, mg_high, color='rebeccapurple', alpha=0.45,
-                    label='fit')
+    a[1].fill_between(time_range, mg_low, mg_high, color='rebeccapurple', 
+                    alpha=0.45, label='fit')
 
     # Plot the cdfs
     a[0].step(ca_x, ca_y, 'k-', lw=1, label='data')
@@ -108,9 +127,4 @@ for g, d in data.groupby(['mutant']):
 
 ax[6].legend(fontsize=8, handlelength=0.75)
 ax[0].legend(fontsize=7, handlelength=0.75)
-plt.savefig('../../figures/FigX_CaMg_distributions.pdf', bbox_inches='tight', face_color='white')
-
-#%%
-
-
-#%%
+plt.savefig('../../figures/Fig_CaMg_distributions.pdf', bbox_inches='tight', face_color='white')

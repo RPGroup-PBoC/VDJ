@@ -1,4 +1,20 @@
-#%%
+"""
+Synthetic and Endogenous RSS Dwell Time Distributions
+--------------------------------------------------------------------------------
+Authors: Soichi Hirokawa and Griffin Chure
+Last Modified: September 25, 2019
+License: MIT
+
+Description
+--------------------------------------------------------------------------------
+This script generates a figure of representative dwell time distributions for 
+a variety of synthetic and endogenous RSS sequences, along with the credible 
+regions from fitting of a single exponential to the distribution.
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be run from the `code/figures` directory and uses a relative path to the `data` folder to access the appropriate CSV files. 
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,10 +29,10 @@ data = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
 data = data[(data['salt']=='Mg') & (data['hmgb1']==80)]
 
 # Load the fitting statistics. 
-samps = pd.read_csv('../../data/expon_waiting_time_posterior_samples.csv',
+samps = pd.read_csv('../../data/exponential_fitting_samples.csv',
                     comment='#')
 samps = samps[samps['salt']=='Mg']
-stats = pd.read_csv('../../data/expon_waiting_time_posterior_summary.csv',
+stats = pd.read_csv('../../data/exponential_fitting_summary.csv',
                     comment='#')
 stats = stats[stats['salt']=='Mg']
 
@@ -28,8 +44,7 @@ nonamer = ['12NonA1G', '12NonA3C', '12NonC8G']
 
 rows = [endogenous, heptamer, spacer, nonamer]
 colors = ['gray', 'tomato', 'dodgerblue', 'rebeccapurple']
-
-DEADFILTER = 21 / 60
+DEADFILTER = 21 / 60 # Deadfilter of 21 seconds for shortest PC
 time = np.linspace(0, 60, 500) -  DEADFILTER
 
 
@@ -52,13 +67,13 @@ for i in range(4):
     ax[i, 0].set_ylabel('cumulative\ndistribution', fontsize=8)
 
 # Add row labels. 
-fig.text(-0.05, 0.73, 'Endogenous', rotation='vertical', color='slategrey', 
+fig.text(-0.05, 0.85, 'Endogenous', rotation='vertical', color='slategrey', 
          fontsize=9)
-fig.text(-0.05, 0.55, 'Heptamer', rotation='vertical', color='tomato', 
+fig.text(-0.05, 0.62, 'Heptamer', rotation='vertical', color='tomato', 
          fontsize=9)
-fig.text(-0.05, 0.37, 'Spacer', rotation='vertical', color='dodgerblue', 
+fig.text(-0.05, 0.4, 'Spacer', rotation='vertical', color='dodgerblue', 
          fontsize=9)
-fig.text(-0.05, 0.16, 'Nonamer', rotation='vertical', color='rebeccapurple', 
+fig.text(-0.05, 0.22, 'Nonamer', rotation='vertical', color='rebeccapurple', 
          fontsize=9)
 fig.text(-0.12, 0.87, '(A)', fontsize=9)
 fig.text(-0.12, 0.67, '(B)', fontsize=9)
@@ -103,7 +118,5 @@ for i, row in enumerate(rows):
         ax[i, j].set_title(title, fontsize=8, y=0.95)
 
 ax[0,0].set_title('V4-57-1', fontsize=8, y=0.95)
-plt.savefig('../../figures/FigX_nonexponential_distributions.pdf', 
+plt.savefig('../../figures/Fig_nonexponential_distributions.pdf', 
             facecolor='white', bbox_inches='tight')
-
-#%%

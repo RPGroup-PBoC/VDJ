@@ -1,4 +1,20 @@
-#%%
+"""
+Comparison of Looping Frequency in Calcium and Magnesium Conditions
+--------------------------------------------------------------------------------
+Author: Soichi Hirokawa
+Last Modified: September 25, 2019
+License: MIT
+
+Description
+--------------------------------------------------------------------------------
+This script generates SI figure 6 which shows the effects of using different 
+bivalent salts on the PC formation frequency.
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be run from the `code/figures` directory and uses a 
+relative path to load the relevant CSV files. 
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,15 +25,15 @@ vdj.viz.plotting_style()
 
 # Load the data with long-form looping confidence intervals 
 # and restrict to relevant sets.
-data = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
+data = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv',
+                   comment='#')
 data = data[(data['hmgb1']==80)]
 
 camg_data = pd.DataFrame()
-
 for mut in data[data['salt']=='Ca']['mutant'].unique():
     camg_data = camg_data.append(data[data['mutant']==mut], ignore_index=True)
 camg_data = camg_data.replace(to_replace='WT12rss', value='reference')
-#%%
+
 # Provide three different plots for calcium-magnesium looping
 # frequency plots
 muts = {'reference':0, '12HeptA4T':1, '12SpacG11T':2}
@@ -26,8 +42,10 @@ df_loops = camg_data[camg_data['percentile']==95.0].copy()
 
 fig, ax = plt.subplots(3, 1, figsize=(6,6))
 for mut in muts:
-    ca_loops = df_loops[(df_loops['mutant']==mut) & (df_loops['salt']=='Ca')]['loops_per_bead'].values[0]
-    mg_loops = df_loops[(df_loops['mutant']==mut) & (df_loops['salt']=='Mg')]['loops_per_bead'].values[0]
+    ca_loops = df_loops[(df_loops['mutant']==mut) &
+                    (df_loops['salt']=='Ca')]['loops_per_bead'].values[0]
+    mg_loops = df_loops[(df_loops['mutant']==mut) &
+                    (df_loops['salt']=='Mg')]['loops_per_bead'].values[0]
     ax[muts[mut]].set_xlim([0, 1.0])
     ax[muts[mut]].set_ylim([0.01, 0.08])
     ax[muts[mut]].set_yticklabels([])
@@ -40,7 +58,7 @@ for mut in muts:
     ax[muts[mut]].scatter(mg_loops, 0.03, s=100, marker='^', 
                         color='white', edgecolor='rebeccapurple', zorder=10)
     
-    for g,d in camg_data[camg_data['mutant']==mut].groupby(['percentile','salt']):
+    for g, d in camg_data[camg_data['mutant']==mut].groupby(['percentile','salt']):
         if g[1]=='Ca':
             rect = patches.Rectangle([d['low'].values[0], 0.048], 
                                     (d['high'].values[0] - d['low'].values[0]),
@@ -73,8 +91,5 @@ ax[0].text(0.25, 0.125, r'Ca$^{2+}$', fontsize=14)
 ax[0].text(0.75, 0.125, r'Mg$^{2+}$', fontsize=14)
 
 plt.tight_layout()
-plt.savefig('./SiFigX_CaMg_looping_freq.pdf', facecolor='white', bbox_inches='tight')
-#%%
-
-
-#%%
+plt.savefig('../../figures/SiFigX_CaMg_looping_freq.pdf', facecolor='white', 
+            bbox_inches='tight')
