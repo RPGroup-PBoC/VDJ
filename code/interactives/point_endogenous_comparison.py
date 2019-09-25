@@ -1,4 +1,25 @@
-#%% 
+"""
+Interactive Comparison of Synthetic and Endogenous RSSs
+--------------------------------------------------------------------------------
+Author: Griffin Chure
+Last Modified: September 25, 2019
+License: MIT
+Associated Files: point_endogenous_comparison.js
+
+Description
+--------------------------------------------------------------------------------
+This script generates an interactive figure for comparing the behavior
+between individual mutations from the reference sequence to a variety of
+endogenous mutations.
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be run from the `code/interactives` directory and
+uses a relative path to load the necessary CSV files. In addition, the
+javascript is loaded from a seaparate file `point_endogenous_comparison.js`
+in the same directory. The javascript was separated from the rest of the
+Python script to make the code more readable.
+"""
 import numpy as np
 import pandas as pd
 from bokeh.themes import Theme
@@ -472,11 +493,6 @@ theme_json = {'attrs':
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
-
-
-# FOrmat legend details. 
-loop_freq_ax.legend.click_policy = 'hide'
-# loop_freq_ax.legend.title_text = 'click to hide'
 bokeh.io.save(lay)
 
 

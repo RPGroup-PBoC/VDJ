@@ -1,4 +1,20 @@
-#%% 
+"""
+Interactive Figure for Exploring Endogenous Sequences
+--------------------------------------------------------------------------------
+Author: Griffin Chure
+Last Modified: September 25, 2019
+License: MIT
+
+Description
+--------------------------------------------------------------------------------
+This script generates an interactive figure for comparing the various
+properties of the endogenous RSS sequences.
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be exectued from the `code/interactives` directory
+and loads the CSV files through a relative path.
+"""
 import numpy as np
 import pandas as pd
 from bokeh.themes import Theme
@@ -24,8 +40,10 @@ bokeh.plotting.output_file('../../figures/interactives/endogenous_sequence_expor
 # ##############################################################################
 # Load the necessary data sets
 dwell_times = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
-posteriors = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv', comment='#')
-loops = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv', comment='#')
+posteriors = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv',
+                     comment='#')
+loops = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv', 
+                    comment='#')
 
 # Identify the endogenous muts
 dfs  = []
@@ -43,9 +61,6 @@ for i, df in enumerate([dwell_times, posteriors, loops]):
 dwell_times, posteriors, loops = dfs
 cut_dwells = dwell_times[dwell_times['cut']==1]
 unloop_dwells = dwell_times[dwell_times['cut']==0]
-
-
-
 
 #%%
 # ##############################################################################

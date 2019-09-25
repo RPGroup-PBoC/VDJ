@@ -1,5 +1,20 @@
-#%%
-# -*- coding: utf-8 -*- #%%
+"""
+Interactive Comparison of the Reference and Synthetic RSSs
+--------------------------------------------------------------------------------
+Author: Griffin Chure
+Last Modified: September 25, 2019
+License: MIT
+
+Description
+--------------------------------------------------------------------------------
+This script generates an interactive tool for exploring how individual point
+mutations influences the behavior of the entire RSS.
+
+Notes
+--------------------------------------------------------------------------------
+This script is designed to be executed from the `code/interactives` directory
+and loads the relevant CSV files from a relative path.
+"""
 import numpy as np
 import pandas as pd
 from bokeh.themes import Theme
@@ -19,6 +34,9 @@ import vdj.io
 import vdj.stats
 from bokeh.transform import transform
 import bokeh.palettes
+
+bokeh.plotting.output_file('../../figures/interactives/point_mutation_explorer.html', 
+                            mode='inline')
 
 # Load the necessary data sets
 dwell_times = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
@@ -47,7 +65,7 @@ for i, df in enumerate([dwell_times, posteriors, loops, pcuts]):
         else:
             n_muts = vdj.io.mutation_parser(g)['n_muts']
             if (n_muts > 1) | (g == 'V4-55'): 
-                mut_class = 'endogenous'j
+                mut_class = 'endogenous'
             else:
                 mut_class = 'point' 
 
@@ -560,8 +578,6 @@ theme_json = {'attrs':
 
                 'offset': 2,
             }}}
-bokeh.plotting.output_file('../../figures/interactives/point_mutation_explorer.html', 
-                            mode='inline')
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
