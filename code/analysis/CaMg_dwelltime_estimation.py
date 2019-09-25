@@ -7,7 +7,7 @@ import vdj.stats
 import tqdm 
 
 # Load the dwell time data
-data = pd.read_csv('../../data/compiled_dwell_times.csv')
+data = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
 
 # Only consider HMGB1 at 80nM
 data = data[data['hmgb1']==80]

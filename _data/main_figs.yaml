@@ -1,65 +1,66 @@
 - fig:
-  title: "Fig. 1(C): Razo-Mejia et al. 2018 Data Collapse"
-  file: Chure2019_Fig1_collapse.py
-  desc:   Used to generate the data collapse figures shown in Fig. 1C of the main text
-  pic: main_fig1.png
+  title: "Fig. 3: TPM data for point mutations introduced at various positions of the reference RSS."
+  file: "Fig_point_mutants.py"
+  desc:  Generates the stickplots and posterior distribution ridgeline plots for the point mutants.
+  pic: main_point_fig.png
   req:
     - ds: 
-      title: Data from Razo-Mejia et al. 2018
-      dataset: RazoMejia_2018.csv
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
+    - ds:
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
+    - ds:
+      title: Summary of cleavage probabilities.
+      dataset: pooled_cutting_probability.csv
+    - ds:
+      title: Posterior distributions for cleavage probabilities.
+      dataset: pooled_cutting_probability_posteriors.csv
 
 - fig:
-  title: "Fig. 3: DNA Binding Mutants"
-  file: Chure2019_Fig3_DNA_mutants.py
-  desc: 
-      Used to generate Figure 3, illustrating DNA binding mutant data, induction
-      profiles, data collapse and change in free energy.
-  pic: main_fig3.png
+  title: "Fig. 4: Observed dynamics between RAG and endogenous RSS sequences."
+  file: Fig_endogenous_properties.py
+  desc: Generates the stickplots of looping frequency, median dwell time, and cleavage probabilities for the endogenous RSSs.
+  pic: main_endog_fig.png
   req:
-    - ds:
-      title: Summarized fold-change measurements
-      dataset: Chure2019_summarized_data.csv
-    - ds:
-      title: DNA binding energy inference statistics
-      dataset: Chure2019_DNA_binding_energy_summary.csv
     - ds: 
-      title: Free energy inferred from fold-change measurements
-      dataset: Chure2019_empirical_F_statistics.csv
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
+    - ds:
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
+    - ds:
+      title: Summary of cleavage probabilities.
+      dataset: pooled_cutting_probability.csv
 
 - fig: 
-  title: "Fig. 4: Inducer Binding Domain Mutants"
-  file: Chure2019_Fig4_IND_mutants.py
-  desc:
-        Used to generate Figure 4, illustrating the inducer binding mutant data,
-        induction profiles, data collapse, and change in free energy.
-  pic: main_fig4.png
+  title: "Fig. 5: Non-exponential waiting time distributions for synthetic and endogenous RSSs."
+  file: Fig_dwell_time_distributions.py
+  desc: Generates figure showing the obsrved dwell time distributions overlaid by the credible region of a fit to a single exponential.         
+  pic: main_dwell_fig.png
   req:
     - ds:
-      title: Summarized fold-change measurements
-      dataset: Chure2019_summarized_data.csv
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
     - ds:
-      title: Ka and Ki inference statistics
-      dataset: Chure2019_KaKi_only_summary.csv
+      title: Parameter summaries from epxonential fitting.
+      dataset: exponential_fitting_summary.csv
     - ds:
-      title: Allosteric parameter inference samples
-      dataset: Chure2019_KaKi_epAI_samples.csv 
-    - ds:
-      title: Free energy inferred from fold-change measurements
-      dataset: Chure2019_empirical_F_statistics.csv
+      title: Posterior samples from exponential fitting.
+      dataset: exponential_fitting_samples.csv
+
 - fig: 
-  title: "Fig. 5: Double Mutants" 
-  file: Chure2019_Fig5_DBL_mutants.py
-  desc: 
-      Used to generate Figure 5, illustrating the double mutant data, induction
-      profiles, and change in free energy. 
-  pic: main_fig5.png
+  title: "Fig. 6: Empirical cumulative distributions of paired complex lifetimes with different divalent cations." 
+  file: Fig_CaMg_comparison.py
+  desc: Used to compare the dwell time distributions of three RSSs with either calcium or magnesium salts. 
+  pic: main_salt_fig.png
   req:
     - ds:
-      title: Summarized fold-change measurements
-      dataset: Chure2019_summarized_data.csv
+      title: Compiled paired complex dwell times.
+      dataset: compiled_dwell_times.csv
     - ds: 
-      title: Allosteric parameter inference samples
-      dataset: Chure2019_KaKi_epAI_samples.csv
+      title: Parameter summaries from exponential fitting. 
+      dataset: exponential_fitting_summary.csv
     - ds:
       title: DNA binding energy inference samples
       dataset: Chure2019_DNA_binding_energy_samples.csv
@@ -68,26 +69,47 @@
       dataset: Chure2019_empirical_F_statistics.csv
 
 - fig:
-  title: "Fig. 6: Data Collapse of the Inducible Simple Repression Motif"
-  file: Chure2019_Fig6_data_collapse.py
-  desc: 
-    Used to generate Figure 6, illustrating full data collapse of previous
-    measurements from Garcia and Phillips 2011, Brewster et al. 2014, Razo-Mejia
-    et al. 2018, and this work
-  pic: main_fig6.png
+  title: "Fig. S2: Representative bootstrap looping frequency distribution." 
+  file: SiFig_bootstrap_mutant.py
+  desc: Performs bootstrapping an dcalculation of confidence intervals for the looping frequency of the reference RSS.
+  pic: si_bs_fig.png
   req:
     - ds:
-      title: Summarized fold-change measurements
-      dataset: Chure2019_summarized_data.csv
+      title: "Compiled PC formation events"
+      dataset: compiled_looping_events.csv
+
+- fig: 
+  title: "Fig. S3: Posterior distributions for endogenous RSS cleavage probabilities"
+  file: SiFig_endogenous_posterior_ridgeplot.py
+  desc: Generates a ridgeline plot of the posterior distributions of PC cleavage probability for the endogenous RSSs.
+  pic: si_ridge_fig.png
+  req:
     - ds:
-      title: DNA binding energy inference statistics 
-      dataset: Chure2019_DNA_binding_energy_summary.csv
+      title: Posterior distributions for cleavage probabilities.
+      dataset: pooled_cutting_probability_posteriors.csv
+
+- fig:
+  title: "Fig. S4 - S5: Comparisons of looping frequencies for special cases"
+  file: SiFig_coding_flanks.py
+  desc: Generates two figures comparing the looping frequencies for differing coding flank sequences as well as for a critical SpaceC1A mutation.
+  pic: si_freq_fig.png
+  req:
+  - ds: 
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
+  - ds:
+      title: Compiled paired complex dwell times. 
+      dataset: compiled_dwell_times.csv
+  - ds:
+    title: Posterior distributions for cleavage probabilities.
+    dataset: pooled_cutting_probability_posteriors.csv
+
+- fig: 
+  title: "Fig. S6: Comparison of looping frequencies for different divalent cations."
+  file: SiFig_CaMg_looping_freq.py
+  desc: Generates a figure comparing the looping frequencies of three RSSs in both calcium and magnesium conditioned buffers.
+  pic: si_camg_fig.png
+  req:
     - ds: 
-      title: Allosteric parameter inference statistics
-      dataset: Chure2019_KaKi_epAI_samples.csv
-    - ds:
-      title: Data from Garcia and Phillips 2011 and Brewster et al. 2014
-      dataset: Garcia2011_Brewster2014.csv
-    - ds:
-      title: Data from Razo-Mejia et al. 2018
-      dataset: RazoMejia_2018.csv
+      title: Summary of looping frequency bootstrap analysis
+      dataset: compiled_looping_frequency_bootstrap.csv
