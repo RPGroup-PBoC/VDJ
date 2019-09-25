@@ -1,6 +1,6 @@
 - fig: 
   title: Interactive Endogenous Sequence Explorer
-  file: interactives/endogenous_explorer.py
+  file: endogenous_explorer.py
   desc: Generates the interactive figure for comparing endogenous RSSs.
   pic: endo_int_fig.png
   req:
