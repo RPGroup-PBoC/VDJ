@@ -55,7 +55,7 @@
       title: Posterior distributions for cleavage probabilities.
       dataset: pooled_cutting_probability_posteriors.csv
     - ds:
-      title: `JavaScript` file used for interaction
+      title: "`JavaScript` file used for interaction"
       dataset: point_endogenous_comparison.js
 
 - fig:
