@@ -38,7 +38,7 @@
 
 - fig: 
   title: Interactive Comparison of Endogenous and Synthetic RSSs
-  file: point_endogenous_explorer.py
+  file: point_endogenous_comparison.py
   desc: Generates the interactive figure for examining how point mutations in the V4-57-1 sequence compare to other endogenous sequences.
   pic: point_endo_int_fig.png
   req:
