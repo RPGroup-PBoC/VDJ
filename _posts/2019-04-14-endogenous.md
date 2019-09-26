@@ -15,7 +15,7 @@ known to be used with differing frequencies *in vivo.* Two endogenous sequences
 can be compared at once by selecting your desired RSS sequence from the corresponding
 dropdown menu. This figure was created using the [Bokeh plotting
 library](http://bokeh.pydata.org). The code used to generate it can be downloaded from the
-[Code]({{site.baseurl}}/code) page of this website. 
+[Code]({{site.baseurl}}/code) page of this website. An offline version of the figure [can be downloaded here]({{site.baseurl}}/figures/endogenous_sequence_explorer.html).
 
 <center>
 

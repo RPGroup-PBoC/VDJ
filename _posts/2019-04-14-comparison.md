@@ -22,7 +22,8 @@ at the far right of the plot.
 
 This figure was created using the [Bokeh plotting
 library](http://bokeh.pydata.org). The code used to generate this figure can
-be found on the [code page]({{site.baseurl}}/code/) of this website.
+be found on the [code page]({{site.baseurl}}/code/) of this website. An offline version of the figure [can be downloaded here]({{site.baseurl}}/figures/point_endogenous_comparison.html).
+
 <center>
 
 {% include point_endogenous_comparison.html %}
