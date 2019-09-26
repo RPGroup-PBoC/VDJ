@@ -1,6 +1,7 @@
 - fig: 
   title: Interactive Endogenous Sequence Explorer
   file: endogenous_explorer.py
+  figfile: endogenous_sequence_explorer.html
   desc: Generates the interactive figure for comparing endogenous RSSs.
   pic: endo_int_fig.png
   req:
@@ -21,6 +22,7 @@
   title: Interactive Synthetic Sequence Explorer
   file: point_mutation_explorer.py
   desc: Generates the interactive figure for examining the effects of single point mutations in the V4-57-1 sequence.
+  figfile: point_mutation_explorer.html
   pic: point_int_fig.png
   req:
     - ds: 
@@ -39,6 +41,7 @@
 - fig: 
   title: Interactive Comparison of Endogenous and Synthetic RSSs
   file: point_endogenous_comparison.py
+  figfile: point_endogenous_comparison.html
   desc: Generates the interactive figure for examining how point mutations in the V4-57-1 sequence compare to other endogenous sequences.
   pic: point_endo_int_fig.png
   req:
@@ -61,6 +64,7 @@
 - fig:
   title: "Fig. 3: TPM data for point mutations introduced at various positions of the reference RSS."
   file: "Fig_point_mutants.py"
+  figfile: Fig_point_mutation_stickplot.pdf
   desc:  Generates the stickplots and posterior distribution ridgeline plots for the point mutants.
   pic: main_point_fig.png
   req:
@@ -80,6 +84,7 @@
 - fig:
   title: "Fig. 4: Observed dynamics between RAG and endogenous RSS sequences."
   file: Fig_endogenous_properties.py
+  figfile: Fig_endogenous_properties.py
   desc: Generates the stickplots of looping frequency, median dwell time, and cleavage probabilities for the endogenous RSSs.
   pic: main_endog_fig.png
   req:
@@ -96,6 +101,7 @@
 - fig: 
   title: "Fig. 5: Non-exponential waiting time distributions for synthetic and endogenous RSSs."
   file: Fig_dwell_time_distributions.py
+  figfile: Fig_nonexponential_distributions.pdf
   desc: Generates figure showing the obsrved dwell time distributions overlaid by the credible region of a fit to a single exponential.         
   pic: main_dwell_fig.png
   req:
@@ -112,6 +118,7 @@
 - fig: 
   title: "Fig. 6: Empirical cumulative distributions of paired complex lifetimes with different divalent cations." 
   file: Fig_CaMg_comparison.py
+  figfile: Fig_CaMg_distributions.pdf
   desc: Used to compare the dwell time distributions of three RSSs with either calcium or magnesium salts. 
   pic: main_salt_fig.png
   req:
@@ -121,16 +128,11 @@
     - ds: 
       title: Parameter summaries from exponential fitting. 
       dataset: exponential_fitting_summary.csv
-    - ds:
-      title: DNA binding energy inference samples
-      dataset: Chure2019_DNA_binding_energy_samples.csv
-    - ds:
-      title: Free energy inferred from fold-change measurements
-      dataset: Chure2019_empirical_F_statistics.csv
 
 - fig:
   title: "Fig. S2: Representative bootstrap looping frequency distribution." 
   file: SiFig_bootstrap_mutant.py
+  figfile: SiFig_bootstrap_reference.pdf
   desc: Performs bootstrapping an dcalculation of confidence intervals for the looping frequency of the reference RSS.
   pic: si_bs_fig.png
   req:
@@ -141,6 +143,7 @@
 - fig: 
   title: "Fig. S3: Posterior distributions for endogenous RSS cleavage probabilities"
   file: SiFig_endogenous_posterior_ridgeplot.py
+  figfile: SiFig_endogenous_posterior_ridgeplot.pdf
   desc: Generates a ridgeline plot of the posterior distributions of PC cleavage probability for the endogenous RSSs.
   pic: si_ridge_fig.png
   req:
@@ -151,22 +154,24 @@
 - fig:
   title: "Fig. S4 - S5: Comparisons of looping frequencies for special cases"
   file: SiFig_coding_flanks.py
+  figfile: SiFig_coding_flank_spacerC1A_endogenous_comparison.pdf
   desc: Generates two figures comparing the looping frequencies for differing coding flank sequences as well as for a critical SpaceC1A mutation.
   pic: si_freq_fig.png
   req:
-  - ds: 
-      title: Summary of looping frequency bootstrap analysis
-      dataset: compiled_looping_frequency_bootstrap.csv
-  - ds:
-      title: Compiled paired complex dwell times. 
-      dataset: compiled_dwell_times.csv
-  - ds:
-    title: Posterior distributions for cleavage probabilities.
-    dataset: pooled_cutting_probability_posteriors.csv
+    - ds: 
+        title: Summary of looping frequency bootstrap analysis
+        dataset: compiled_looping_frequency_bootstrap.csv
+    - ds:
+        title: Compiled paired complex dwell times. 
+        dataset: compiled_dwell_times.csv
+    - ds:
+      title: Posterior distributions for cleavage probabilities.
+      dataset: pooled_cutting_probability_posteriors.csv
 
 - fig: 
   title: "Fig. S6: Comparison of looping frequencies for different divalent cations."
   file: SiFig_CaMg_looping_freq.py
+  figfile: SiFig_CaMg_looping_freq.pdf
   desc: Generates a figure comparing the looping frequencies of three RSSs in both calcium and magnesium conditioned buffers.
   pic: si_camg_fig.png
   req:
