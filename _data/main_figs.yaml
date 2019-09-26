@@ -19,7 +19,7 @@
 
 - fig: 
   title: Interactive Synthetic Sequence Explorer
-  file: interactives/point_mutation_explorer.py
+  file: point_mutation_explorer.py
   desc: Generates the interactive figure for examining the effects of single point mutations in the V4-57-1 sequence.
   pic: point_int_fig.png
   req:
