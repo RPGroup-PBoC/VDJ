@@ -1,6 +1,10 @@
 
 # Probing the Sequence-Dependent Dynamics of Endogenous and Synthetic RSSs in V(D)J Recombination 
 
+
+[![DOI](https://zenodo.org/badge/187516995.svg)](https://zenodo.org/badge/latestdoi/187516995)
+
+
 Welcome to the GitHub repository for our work on V(D)J recombination! This
 repository contains the entire project history as well as curated scripts to
 ensure computational reproducibility. The following sections will describe this
