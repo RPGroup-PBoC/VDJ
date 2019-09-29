@@ -25,7 +25,8 @@ from bokeh.events import Tap
 from bokeh.models import (ColumnDataSource, Div, LinearAxis, CustomJS, 
                           CDSView, Grid, GroupFilter, Band, Dropdown, HoverTool,
                           LinearColorMapper, TapTool, RadioButtonGroup,
-                          ColorBar, FixedTicker, Button, Segment)
+                          ColorBar, FixedTicker, Button, Segment,
+                          BoxAnnotation)
 from bokeh.layouts import layout, widgetbox
 import bokeh.resources
 from bokeh.models.widgets import Select 
@@ -201,12 +202,12 @@ pcut_source = ColumnDataSource(pcut_mat)
 # %%
 # Set up the matrices
 ax_loop_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
-            toolbar_location=None)
+            toolbar_location=None, y_range=[-0.5, 3.5])
 ax_loop = bokeh.plotting.figure(height=120, width=600, x_axis_label='paired complexes per bead',
             y_range=[-0.8, 0.8], x_range=[-0.1, 0.95], toolbar_location=None)
 
 ax_dwell_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
-                toolbar_location=None)
+                toolbar_location=None, y_range=[-0.5, 3.5])
 
 ax_dwell_unlooped = bokeh.plotting.figure(height=200, width=185,
         x_axis_label='dwell time [min]', y_axis_label='ECDF',
@@ -222,7 +223,7 @@ ax_dwell_all = bokeh.plotting.figure(height=200, width=185,
         tools=[''], toolbar_location=None, x_axis_type='log', title='all PCs',
         x_range=[0.50, 80])
 ax_cut_mat = bokeh.plotting.figure(height=120, width=600, x_range=[-1, 28], tools=['tap'],
-            toolbar_location=None)
+            toolbar_location=None, y_range=[-0.5, 3.5])
 ax_cut = bokeh.plotting.figure(height=200, width=600, 
     x_axis_label='cleavage probability', y_axis_label='posterior probability',
     tools=[''], toolbar_location=None)
@@ -251,6 +252,15 @@ for a in [ax_leg, ax_leg2]:
     a.yaxis.visible = False
     a.xgrid.visible = False
     a.ygrid.visible = False
+
+# Adjust shading on the heat maps to indicate region of sequence
+for a in [ax_loop_mat, ax_dwell_mat, ax_cut_mat]:
+    a.ray(x=6.5, y=3.5, length=7, angle=-np.pi/2, color='black',
+        level='overlay', line_width=2)
+    a.ray(x=17.5, y=3.5, length=7, angle=-np.pi/2, color='black',
+        level='overlay', line_width=2)
+  
+
 
 # Insert interactivity
 mut_filter = GroupFilter(column_name="mutant", group='')
