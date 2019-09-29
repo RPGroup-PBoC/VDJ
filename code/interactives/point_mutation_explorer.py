@@ -257,7 +257,7 @@ for a in [ax_leg, ax_leg2]:
 for a in [ax_loop_mat, ax_dwell_mat, ax_cut_mat]:
     a.ray(x=6.5, y=3.5, length=7, angle=-np.pi/2, color='black',
         level='overlay', line_width=2)
-    a.ray(x=17.5, y=3.5, length=7, angle=-np.pi/2, color='black',
+    a.ray(x=18.5, y=3.5, length=7, angle=-np.pi/2, color='black',
         level='overlay', line_width=2)
   
 
