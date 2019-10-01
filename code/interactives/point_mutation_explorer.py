@@ -261,7 +261,6 @@ for a in [ax_loop_mat, ax_dwell_mat, ax_cut_mat]:
         level='overlay', line_width=2)
   
 
-
 # Insert interactivity
 mut_filter = GroupFilter(column_name="mutant", group='')
 loop_view = CDSView(source=loop_source, filters=[mut_filter])
