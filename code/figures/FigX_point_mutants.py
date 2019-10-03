@@ -8,7 +8,7 @@ import vdj.io
 vdj.viz.plotting_style()
 # Load the data with long-form looping events and restrict to relevant sets.
 data = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
-counts = data[(data['salt']=='Mg') & (data['hmgb1']==80) & (counts['percentile']==95.0) & (counts['mutant']!='12CodC6A')]
+counts = data[(data['salt']=='Mg') & (data['hmgb1']==80) & (data['percentile']==95.0) & (data['mutant']!='12CodC6A')]
 
 # Load the dwell times
 dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
@@ -277,12 +277,6 @@ ax[3].set_xlabel('probability of cutting')
 ax[3].set_ylim([-0.025, 0.26])
 ax[3].set_xlim([0.0, 1.0])
 ax[3].set_yticklabels([])
-
-# Try adding an annotation. THis may be tricky.
-ax[3].vlines(0.56,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='k')
-ax[3].hlines(plot_offset['WT12rss'] + 0.06, 0.54, 0.56, color='k')
-ax[3].hlines(plot_offset['WT12rss'], 0.54, 0.56, color='k')
-ax[3].text(0.562, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
 
 # Add Figure Panels. 
 fig.text(0.005, 0.87, '(A)', fontsize=12)
