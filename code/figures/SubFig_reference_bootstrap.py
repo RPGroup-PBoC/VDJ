@@ -53,28 +53,27 @@ text_perc = '95%'
 
 true_loops_val = y[x.index(bs_df['loops_per_bead'].values[0])]
 #%%
-fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-ax.set_ylim([-0.01, 1.01])
-ax.step(x, y, color='dodgerblue', lw=2, zorder=10)
-ax.axvline(bs_df['loops_per_bead'].values[0], 0, true_loops_val, 
+fig, ax = plt.subplots(1, 1, figsize=(2,4))
+ax.set_xlim([-1, 250000])
+ax.hist(loop_freq, color='tomato', bins=20, zorder=10,
+        orientation='horizontal')
+ax.axhline(bs_df['loops_per_bead'].values[0], 0, true_loops_val, 
             color='slategrey', ls='--', alpha=0.4, lw=2)
-for n in range(2):
-    ax.hlines(percentiles[n]/100, 0, bs_df[col_names[n]].values[0],linestyle='--',
-                color='slategrey', alpha=0.4) 
-    ax.vlines(bs_df[col_names[n]].values[0], percentiles[n]/100, 
-                true_loops_val, linestyle='--', color='slategrey', 
-                alpha=0.4)
-ax.scatter(bs_df['loops_per_bead'], true_loops_val, color='slategrey',
+
+ax.scatter(true_loops_val, bs_df['loops_per_bead'], color='slategrey',
             s=50, alpha=0.7)
-ax.hlines(true_loops_val, bs_df[col_names[0]].values[0],
+ax.vlines(true_loops_val, bs_df[col_names[0]].values[0],
         bs_df[col_names[1]].values[0], alpha=0.7, 
         ls='-', color='slategrey', lw=3)
 
-_ = ax.set_xlim([loop_freq.min(),loop_freq.max()])
-_ = ax.set_xlabel('looping frequency', fontsize=12)
-_ = ax.set_ylabel('ECDF', fontsize=12)
-_ = ax.set_xticks([0.15, 0.20, 0.250, 0.30])
-_ = ax.set_xticklabels([0.15, 0.20, 0.25, 0.30])
+_ = ax.set_ylim([loop_freq.min(),loop_freq.max()])
+_ = ax.set_ylabel('bootstrapped\nlooping frequency', fontsize=16)
+_ = ax.set_xlabel('counts', fontsize=16)
+_ = ax.set_ylim([0, 0.6])
+ytick = np.arange(0.0,0.7,0.1)
+_ = ax.set_yticks(ytick)
+_ = ax.set_yticklabels(['%.1f' %n for n in ytick])
+_ = ax.set_xticklabels([])
 
 fig.savefig('../../figures/SubFigXB_reference_bootstrap.pdf',
             bbox_inches='tight', facecolor='white')
