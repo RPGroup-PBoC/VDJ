@@ -57,7 +57,7 @@ text_perc = ['5%', '10%', '25%', '50%', '75%', '95%']
 
 fig, ax = plt.subplots(1, 1, figsize=(5, 5))
 ax.set_ylim([-0.01, 1.01])
-ax.plot(x, y, color='dodgerblue', lw=2)
+ax.step(x, y, color='dodgerblue', lw=2)
 ax.axvline(bs_df['loops_per_bead'].values[0], 0, 1.0, color='grey', lw=2)
 for percentile in col_names:
     ax.fill_betweenx(y_short, bs_df[percentile[0]].values[0], bs_df[[percentile[1]]].values[0],
