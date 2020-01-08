@@ -25,7 +25,7 @@ dwell_times = pd.read_csv('../../../data/compiled_dwell_times.csv')
 posteriors = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
 loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
 pcuts = pd.read_csv('../../../data/pooled_cutting_probability.csv')
-
+pcuts.rename(columns={'n_beads': 'n_loops'}, inplace=True)
 # Keep the data from the reference sequence
 dwell_ref = dwell_times[(dwell_times['mutant']=='WT12rss') & 
                        (dwell_times['hmgb1']==80) & (dwell_times['salt']=='Mg')]
@@ -43,11 +43,12 @@ dfs  = []
 for i, df in enumerate([dwell_times, posteriors, loops, pcuts]):
     for g, d in df.groupby(['mutant']):
         n_muts = vdj.io.mutation_parser(g)['n_muts']
-        if (n_muts > 1) | (g == 'V4-55'): 
+        if 'cod' in g.lower():
+            mut_class = 'flank'
+        elif (n_muts > 1) | (g == 'V4-55'): 
             mut_class = 'endogenous'
         else:
             mut_class = 'point' 
-
         df.loc[df['mutant']==g, 'class'] = mut_class
     df = df[(df['class']=='point') & (df['salt']=='Mg') & (df['hmgb1']==80)]
     dfs.append(df)
@@ -114,10 +115,13 @@ nt_idx = vdj.io.nucleotide_idx()
 # def parse_mutation(0)
 for g, d in dwell_times.groupby(['mutant']):
     mut_seq = vdj.io.mutation_parser(g)
-    if g != 'WT12rss':
+    if (g != 'WT12rss') & ('cod' not in g.lower()):
         # Parse the mutation
         loc = np.where(mut_seq['seq_idx']!=ref_seq)[0][0]
-        base = mut_seq['seq'][loc]
+        try:
+            base = mut_seq['seq'][loc]
+        except TypeError:
+            base = mut_seq['seq']
 
         # Compute the median dwell time
         med_dwell = d['dwell_time_min'].median()
@@ -128,7 +132,8 @@ for g, d in dwell_times.groupby(['mutant']):
                 'base_idx': nt_idx[base],
                 'base': base,
                 'diff': diff,
-                'med_dwell':med_dwell}, ignore_index=True)
+                'med_dwell':med_dwell,
+                'n_loops': int(len(d))}, ignore_index=True)
 dwell_source = ColumnDataSource(dwell_mat)
 
 #%%
@@ -138,7 +143,7 @@ dwell_source = ColumnDataSource(dwell_mat)
 pooled_loop_mat = pd.DataFrame()
 for g, d in loops.groupby(['mutant']):
     mut_seq = vdj.io.mutation_parser(g)
-    if g != 'WT12rss':
+    if (g != 'WT12rss') & ('cod' not in g.lower()):
         # Parse the mutation
         loc = np.where(mut_seq['seq_idx']!=ref_seq)[0][0]
         base = mut_seq['seq'][loc]
@@ -151,7 +156,9 @@ for g, d in loops.groupby(['mutant']):
                  'base_idx': nt_idx[base],
                  'loops_per_bead': d['loops_per_bead'].values[0],
                  'base': base,
-                 'diff': diff}, ignore_index=True)
+                 'diff': diff,
+                 'n_beads': int(d['n_beads'].unique()),
+                 'n_loops': int(d['n_loops'].unique())}, ignore_index=True)
 loop_source = ColumnDataSource(pooled_loop_mat)
 #%%
 # ##############################################################################
@@ -161,7 +168,7 @@ mean_cut_ref = pcut_ref['mode'].values[0]
 pcut_mat = pd.DataFrame()
 for g, d in pcuts.groupby(['mutant']):
     mut_seq = vdj.io.mutation_parser(g)
-    if g != 'WT12rss':
+    if (g != 'WT12rss') & ('cod' not in g.lower()):
         # Parse the mutation
         loc = np.where(mut_seq['seq_idx']!=ref_seq)[0][0]
         base = mut_seq['seq'][loc]
@@ -175,7 +182,9 @@ for g, d in pcuts.groupby(['mutant']):
                  'base_idx': nt_idx[base],
                  'pcut': val,
                  'base': base,
-                 'diff': diff}, ignore_index=True)
+                 'diff': diff,
+                 'n_loops': int(d['n_loops'].unique()),
+                 'n_cuts': int(d['n_cuts'].unique())}, ignore_index=True)
 pcut_source = ColumnDataSource(pcut_mat)
 # %%
 # Set up the matrices
@@ -438,19 +447,24 @@ loop_fig = ax_loop_mat.rect('pos', 'base_idx', width=1, height=1, source=loop_so
 ax_loop_mat.tools.append(HoverTool(renderers=[loop_fig],
         tooltips=[('mutant', '@mutant'), 
                   ('difference in frequency', '@diff'),
-                  ('looping frequency', '@loops_per_bead')]))
+                  ('looping frequency', '@loops_per_bead'),
+                  ('number of beads', '@n_beads'),
+                  ('number of loops', '@n_loops')]))
 dwell_fig = ax_dwell_mat.rect('pos', 'base_idx', width=1, height=1, source=dwell_source, 
         fill_color=transform('diff', dwell_color))
 ax_dwell_mat.tools.append(HoverTool(renderers=[dwell_fig],
         tooltips=[('mutant', '@mutant'), 
                   ('difference in median dwell time [min]', '@diff'),
-                  ('median dwell time [min]', '@med_dwell')]))
+                  ('median dwell time [min]', '@med_dwell'),
+                  ('number of loops', '@n_loops')]))
 cut_fig = ax_cut_mat.rect('pos', 'base_idx', width=1, height=1, source=pcut_source, 
         fill_color=transform('diff', cut_color))
 ax_cut_mat.tools.append(HoverTool(renderers=[cut_fig],
         tooltips=[('mutant', '@mutant'), 
                   ('difference in cleavage probability', '@diff'),
-                  ('cleavage probability', '@pcut')]))
+                  ('cleavage probability', '@pcut'),
+                  ('number of loops', '@n_loops'),
+                  ('number of cuts', '@n_cuts')]))
 
 # Add the reference features
 ax_dwell_unlooped.step('dwell', 'ecdf',  color='slategrey', line_width=2,

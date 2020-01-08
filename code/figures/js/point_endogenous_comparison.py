@@ -15,7 +15,21 @@ from bokeh.embed import components
 import vdj.io
 import vdj.stats
 bokeh.plotting.output_file('./point_endogenous_comparison.html')
-# bokeh.io.output_notebook()
+
+# Load the data sets
+loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
+dwell_all_data = pd.read_csv('../../../data/compiled_dwell_times.csv')
+post_data = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
+pcuts = pd.read_csv('../../../data/pooled_cutting_probability_summary.csv')
+loop_data = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
+pcuts = pd.read_csv('../../../data/pooled_cutting_probability.csv')
+pcuts.rename(columns={'n_beads': 'n_loops'}, inplace=True)
+post_data['color'] = 'slategrey'
+
+#%%
+# Restrict the posterior distributions.
+post_data = post_data[(post_data['hmgb1']==80) & (post_data['salt']=='Mg')]
+
 
 
 # Start by trying to figure out the details of picking the point mutants that
@@ -56,22 +70,24 @@ for key, val in endog_seqs.items():
             color_idx += 1
         else:
             mut_info = {'position':i, 'base':reference[0][i], 'base_idx':nt_idx[b],
-                        'point_mutant':'No Mutation', 'mutant':key, 
+                        'point_mutant': key, 'mutant':key, 
                         'color':'#c2c2c2'}
-        if (key != 'WT12rss') & (key != 'reference'):
-            mut_df = mut_df.append(mut_info, ignore_index=True)
+        if mut_info['point_mutant'] == 'reference':
+           mut_info['point_mutant'] = 'WT12rss'
+        # Get the loops and cut statistics
+        loop_mut = loop_data[(loop_data['mutant']==mut_info['point_mutant']) & (loop_data['salt']=='Mg') & (loop_data['hmgb1']==80)]
+        pcut_mut = pcuts[(pcuts['mutant']==mut_info['point_mutant']) & (pcuts['salt']=='Mg') & (pcuts['hmgb1']==80)]
+        n_loops = int(loop_mut['n_loops'].unique())
+        n_beads = int(loop_mut['n_beads'].unique())
+        n_cuts = int(pcut_mut['n_cuts'].unique())
+        mut_info['n_loops'] = n_loops 
+        mut_info['n_beads'] = n_beads
+        mut_info['n_cuts'] = n_cuts
+        # if (key != 'WT12rss') & (key != 'reference') & ('cod' not in key.lower()):
+        mut_df = mut_df.append(mut_info, ignore_index=True)
 seq_source = ColumnDataSource(mut_df)
 
 # %%
-# Load the data sets
-loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
-dwell_all_data = pd.read_csv('../../../data/compiled_dwell_times.csv')
-post_data = pd.read_csv('../../../data/pooled_cutting_probability_posteriors.csv')
-post_data['color'] = 'slategrey'
-
-# Restrict the posterior distributions.
-post_data = post_data[(post_data['hmgb1']==80) & (post_data['salt']=='Mg')]
-
 dfs = []
 for g, d in post_data.groupby('mutant'):
     # Determine the class of mutant.
@@ -420,7 +436,10 @@ post_rend = pcut_ax.multi_line('xs', 'ys', source=post_blank, line_width=2, colo
 
 
 hover = HoverTool(renderers=[sequence], callback=js_cbs[1],
-tooltips=[('mutation', '@point_mutant')])
+tooltips=[('mutation', '@point_mutant'),
+          ('number of beads', '@n_beads'),
+          ('number of loops', '@n_loops'),
+          ('number of cuts', '@n_cuts')])
 
 seq_ax.add_tools(hover)
 sel.js_on_change('value', js_cbs[0])

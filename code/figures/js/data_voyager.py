@@ -181,7 +181,7 @@ floop_rep['y'] = np.random.normal(0, 0.01, len(floop_rep))
 # ##############################################################################
 # FIGURE SOURCE AND VIEW DEFINITIONS
 # ##############################################################################
-boeh.plotting.output_file('./data_voyager.html')
+bokeh.plotting.output_file('./data_voyager.html')
 
 # Instantiate the dropdown menu
 selector = Select(title='Mutant', value='WT12rss', 

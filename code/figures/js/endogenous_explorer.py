@@ -31,10 +31,12 @@ dfs  = []
 for i, df in enumerate([dwell_times, posteriors, loops]):
     # Rename the point mutant 12SpacC1A to  the endogenous mutant V4-55
     for g, d in df.groupby(['mutant']):
-        if ('12Spac' not in g) & ('12Hept' not in g) & ('12Non' not in g):
+        if ('12spac' not in g.lower()) & ('12hept' not in g.lower()) & ('12non' not in g.lower()) & ('cod' not in g.lower()):
             mut_class = 'endogenous'
+        elif 'cod' in g.lower():
+            mut_class = 'flank' 
         else:
-            mut_class = 'point' 
+            mut_class = 'point'
        
         df.loc[df['mutant']==g, 'class'] = mut_class
     df = df[(df['class']=='endogenous') & (df['salt']=='Mg') & (df['hmgb1']==80)]
@@ -44,8 +46,15 @@ cut_dwells = dwell_times[dwell_times['cut']==1]
 unloop_dwells = dwell_times[dwell_times['cut']==0]
 
 
-
-
+#%% Generate a dataframe with div entries. 
+stat_df = pd.DataFrame([])
+for g, d in dwell_times.groupby('mutant'):
+    # Count the total number of observed loops. 
+    n_loops = len(d)
+    n_cuts = d['cut'].sum()   
+    n_beads = int(loops[loops['mutant']==g]['n_beads'].unique()) 
+    stat_df = stat_df.append({'mutant':g, 'n_loops':n_loops, 'n_cuts':n_cuts, 'n_beads':n_beads}, 
+                    ignore_index=True)
 #%%
 # ##############################################################################
 # GENERATE HISTOGRAMS OF DWELL TIMES 
@@ -102,6 +111,8 @@ dwell_unloop_source2 = ColumnDataSource(unloop_dist)
 cut_source2 = ColumnDataSource(cut_dist)
 post_source2 = ColumnDataSource(posteriors)
 loop_source2 = ColumnDataSource(loops)
+stat_source = ColumnDataSource(stat_df)
+
 
 # Define the Views
 dwell_all_view1 = CDSView(source=dwell_all_source1, filters=[mut_filter1])
@@ -131,7 +142,6 @@ ax_dwell_cut = bokeh.plotting.figure(height=300, width=400,x_axis_label='paired 
                                 y_axis_label='ECDF', tools=[''], x_axis_type='log')
 ax_dwell_unloop = bokeh.plotting.figure(height=300, width=400, x_axis_label='paired complex dwell time [min]',
                                 y_axis_label='ECDF', tools=[''], x_axis_type='log')
-
 ax_cut = bokeh.plotting.figure(height=300, width=400, x_axis_label='cutting probability',
                                y_axis_label='posterior probability', tools=[''])
 
@@ -163,8 +173,13 @@ dwell_row = bokeh.layouts.row(ax_dwell_unloop, ax_dwell_cut)
 final_row = bokeh.layouts.row(ax_dwell_all, ax_cut)
 col = bokeh.layouts.column(ax_loop, dwell_row, final_row)
 spacer = Div(text="<br/>")
-lay = bokeh.layouts.column(selections, ax_leg, col)
+title_div = Div(text='<center> <b>Observation Statistics</b> </center>')
+count_div = Div(text='')
+col2 = bokeh.layouts.column(title_div, count_div)
+row2 = bokeh.layouts.row(selections, col2)
+lay = bokeh.layouts.column(row2, ax_leg, col)
 # lay.sizing_mode = 'scale_width'
+
 # ############################################################################## # POPULATE CANVASES
 # ############################################################################## 
 # Loops per bead
@@ -203,12 +218,6 @@ mut1_circ = ax_loop.triangle(name='mut1', x='loops_per_bead', y=0.5, source=loop
 mut2_circ = ax_loop.triangle(name='mut2', x='loops_per_bead', y=-0.5, source=loop_source2,
                 view=loop_view2, fill_color='white', line_color='dodgerblue', 
                 size=10, level='overlay', legend='observed frequency')
-
-# # Add hover tooltips to the loop plot 
-# tooltips = [('mutant', '@mutant'), ('# beads', '@n_beads'), ('# paired complexes', '@n_loops')]
-# ax_loop.add_tools(HoverTool(renderers=[mut1_circ, mut2_circ], 
-#                   names=['mut1', 'mut2'], tooltips=tooltips))
-
 for i, p in enumerate(percs):
     print(p)
 
@@ -245,9 +254,6 @@ ax_dwell_unloop.step('dwell_time', 'ecdf', source=dwell_unloop_source1, view=dwe
 ax_dwell_unloop.step('dwell_time', 'ecdf', source=dwell_unloop_source2, view=dwell_unloop_view2,
                     color='dodgerblue', line_width=2)
 
-
-
-
 # Cutting probability posterior
 ax_cut.line(x='probability', y='posterior', source=post_source1, view=post_view1, 
             color='slategrey')
@@ -277,13 +283,52 @@ args = {'sel1':mut_sel1, 'filter1':mut_filter1, 'sel2':mut_sel2, 'filter2':mut_f
         'percentile_source2': percentile_source2,
         'percentile_view1': perc_view1,
         'percentile_view2': perc_view2,
-        'leg_source':leg_source}
+        'leg_source':leg_source,
+        'count_div': count_div,
+        'stat_source': stat_source}
 
 callback = CustomJS(args=args, code="""
   var mut1 = sel1.value;
   var mut2 = sel2.value;
   filter1.group = mut1;
   filter2.group = mut2;
+
+  // Get the stats. 
+  var mut1_nloops = 0
+  var mut2_nloops = 0
+  var mut1_nbeads = 0
+  var mut2_nbeads = 0
+  var mut1_ncuts = 0
+  var mut2_ncuts = 0
+
+// Hardcoded number of endogenous sequences.
+  for (var i = 0; i < 12; i++) {
+      if (stat_source.data['mutant'][i] === mut1) {
+          mut1_nloops = stat_source.data['n_loops'][i]
+          mut1_nbeads= stat_source.data['n_beads'][i]
+          mut1_ncuts = stat_source.data['n_cuts'][i] 
+      }
+     if (stat_source.data['mutant'][i] === mut2) {
+          mut2_nloops = stat_source.data['n_loops'][i]
+          mut2_nbeads= stat_source.data['n_beads'][i] 
+          mut2_ncuts = stat_source.data['n_cuts'][i] 
+     }
+  }
+
+  // Define the new text for the observations div.
+  var new_text = '<center>'.concat(' Number of beads : <span style="color:slategrey;">',
+                mut1_nbeads.toString(), '</span> ; <span style="color:dodgerblue">',
+                mut2_nbeads.toString(), '</span><br/>',
+                'Number of loops : <span  style="color:slategrey;">', 
+                mut1_nloops.toString(), '</span> ; <span style="color:dodgerblue">', 
+                mut2_nloops.toString(), '</span><br/>', 
+                'Number of cuts : <span style="color:slategrey;">', 
+                mut1_ncuts.toString(), '</span> ; <span style="color:dodgerblue">', 
+                mut2_ncuts.toString(),
+'</span><br/></center>')
+  count_div.text = new_text;
+  count_div.change.emit();
+
 
   // Iterate through each percentile. 
   for (var i = 0; i < percentile_source1.length; i++ ) {
