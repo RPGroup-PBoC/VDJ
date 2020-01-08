@@ -2,15 +2,14 @@
 Comparison of Synthetic RSS Behavior
 --------------------------------------------------------------------------------
 Authors: Soichi Hirokawa and Griffin Chure
-Last Modified: September 25, 2019
+Last Modified: January 8, 2020
 License: MIT
 
 Description
 --------------------------------------------------------------------------------
-This script generates a stickplot figure that compares various quantities
-(such as median dwell time, looping frequency, and cutting probability) among
-the synthetic RSSs. Posterior distributions for the cutting probability are
-also shown for specific cases.
+This script generates three stickplot figures that compare the looping frequency,
+dwell time, and cutting probability among the synthetic RSSs. Posterior 
+distributions for the cutting probability are also shown for specific RSSs.
 
 Notes
 --------------------------------------------------------------------------------
@@ -97,6 +96,8 @@ for m in points_cut['mutant'].unique():
         _d = points_cut[points_cut['mutant']==m]
 
 #%%
+# zshift in stickplots allow plot colors to show up more prominently
+zshift = 100
 posterior_list = ['WT12rss', '12HeptC3G', '12HeptC3T', '12SpacC4G', '12NonA4C', '12SpacG10T']
 posterior_shift = {'WT12rss': 0, 
                    '12HeptC3G': 0.1, 
@@ -156,23 +157,25 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 if type(base) != str:
                         base = base[0]
                 a.plot(g + 1 + hshift[base], d[v], marker='o', color=colors[base], lw=0.75, 
-                        ms=10, linestyle='none', label='__nolegend__', 
-                        markerfacecolor='white', alpha=0.8)
+                        ms=10, linestyle='none', label='__nolegend__', zorder=zshift,
+                        markerfacecolor='white', alpha=0.7)
                 if (base == 'T') | (base == 'A'):
                         shift = 0.05
                 else:
                         shift = 0 
-                a.annotate(base , xy=(g + 0.78 + shift + hshift[base], d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
-                            size=9,  label='__nolegend__', clip_on=False)
+                a.annotate(base , xy=(g + 0.78 + shift + hshift[base], d[v] - vshift), 
+                        color=colors[base], zorder=zshift, size=9,  label='__nolegend__', 
+                        clip_on=False)
                 if j==0:
-                        a.vlines(g + 1 + hshift[base], d['low'], d['high'],
-                                color=colors[base], lw=1.5, label='__nolegend__')
+                        a.vlines(g + 1 + hshift[base], d['low'], d['high'], zorder=zshift,
+                                alpha=0.7, color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==1:
-                        a.vlines(g + 1 + hshift[base], d['dwell_25'], d['dwell_75'],
-                                color=colors[base], lw=1.5, label='__nolegend__')
+                        a.vlines(g + 1 + hshift[base], d['dwell_25'], d['dwell_75'], alpha=0.7,
+                                zorder=zshift, color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==2:
                         a.vlines(g + 1 + hshift[base], d['mean']-d['std'], d['mean']+d['std'],
-                                color=colors[base], lw=1.5, label='__nolegend__')
+                                alpha=0.7, zorder=zshift, color=colors[base], lw=1.5, 
+                                label='__nolegend__')
 #                else:
 #                        a.vlines(g + 1, 0, d['rel_diff'], color=colors[base], lw=1.5, label='__nolegend__')
             else:
@@ -187,15 +190,15 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                     if j==0:
                             a.vlines(g + 1 + hshift[base], _d['low'], _d['high'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
-                                        zorder=zorder, alpha=0.5)
+                                        zorder=zorder+zshift, alpha=0.7)
                     elif j==1:
                             a.vlines(g + 1 + hshift[base], _d['dwell_25'], _d['dwell_75'],
                                         color=colors[base], lw=1.5, label='__nolegend__',
-                                        zorder=zorder, alpha=0.5)
+                                        zorder=zorder+zshift, alpha=0.7)
                     elif j==2:
                             a.vlines(g + 1 + hshift[base], _d[v] - _d['std'], _d[v]+_d['std'],
                                      color=colors[base], lw=1.5, label='__nolegend__',
-                                     zorder=zorder, alpha=0.5)
+                                     zorder=zorder+zshift, alpha=0.7)
 #                    else:
 #                            a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
 #                                label='__nolegend__', zorder=zorder)
@@ -206,15 +209,18 @@ for j, p in enumerate([points, points_dwell, points_cut]):
         
                     a.plot(g + 1 + hshift[base], _d[v], marker='o', color=colors[base], lw=0.75, 
                         ms=10, linestyle='none', label='__nolegend__', 
-                        markerfacecolor='white', zorder=zorder, alpha=0.8)
+                        markerfacecolor='white', zorder=zorder+zshift, alpha=0.7)
                     a.annotate(base , xy=(g + 0.78 + shift + hshift[base], _d[v] - vshift), color=colors[base], #, markeredgewidth=0.5,
-                           size=9,  label='__nolegend__', zorder=zorder, clip_on=False)
+                           size=9,  label='__nolegend__', zorder=zorder+zshift, clip_on=False)
 
                     zorder -= 1
 wt_x = np.linspace(0, 30, 1000)
-ax_loop.fill_between(wt_x, wt_loop_low, wt_loop_high, facecolor='grey', alpha=0.4)
-ax_dwell.vlines(1, wt_dwell_25, wt_dwell_75, color='k', lw=1.5)
-ax_cut[0].fill_between(wt_x, wt_cut-wt_std, wt_cut+wt_std, facecolor='grey', alpha=0.4)
+ax_loop.fill_between(wt_x, wt_loop_low, wt_loop_high, facecolor='grey', 
+                        zorder=zshift, alpha=0.4)
+ax_dwell.vlines(1, wt_dwell_25, wt_dwell_75, zorder=zshift,
+                color='k', lw=1.5)
+ax_cut[0].fill_between(wt_x, wt_cut-wt_std, wt_cut+wt_std, 
+                        zorder=zshift, facecolor='grey', alpha=0.4)
  
 # Previous y positions were -0.84 and -0.72
 line_loop1 = lines.Line2D([7.5, 7.5], [-0.12, -0.02], clip_on=False, alpha=1,
