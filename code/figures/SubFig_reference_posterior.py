@@ -32,7 +32,8 @@ cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv',
                         comment='#')
 cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg') & (cut_posts['mutant']=='WT12rss')]
 
-fig, ax = plt.subplots(1, 1, figsize=(8.2, 2.3))
+#%%
+fig, ax = plt.subplots(1, 1, figsize=(4.1, 2.3))
 ax.plot(cut_posts['probability'], cut_posts['posterior'], color='white')
 ax.scatter(cut_data['mean'], cut_posts['posterior'].max()/3, color='slategrey')
 ax.fill_between(cut_posts['probability'], 0, cut_posts['posterior'],
@@ -41,7 +42,8 @@ ax.hlines(cut_posts['posterior'].max()/3, cut_data['mean'] - cut_data['std'],
         cut_data['mean'] + cut_data['std'], color='slategrey')
 
 _ = ax.set_yticklabels([])
-_ = ax.set_xlim([0.0, 1.0])
+_ = ax.set_xticklabels([])
+_ = ax.set_xlim([0.2, 0.8])
 _ = ax.set_ylim([0.0, cut_posts['posterior'].max()+0.005])
 _ = ax.set_ylabel('$P(p_\mathrm{cut} | n_\mathrm{loops}, n_\mathrm{cuts})$\nprobability of $p_\mathrm{cut}$')
 _ = ax.set_xlabel(r'$p_\mathrm{cut}$')
@@ -54,7 +56,7 @@ bead_stats = '\n'.join((
 
 bbox_props = dict(boxstyle='square', edgecolor='k', facecolor='white', alpha=0.5)
 
-_ = ax.text(0.88, 0.051, bead_stats, fontsize=12, horizontalalignment='center',
+_ = ax.text(0.66, 0.051, bead_stats, fontsize=12, horizontalalignment='center',
             verticalalignment='top', bbox=bbox_props)
 _ = ax.text(cut_data['mean'], cut_posts['posterior'].max()/3 + 0.005,
             r'$\mu \pm \sigma$', fontsize=12, verticalalignment='center',
@@ -62,3 +64,5 @@ _ = ax.text(cut_data['mean'], cut_posts['posterior'].max()/3 + 0.005,
 
 fig.savefig('../../figures/SubFigX_point_posterior_definition.pdf', bbox_inches='tight',
             facecolor='white')
+
+# %%
