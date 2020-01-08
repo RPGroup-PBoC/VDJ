@@ -65,12 +65,17 @@ function logSumExp(vals) {
    return maxVal + Math.log(sum_value);
 }
 
+
+
+// Set the maximum of the cutting slider to the maximum of the loop slider
+n_cuts_slider.end = n_loops_slider.value - 1;
+if (n_cuts_slider.value >= n_loops_slider.value) {
+    n_cuts_slider.value =  n_loops_slider.value - 1;
+}
+
 // Get the input values
 var N = n_loops_slider.value;
 var n = n_cuts_slider.value;
-
-// Set the maximum of the cutting slider to the maximum of the loop slider
-n_cuts_slider.end = n_loops_slider.value - 1
 
 // Evaluate the posterior
 var log_posterior = [];
