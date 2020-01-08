@@ -30,6 +30,6 @@ here]({{site.baseurl}}/figures/pcut_model_explorer.html).
 
 <center>
 
-{% include endogenous_voyager.html %}
+{% include pcut_model_explorer.html %}
 
 </center>
