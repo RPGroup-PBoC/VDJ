@@ -2,7 +2,7 @@
 Comparison of Coding Flank Effects and Critical SpacerC1A Mutant
 --------------------------------------------------------------------------------
 Author: Soichi Hirokawa
-Last Modified: September 25,2019
+Last Modified: January 7, 2020
 License: MIT
 
 Description
@@ -126,13 +126,13 @@ for seq in seqs:
         ax_conf_int.text(seqs[seq] + perc_widths[g] - 0.015, 0.05, str(int(g)) + '%',
                         ha='center', va='top')
 
-    ax_dwell_cut.plot(cut_dist[cut_dist['mutant']==seq]['x'], 
+    ax_dwell_cut.step(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_unloop.plot(unloop_dist[unloop_dist['mutant']==seq]['x'], 
+    ax_dwell_unloop.step(unloop_dist[unloop_dist['mutant']==seq]['x'], 
                         unloop_dist[unloop_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_all.plot(dwell_dist[dwell_dist['mutant']==seq]['x'], 
+    ax_dwell_all.step(dwell_dist[dwell_dist['mutant']==seq]['x'], 
                         dwell_dist[dwell_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
     ax_posts.plot(cut_posts[cut_posts['mutant']==seq]['probability'],
@@ -209,13 +209,13 @@ for seq in seqs:
         ax_conf_int.text(seqs[seq] + perc_widths[g] - 0.015, 0.05, str(int(g)) + '%',
                         ha='center', va='top')
 
-    ax_dwell_cut.plot(cut_dist[cut_dist['mutant']==seq]['x'], 
+    ax_dwell_cut.step(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_unloop.plot(unloop_dist[unloop_dist['mutant']==seq]['x'], 
+    ax_dwell_unloop.step(unloop_dist[unloop_dist['mutant']==seq]['x'], 
                         unloop_dist[unloop_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_all.plot(dwell_dist[dwell_dist['mutant']==seq]['x'], 
+    ax_dwell_all.step(dwell_dist[dwell_dist['mutant']==seq]['x'], 
                         dwell_dist[dwell_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
     ax_posts.plot(cut_posts[cut_posts['mutant']==seq]['probability'],
@@ -228,3 +228,5 @@ for seq in seqs:
     ax_conf_int.text(seqs[seq] + 0.09, 0.65, seq, ha='center', va='bottom', fontsize=12)
 plt.savefig('../../figures/SiFig_spacerC1A_endogenous_cmparison.pdf', 
             bbox_inches='tight', facecolor='white')
+
+# %%
