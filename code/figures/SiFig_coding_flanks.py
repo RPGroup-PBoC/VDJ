@@ -113,7 +113,7 @@ ax_dwell_all.text(14, 0.1, 'cutting and\nunlooping',
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
 
-gs2.tight_layout(fig, rect=[0, 0, 1.5, 0.8])
+gs2.tight_layout(fig, rect=[0, 0, 1.56, 0.8])
 
 seqs = {'V4-57-1 (ref)':0.25, '12CodC6A':0.5}
 colors = {'V4-57-1 (ref)':'slategrey', '12CodC6A':'dodgerblue'}
@@ -204,7 +204,7 @@ ax_dwell_all.set_xscale('log')
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
 
-gs2.tight_layout(fig, rect=[0, 0, 1.5, 0.8])
+gs2.tight_layout(fig, rect=[0, 0, 1.55, 0.8])
 
 perc_widths = {p:w for p, w in zip(np.sort(loop['percentile'].unique()), np.arange(0.03, 0.21, 0.03))}
 
