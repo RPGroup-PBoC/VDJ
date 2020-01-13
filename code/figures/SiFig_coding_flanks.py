@@ -94,21 +94,21 @@ gs.tight_layout(fig, rect=[0, 0.75, 1.5, 1.55])
 gs2 = gridspec.GridSpec(1, 3)
 ax_dwell_cut = fig.add_subplot(gs2[0])
 ax_dwell_cut.set_xscale('log')
-ax_dwell_cut.text(14, 0.1, 'cutting\nonly',
+ax_dwell_cut.text(18, 0.1, 'cutting\nonly',
                 horizontalalignment='center', fontsize=14)
 ax_dwell_cut.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_cut.set_ylabel('ECDF', fontsize=16)
 
 ax_dwell_unloop = fig.add_subplot(gs2[1])
 ax_dwell_unloop.set_xscale('log')
-ax_dwell_unloop.text(14, 0.1, 'unlooping\nonly',
+ax_dwell_unloop.text(18, 0.1, 'unlooping\nonly',
                 horizontalalignment='center', fontsize=14)
 ax_dwell_unloop.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_unloop.set_yticklabels([])
 
 ax_dwell_all = fig.add_subplot(gs2[2])
 ax_dwell_all.set_xscale('log')
-ax_dwell_all.text(14, 0.1, 'cutting and\nunlooping',
+ax_dwell_all.text(16, 0.1, 'cutting and\nunlooping',
                 horizontalalignment='center', fontsize=14)
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
