@@ -62,7 +62,7 @@ for source in [dwell, dwell_cut, dwell_unloop]:
     dfs.append(dwell_dist)
 dwell_dist, cut_dist, unloop_dist = dfs
 
-
+#%%
 fig = plt.figure()
 ax = plt.gca()
 ax.get_xaxis().set_ticks([])
@@ -94,16 +94,22 @@ gs.tight_layout(fig, rect=[0, 0.75, 1.5, 1.55])
 gs2 = gridspec.GridSpec(1, 3)
 ax_dwell_cut = fig.add_subplot(gs2[0])
 ax_dwell_cut.set_xscale('log')
+ax_dwell_cut.text(14, 0.1, 'cutting\nonly',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_cut.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_cut.set_ylabel('ECDF', fontsize=16)
 
 ax_dwell_unloop = fig.add_subplot(gs2[1])
 ax_dwell_unloop.set_xscale('log')
+ax_dwell_unloop.text(14, 0.1, 'unlooping\nonly',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_unloop.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_unloop.set_yticklabels([])
 
 ax_dwell_all = fig.add_subplot(gs2[2])
 ax_dwell_all.set_xscale('log')
+ax_dwell_all.text(14, 0.1, 'cutting and\nunlooping',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
 
@@ -162,7 +168,7 @@ ax_conf_int.set_xticklabels([])
 ax_conf_int.set_yticklabels([])
 ax_conf_int.set_facecolor('white')
 
-gs = gridspec.GridSpec(1, 3, hspace=0.2, wspace=0.4)
+gs = gridspec.GridSpec(1, 3, hspace=0.2, wspace=0.6)
 ax_loop = fig.add_subplot(gs[0])
 ax_loop.set_xticklabels([])
 ax_loop.set_xlim([0.125, 0.625])
@@ -178,16 +184,22 @@ gs.tight_layout(fig, rect=[0, 0.75, 1.5, 1.55])
 
 gs2 = gridspec.GridSpec(1, 3)
 ax_dwell_cut = fig.add_subplot(gs2[0])
+ax_dwell_cut.text(12, 0.1, 'cutting\nonly', 
+                horizontalalignment='center', fontsize=14)
 ax_dwell_cut.set_xscale('log')
 ax_dwell_cut.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_cut.set_ylabel('ECDF', fontsize=16)
 
 ax_dwell_unloop = fig.add_subplot(gs2[1])
+ax_dwell_unloop.text(12, 0.1, 'unlooping\nonly', 
+                horizontalalignment='center', fontsize=14)
 ax_dwell_unloop.set_xscale('log')
 ax_dwell_unloop.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_unloop.set_yticklabels([])
 
 ax_dwell_all = fig.add_subplot(gs2[2])
+ax_dwell_all.text(10, 0.1, 'cutting and\nunlooping',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_all.set_xscale('log')
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
