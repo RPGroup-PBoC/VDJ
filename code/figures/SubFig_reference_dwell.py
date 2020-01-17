@@ -31,11 +31,14 @@ dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80) & (dwell['mutant']=='
 fig,ax = plt.subplots(1, 1, figsize=(9,3))
 bins=np.arange(0, 20, 1.0)
 ax.hist(dwell['dwell_time_min'], color='#e28371', bins=bins)
-ax.plot(dwell['dwell_time_min'].median(), 15, color='dodgerblue', lw=0.75,
-            ms=10, zorder=10, marker='o', markerfacecolor='white')
+ax.plot(dwell['dwell_time_min'].median(), 15, color='dodgerblue', lw=1.25,
+            ms=25, zorder=10, marker='o', markerfacecolor='white')
 ax.hlines(15, dwell['dwell_time_min'].quantile(0.25),
         dwell['dwell_time_min'].quantile(0.75), color='dodgerblue',
-        lw=4, ls='-', zorder=10)
+        lw=5, ls='-', zorder=10)
+ax.text(dwell['dwell_time_min'].median(), 14.6, 'N', fontsize=18, zorder=20,
+        color='dodgerblue', horizontalalignment='center',
+        verticalalignment='center')
 
 _ = ax.set_xlim([0, 20])
 _ = ax.set_xticklabels([])
