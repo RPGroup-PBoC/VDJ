@@ -35,15 +35,14 @@ cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg') & (cu
 #%%
 fig, ax = plt.subplots(1, 1, figsize=(4.1, 2.3))
 ax.plot(cut_posts['probability'], cut_posts['posterior'], color='white')
-ax.plot(cut_data['mean'], cut_posts['posterior'].max()/3, 
+ax.plot(cut_data['mean'], cut_posts['posterior'].max()/3, zorder=10,
             color='dodgerblue', marker='o', ms=15, markerfacecolor='white')
 ax.fill_between(cut_posts['probability'], 0, cut_posts['posterior'],
                 color='slategrey', alpha=0.4)
 ax.hlines(cut_posts['posterior'].max()/3, cut_data['mean'] - cut_data['std'],
-        cut_data['mean'] + cut_data['std'], color='dodgerblue', lw=4)
+        cut_data['mean'] + cut_data['std'], color='dodgerblue', zorder=10,
+        lw=4)
 
-_ = ax.set_yticklabels([])
-_ = ax.set_xticklabels([])
 _ = ax.set_xlim([0.3, 0.7])
 _ = ax.set_ylim([0.0, cut_posts['posterior'].max()+0.005])
 _ = ax.set_ylabel('$P(p_\mathrm{cut} | n_\mathrm{loops}, n_\mathrm{cuts})$',
@@ -63,9 +62,9 @@ bbox_props = dict(boxstyle='square', edgecolor='k', facecolor='white', alpha=0.5
 _ = ax.text(cut_data['mean'], cut_posts['posterior'].max()/3 + 0.008,
             r'$\mu \pm \sigma$', fontsize=12, verticalalignment='center',
             horizontalalignment='center')
-_ = ax.text(cut_data['mean'], cut_posts['posterior'].max()/3-0.0005, 'N',
+_ = ax.text(cut_data['mean']+0.001, cut_posts['posterior'].max()/3-0.0005, 'N',
             fontsize=13, color='dodgerblue', verticalalignment='center', 
-            horizontalalignment='center')
+            horizontalalignment='center', zorder=15)
 
 fig.savefig('../../figures/SubFigX_point_posterior_definition.pdf', bbox_inches='tight',
             facecolor='white')
