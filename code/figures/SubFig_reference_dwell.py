@@ -40,12 +40,13 @@ ax.text(dwell['dwell_time_min'].median(), 14.6, 'N', fontsize=18, zorder=20,
         color='dodgerblue', horizontalalignment='center',
         verticalalignment='center')
 
+_ = ax.set_xticks(np.arange(0, 30, 5))
+_ = ax.set_xticklabels(np.arange(0, 30, 5), fontsize=18)
 _ = ax.set_xlim([0, 20])
-_ = ax.set_xticklabels([])
 _ = ax.set_yticks(np.arange(0, 40, 10))
-_ = ax.set_yticklabels([])
-_ = ax.set_ylabel('counts', fontsize=24)
-_ = ax.set_xlabel('\ntime [min]', fontsize=24)
+_ = ax.set_yticklabels(np.arange(0, 40, 10), fontsize=18)
+_ = ax.set_ylabel('counts', fontsize=28)
+_ = ax.set_xlabel('time [min]', fontsize=28)
 
 fig.savefig('../../figures/SubFigB_reference_dwell_histogram.pdf', bbox_inches='tight',
             facecolor='white')
