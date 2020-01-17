@@ -312,7 +312,7 @@ ax_dwell.spines['left'].set_visible(False)
 
 ax_cut[0].set_ylim([0, 1.0])
 ax_cut[0].set_xlim([0.7, 28.5])
-ax_cut[0].set_ylabel('cutting probability', fontsize=12)
+ax_cut[0].set_ylabel(r'$p_\mathrm{cut}$', fontsize=12)
 ax_cut[0].set_title('Heptamer', loc='left')
 ax_cut[0].set_title('Spacer         ') # Spaces are ad-hoc positioning
 ax_cut[0].set_title('Nonamer', loc='right')
@@ -339,7 +339,7 @@ for mut, mut_posts in df_post.groupby('mutant'):
                 fontsize=10, color=post_colors[mut], ha="right", va="center",
                 zorder=post_zorder[mut] + 1)
 ax_cut[1].set_facecolor('white')
-ax_cut[1].set_xlabel('probability of cutting')
+ax_cut[1].set_xlabel(r'$p_\mathrm{cut}$', fontsize=12)
 ax_cut[1].set_ylim([-0.025, 0.26])
 ax_cut[1].set_xlim([0.0, 1.0])
 ax_cut[1].set_yticklabels([])
@@ -348,7 +348,7 @@ ax_cut[1].set_yticklabels([])
 ax_cut[1].vlines(0.56,plot_offset['WT12rss'], plot_offset['WT12rss'] + 0.06, color='k')
 ax_cut[1].hlines(plot_offset['WT12rss'] + 0.06, 0.54, 0.56, color='k')
 ax_cut[1].hlines(plot_offset['WT12rss'], 0.54, 0.56, color='k')
-ax_cut[1].text(0.562, plot_offset['WT12rss'] + 0.03 ,'$\propto$ probability')
+ax_cut[1].text(0.562, plot_offset['WT12rss'] + 0.025 ,r'  $\mathbf{P(p_\mathrm{cut} | n_\mathrm{loops}, n_\mathrm{cuts})}$')
 
 # Add Figure Panels. 
 fig_loop.savefig('../../figures/SubFigXC_point_loop.pdf', facecolor='white',
