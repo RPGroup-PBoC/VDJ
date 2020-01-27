@@ -47,6 +47,8 @@ _ = ax.set_yticks(np.arange(0, 40, 10))
 _ = ax.set_yticklabels(np.arange(0, 40, 10), fontsize=18)
 _ = ax.set_ylabel('counts', fontsize=28)
 _ = ax.set_xlabel('time [min]', fontsize=28)
+_ = ax.tick_params(direction='out', length=0, width=2,
+                labelsize=20, right=False, top=False)
 
 fig.savefig('../../figures/SubFigB_reference_dwell_histogram.pdf', bbox_inches='tight',
             facecolor='white')
