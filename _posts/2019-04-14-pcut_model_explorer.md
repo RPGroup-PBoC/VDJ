@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Cutting Probability Inference Explorer
+title: Cutting Probability Model Explorer
 date: "2017-09-12 13:32:20 +0300"
 description: pcut_explorer
 permalink: pcut_model_explorer
@@ -17,7 +17,7 @@ probability in hand, we can enumerate the posterior probability of the cleavage 
 as 
 
 $$
-P(p_{cut}\,\vert\, N_{loops}, n_{cuts}) \propto \frac{(N_{loops} + 1)!}{n_{cuts}!(N_{loops} - n_{cuts})!}p_{cut}^{n_{cuts}}(1 - p_{cut})^{N_{loops} - n_{cuts}}.
+P(p_{cut}\,\vert\, n_{loops}, n_{cuts}) = \frac{(n_{loops} + 1)!}{n_{cuts}!(n_{loops} - n_{cuts})!}p_{cut}^{n_{cuts}}(1 - p_{cut})^{n_{loops} - n_{cuts}}.
 $$
 
 The interactive figure given below allows you to explore how different number of 

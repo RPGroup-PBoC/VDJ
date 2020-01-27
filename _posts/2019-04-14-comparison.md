@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Interactive RSS Comparison 
-description: Comparison of Synthetic and Endogenous RSS behaviors
+description: Synthetic-Endogenous RSS Comparison 
 permalink: comparison
 ---
 
