@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Interactive RSS Comparison 
+title: Synthetic-Endogenous RSS Comparison 
 description: Synthetic-Endogenous RSS Comparison 
 permalink: comparison
 ---
