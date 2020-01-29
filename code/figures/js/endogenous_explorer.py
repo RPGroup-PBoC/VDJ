@@ -14,7 +14,7 @@ from bokeh.embed import components
 import bokeh.palettes
 import vdj.io
 import vdj.stats
-bokeh.plotting.output_file('./endogenous_voyager.html')
+bokeh.plotting.output_file('./endogenous_voyager.html', mode='inline')
 
 
 #%%

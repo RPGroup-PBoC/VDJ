@@ -12,7 +12,7 @@ from bokeh.embed import components
 import vdj.io
 import vdj.stats
 bokeh.io.output_notebook()
-bokeh.plotting.output_file('./pcut_model_explorer.html')
+bokeh.plotting.output_file('./pcut_model_explorer.html', mode='inline')
 # %%
 # Define the sliders
 n_loops_slider = Slider(start=1, end=500, step=1, value=10,

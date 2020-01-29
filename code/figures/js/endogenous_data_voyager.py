@@ -14,6 +14,7 @@ from bokeh.models import ColumnDataSource, Div, LinearAxis, CustomJS, CDSView, G
 from bokeh.layouts import layout, widgetbox
 from bokeh.models.widgets import Select
 from bokeh.embed import components
+import bokeh.resources
 import vdj.io
 import vdj.stats
 import scipy.stats
@@ -306,7 +307,7 @@ floop_rep = floop_rep.replace({'mutant' : endog_names})
 # ##############################################################################
 # FIGURE SOURCE AND VIEW DEFINITIONS
 # ##############################################################################
-bokeh.plotting.output_file('./data_voyager.html')
+bokeh.plotting.output_file('./data_voyager.html', mode='inline')
 
 # Instantiate the dropdown menu
 selector = Select(title='Mutant', value='V4-57-1 (ref)', 

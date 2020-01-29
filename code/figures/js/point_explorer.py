@@ -571,7 +571,7 @@ theme_json = {'attrs':
 
                 'offset': 2,
             }}}
-bokeh.plotting.output_file('./point_voyager.html')
+bokeh.plotting.output_file('./point_voyager.html', mode='inline')
 
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme

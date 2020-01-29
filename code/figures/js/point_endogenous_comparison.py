@@ -14,7 +14,7 @@ from bokeh.models.widgets import Select
 from bokeh.embed import components
 import vdj.io
 import vdj.stats
-bokeh.plotting.output_file('./point_endogenous_comparison.html')
+bokeh.plotting.output_file('./point_endogenous_comparison.html', mode='inline')
 
 # Load the data sets
 loops = pd.read_csv('../../../data/compiled_loop_freq_bs.csv')
@@ -74,6 +74,8 @@ for key, val in endog_seqs.items():
                         'color':'#c2c2c2'}
         if mut_info['point_mutant'] == 'reference':
            mut_info['point_mutant'] = 'WT12rss'
+        if mut_info['point_mutant'] == 'V10-95':
+            mut_info['point_mutant'] = 'V10-96'
         # Get the loops and cut statistics
         loop_mut = loop_data[(loop_data['mutant']==mut_info['point_mutant']) & (loop_data['salt']=='Mg') & (loop_data['hmgb1']==80)]
         pcut_mut = pcuts[(pcuts['mutant']==mut_info['point_mutant']) & (pcuts['salt']=='Mg') & (pcuts['hmgb1']==80)]
