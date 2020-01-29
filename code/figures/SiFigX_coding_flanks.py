@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,21 +10,23 @@ vdj.viz.plotting_style()
 # Upload data on coding flank-relevant RSSs
 cf_muts = ['WT12rss', '12CodC6A', '12SpacC1A', 'V4-55']
 
-loop = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
-loop = loop[(loop['mutant'].isin(cf_muts)) & (loop['hmgb1']==80) & (loop['salt']=='Mg')]
+loop = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv',
+                   comment='#')
+loop = loop[(loop['mutant'].isin(cf_muts)) &
+         (loop['hmgb1']==80) & (loop['salt']=='Mg')]
 loop = loop.replace(to_replace='WT12rss', value='V4-57-1 (ref)')
 
-dwell = pd.read_csv('../../data/compiled_dwell_times.csv')
+dwell = pd.read_csv('../../data/compiled_dwell_times.csv', comment='#')
 dwell = dwell[(dwell['mutant'].isin(cf_muts)) & (dwell['hmgb1']==80) & (dwell['salt']=='Mg')]
 dwell = dwell.replace(to_replace='WT12rss', value='V4-57-1 (ref)')
 dwell_cut = dwell[dwell['cut']==1].copy()
 dwell_unloop = dwell[dwell['cut']==0].copy()
 
-cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv')
+cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv',
+                        comment='#')
 cut_posts = cut_posts[(cut_posts['mutant'].isin(cf_muts)) & (cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg')]
 cut_posts = cut_posts.replace(to_replace='WT12rss', value='V4-57-1 (ref)')
 
-#%%
 # Create dwell ECDFs
 dfs = []
 for source in [dwell, dwell_cut, dwell_unloop]:
@@ -74,20 +75,26 @@ gs.tight_layout(fig, rect=[0, 0.75, 1.5, 1.55])
 gs2 = gridspec.GridSpec(1, 3)
 ax_dwell_cut = fig.add_subplot(gs2[0])
 ax_dwell_cut.set_xscale('log')
+ax_dwell_cut.text(18, 0.1, 'cutting\nonly',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_cut.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_cut.set_ylabel('ECDF', fontsize=16)
 
 ax_dwell_unloop = fig.add_subplot(gs2[1])
 ax_dwell_unloop.set_xscale('log')
+ax_dwell_unloop.text(18, 0.1, 'unlooping\nonly',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_unloop.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_unloop.set_yticklabels([])
 
 ax_dwell_all = fig.add_subplot(gs2[2])
 ax_dwell_all.set_xscale('log')
+ax_dwell_all.text(16, 0.1, 'cutting and\nunlooping',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
 
-gs2.tight_layout(fig, rect=[0, 0, 1.5, 0.8])
+gs2.tight_layout(fig, rect=[0, 0, 1.56, 0.8])
 
 seqs = {'V4-57-1 (ref)':0.25, '12CodC6A':0.5}
 colors = {'V4-57-1 (ref)':'slategrey', '12CodC6A':'dodgerblue'}
@@ -106,13 +113,13 @@ for seq in seqs:
         ax_conf_int.text(seqs[seq] + perc_widths[g] - 0.015, 0.05, str(int(g)) + '%',
                         ha='center', va='top')
 
-    ax_dwell_cut.plot(cut_dist[cut_dist['mutant']==seq]['x'], 
+    ax_dwell_cut.step(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_unloop.plot(unloop_dist[unloop_dist['mutant']==seq]['x'], 
+    ax_dwell_unloop.step(unloop_dist[unloop_dist['mutant']==seq]['x'], 
                         unloop_dist[unloop_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_all.plot(dwell_dist[dwell_dist['mutant']==seq]['x'], 
+    ax_dwell_all.step(dwell_dist[dwell_dist['mutant']==seq]['x'], 
                         dwell_dist[dwell_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
     ax_posts.plot(cut_posts[cut_posts['mutant']==seq]['probability'],
@@ -123,7 +130,7 @@ for seq in seqs:
                             color=colors[seq], alpha=0.4)
     
     ax_conf_int.text(seqs[seq] + 0.09, 0.65, seq, ha='center', va='bottom', fontsize=12)
-plt.savefig('./SiFigX_cod_ref.pdf', bbox_inches='tight', facecolor='white')
+plt.savefig('./SiFig_coding_flank_reference.pdf', bbox_inches='tight', facecolor='white')
 #%%
 seqs = {'V4-55':0.25, '12SpacC1A':0.5}
 colors = {'V4-55':'slategrey', '12SpacC1A':'dodgerblue'}
@@ -142,7 +149,7 @@ ax_conf_int.set_xticklabels([])
 ax_conf_int.set_yticklabels([])
 ax_conf_int.set_facecolor('white')
 
-gs = gridspec.GridSpec(1, 3, hspace=0.2, wspace=0.4)
+gs = gridspec.GridSpec(1, 3, hspace=0.2, wspace=0.6)
 ax_loop = fig.add_subplot(gs[0])
 ax_loop.set_xticklabels([])
 ax_loop.set_xlim([0.125, 0.625])
@@ -158,21 +165,27 @@ gs.tight_layout(fig, rect=[0, 0.75, 1.5, 1.55])
 
 gs2 = gridspec.GridSpec(1, 3)
 ax_dwell_cut = fig.add_subplot(gs2[0])
+ax_dwell_cut.text(12, 0.1, 'cutting\nonly', 
+                horizontalalignment='center', fontsize=14)
 ax_dwell_cut.set_xscale('log')
 ax_dwell_cut.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_cut.set_ylabel('ECDF', fontsize=16)
 
 ax_dwell_unloop = fig.add_subplot(gs2[1])
+ax_dwell_unloop.text(12, 0.1, 'unlooping\nonly', 
+                horizontalalignment='center', fontsize=14)
 ax_dwell_unloop.set_xscale('log')
 ax_dwell_unloop.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_unloop.set_yticklabels([])
 
 ax_dwell_all = fig.add_subplot(gs2[2])
+ax_dwell_all.text(10, 0.1, 'cutting and\nunlooping',
+                horizontalalignment='center', fontsize=14)
 ax_dwell_all.set_xscale('log')
 ax_dwell_all.set_xlabel('dwell time [min]', fontsize=16)
 ax_dwell_all.set_yticklabels([])
 
-gs2.tight_layout(fig, rect=[0, 0, 1.5, 0.8])
+gs2.tight_layout(fig, rect=[0, 0, 1.55, 0.8])
 
 perc_widths = {p:w for p, w in zip(np.sort(loop['percentile'].unique()), np.arange(0.03, 0.21, 0.03))}
 
@@ -189,13 +202,13 @@ for seq in seqs:
         ax_conf_int.text(seqs[seq] + perc_widths[g] - 0.015, 0.05, str(int(g)) + '%',
                         ha='center', va='top')
 
-    ax_dwell_cut.plot(cut_dist[cut_dist['mutant']==seq]['x'], 
+    ax_dwell_cut.step(cut_dist[cut_dist['mutant']==seq]['x'], 
                         cut_dist[cut_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_unloop.plot(unloop_dist[unloop_dist['mutant']==seq]['x'], 
+    ax_dwell_unloop.step(unloop_dist[unloop_dist['mutant']==seq]['x'], 
                         unloop_dist[unloop_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
-    ax_dwell_all.plot(dwell_dist[dwell_dist['mutant']==seq]['x'], 
+    ax_dwell_all.step(dwell_dist[dwell_dist['mutant']==seq]['x'], 
                         dwell_dist[dwell_dist['mutant']==seq]['y'],
                         lw=2, color=colors[seq])
     ax_posts.plot(cut_posts[cut_posts['mutant']==seq]['probability'],
@@ -206,9 +219,7 @@ for seq in seqs:
                             color=colors[seq], alpha=0.4)
     
     ax_conf_int.text(seqs[seq] + 0.09, 0.65, seq, ha='center', va='bottom', fontsize=12)
-plt.savefig('./SiFigX_spac_endog.pdf', bbox_inches='tight', facecolor='white')
+plt.savefig('./SiFig_spacerC1A_endogenous_cmparison.pdf', 
+            bbox_inches='tight', facecolor='white')
 
-#%%
-
-
-#%%
+# %%
