@@ -242,7 +242,7 @@ post_endog_view = CDSView(source=post_endog, filters=[endog_filter])
 post_point_view = CDSView(source=post_point)
 
 # Define the dropdown for the interactivity
-menu_dict = {m:m for m in mut_df['mutant'].unique()}
+menu_dict = {m:m for m in mut_df['mutant'].unique() if m != 'V10-95'}
 menu_dict['DFL161'] = "DFL16.1-5"
 menu_dict['DFL1613'] = "DFL16.1-3"
 menu = [(v,k) for k, v in menu_dict.items()]
