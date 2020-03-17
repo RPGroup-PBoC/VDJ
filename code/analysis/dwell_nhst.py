@@ -1,9 +1,9 @@
 #%%
 import numpy as np 
 import pandas as pd 
-
+import numba
 # Define the number of permutations. 
-n_bs = int(1E6)
+n_bs = int(1E7)
 
 # Load the data and restrict to useful conditions
 data = pd.read_csv('../../data/compiled_dwell_times.csv')
