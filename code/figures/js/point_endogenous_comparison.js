@@ -21,18 +21,16 @@ for (var i = 0; i < seq_source.data['mutant'].length ; i++) {
     var mutation = seq_source.data['point_mutant'][i]
 
     // If the endogenous mutation is the same as the selection and is not the 
-    // same as the reference, push the piont mutant to the array 
+    // same as the reference, push the point mutant to the array 
     if (endo === mut && mutation !== "No Mutation") {
         points.push(seq_source.data['point_mutant'][i]);
-
         // Determine if the mutant user is hovering over is the same as the 
         // point mutant or if it is not hovered over at all.
-        if (hover_mut === 'None' | hover_mut === ' ' | 
-           hover_mut === 'No Mutation' | hover_mut === undefined | 
+        if (hover_mut === 'None' || hover_mut === '' ||
+           hover_mut === 'No Mutation' || hover_mut === undefined ||
            hover_mut === mutation) {        
-
             // Add the display color to the colors array
-            colors.push(seq_source.data['color'][i]);
+            colors.push(seq_source.data['display_color'][i]);
 
             // Add an alpha of 1 to the alphas array
             alphas.push(1);
@@ -57,7 +55,12 @@ var  leg_ys = [[-10, -9]];
 
 for (var i = 0; i < colors.length; i++) {
     leg_colors.push(colors[i]);
+    if (points[i].includes('-') || points[i].includes('WT')) {
+        leg_mutant.push(points[i]);
+    }
+    else {
     leg_mutant.push(points[i].slice(2))
+    }
     leg_alphas.push(alphas[i]);
     leg_xs.push([-10, -9])
     leg_ys.push([-10, -9])

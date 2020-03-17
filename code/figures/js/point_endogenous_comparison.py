@@ -26,11 +26,8 @@ pcuts = pd.read_csv('../../../data/pooled_cutting_probability.csv')
 pcuts.rename(columns={'n_beads': 'n_loops'}, inplace=True)
 post_data['color'] = 'slategrey'
 
-#%%
 # Restrict the posterior distributions.
 post_data = post_data[(post_data['hmgb1']==80) & (post_data['salt']=='Mg')]
-
-
 
 # Start by trying to figure out the details of picking the point mutants that
 # make up the reference
@@ -89,7 +86,6 @@ for key, val in endog_seqs.items():
         mut_df = mut_df.append(mut_info, ignore_index=True)
 seq_source = ColumnDataSource(mut_df)
 
-# %%
 dfs = []
 for g, d in post_data.groupby('mutant'):
     # Determine the class of mutant.
@@ -135,7 +131,7 @@ for g, d in loops.groupby('mutant'):
 
 loops = pd.concat(dfs)
 
-#%% Process all datasets
+# Process all datasets
 # Keep only the HMGB1 = 80 mM and Mg
 dwell_all_data = dwell_all_data[(dwell_all_data['hmgb1']==80) & 
                                 (dwell_all_data['salt']=='Mg')]
@@ -210,8 +206,6 @@ dwell_unloop_blank = ColumnDataSource({'xs':[], 'ys':[], 'c':[], 'mutant':[], 'a
 loop_point = ColumnDataSource(loops[loops['class']=='point'])
 loop_endog = ColumnDataSource(loops[loops['class']=='endogenous'])
 
-
-#%%
 
 # Define filters
 endog_filter = GroupFilter(column_name='mutant', group='')
@@ -495,12 +489,12 @@ theme_json = {'attrs':
 theme = Theme(json=theme_json)
 bokeh.io.curdoc().theme = theme
 
-
 # FOrmat legend details. 
 loop_freq_ax.legend.click_policy = 'hide'
+
 # loop_freq_ax.legend.title_text = 'click to hide'
 bokeh.io.save(lay)
 
 
 
-#%%
+# %%
