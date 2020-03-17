@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 
 # Define the number of bootstrap replicates
-n_bs = int(1E6)
+n_bs = int(1E7)
 
 # Load the cutting data 
 data = pd.read_csv('../../data/compiled_looping_events.csv')
