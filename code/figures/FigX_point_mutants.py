@@ -7,7 +7,7 @@ import vdj.io
 vdj.viz.plotting_style()
 
 # Load the data with long-form looping events and restrict to relevant sets.
-data = pd.read_csv('../../data/compiled_looping_frequency_bootstrap.csv',       
+data = pd.read_csv('../../data/compiled_loop_freq_bs.csv',       
                    comment='#')
 counts = data[(data['salt']=='Mg') & (data['hmgb1']==80) & 
         (data['percentile']==95.0) & (data['mutant']!='12CodC6A')]
@@ -40,7 +40,7 @@ wt_val = counts[counts['mutant']=='WT12rss']['loops_per_bead'].values[0]
 wt_loop_low = counts[counts['mutant']=='WT12rss']['low'].values[0]
 wt_loop_high = counts[counts['mutant']=='WT12rss']['high'].values[0]
 
-wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mean'].values[0]
+wt_cut = cut_data[cut_data['mutant']=='WT12rss']['mode'].values[0]
 wt_std = cut_data[cut_data['mutant']=='WT12rss']['std'].values[0]
 
 wt_dwell = median_dwell[median_dwell['mutant']=='WT12rss']['dwell_time_min'].values[0]
