@@ -15,6 +15,14 @@ dwell = dwell[(dwell['salt']=='Mg') & (dwell['hmgb1']==80) & (dwell['mutant']!='
 
 bs_loops = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
 counts = bs_loops[(bs_loops['salt']=='Mg') & (bs_loops['hmgb1']==80) & (bs_loops['mutant']!='12CodC6A') & (bs_loops['percentile']==95.0)]
+
+# Load the significance testing for p_values less than 0.05
+p_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
+p_loop = p_loop[(p_loop['p_value'] < 0.05) & (p_loop['mutant']!='CodC6A')]
+
+p_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
+p_dwell = p_dwell[(p_dwell['p_value'] < 0.05) & (p_dwell['mutant']!='CodC6A')]
+
 #%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
 dwell_25 = dwell.groupby('mutant')['dwell_time_min'].quantile(0.25).reset_index()
@@ -26,8 +34,8 @@ dwell_quartiles['quartile_low'] = dwell_25['dwell_time_min']
 dwell_quartiles['quartile_high'] = dwell_75['dwell_time_min']
 
 cuts.rename(columns={'mode':'mean_p_cut'}, inplace=True)
-dfs = [counts, dwell, cuts]
-valid_dfs = [[], [], []]
+dfs = [counts, dwell, cuts, p_loop, p_dwell]
+valid_dfs = [[], [], [], [], []]
 for i, d in enumerate(dfs):
     d = d.copy()
     for g, _d in d.groupby(['mutant']):
@@ -37,6 +45,8 @@ for i, d in enumerate(dfs):
 endo_counts = pd.concat(valid_dfs[0])
 endo_dwell = pd.concat(valid_dfs[1])
 endo_cuts = pd.concat(valid_dfs[2])
+endo_ploop = pd.concat(valid_dfs[3])
+endo_pdwell = pd.concat(valid_dfs[4])
 #%%
 # Set up the figure canvas
 fig, ax = plt.subplots(3, 1, figsize=(3.42, 5), sharex=True)

@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
 import matplotlib.lines as lines
-import vdj.viz 
-import vdj.io 
+import vdj.viz
+import vdj.io
 vdj.viz.plotting_style()
 
 # Load the data with long-form looping events and restrict to relevant sets.
@@ -30,6 +30,13 @@ cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv',
                         comment='#')
 cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg') & (cut_posts['mutant']!='12CodC6A')]
 
+# Load the significance testing for p_values less than 0.05
+p_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
+p_loop = p_loop[(p_loop['p_value'] < 0.05) & (p_loop['mutant']!='CodC6A')]
+
+p_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
+p_dwell = p_dwell[(p_dwell['p_value'] < 0.05) & (p_dwell['mutant']!='CodC6A')]
+
 # Get the reference seq
 ref = vdj.io.endogenous_seqs()['WT12rss']
 ref_seq = ref[0]
@@ -52,6 +59,9 @@ for m in counts['mutant'].unique():
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
     cut_data.loc[cut_data['mutant']==m, 'n_muts'] = seq['n_muts']
     median_dwell.loc[median_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
+    p_loop.loc[p_loop['mutant']==m, 'n_muts'] = seq['n_muts']
+    p_dwell.loc[p_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
+
     if m in median_dwell['mutant'].unique():
         median_dwell.loc[median_dwell['mutant']==m, 'dwell_25'] = dwell_25[dwell_25['mutant']==m]['dwell_time_min'].values[0]
         median_dwell.loc[median_dwell['mutant']==m, 'dwell_75'] = dwell_75[dwell_75['mutant']==m]['dwell_time_min'].values[0]
@@ -63,11 +73,17 @@ for m in counts['mutant'].unique():
     counts.loc[counts['mutant']==m, 'base'] = mut
     median_dwell.loc[median_dwell['mutant']==m, 'pos'] = loc
     median_dwell.loc[median_dwell['mutant']==m, 'base'] = mut
+    p_loop.loc[p_loop['mutant']==m, 'pos'] = loc
+    p_loop.loc[p_loop['mutant']==m, 'base'] = mut
+    p_dwell.loc[p_dwell['mutant']==m, 'pos'] = loc
+    p_dwell.loc[p_dwell['mutant']==m, 'base'] = mut
 
 # Keep the single point mutants
 points = counts[(counts['n_muts'] == 1) & (counts['mutant'] != 'V4-55')].copy()
 points_cut = cut_data[(cut_data['n_muts'] == 1) & (cut_data['mutant'] != 'V4-55')].copy()
 points_dwell = median_dwell[(median_dwell['n_muts']==1) & (median_dwell['mutant'] != 'V4-55')].copy()
+p_loop = p_loop[(p_loop['n_muts'] == 1) & (p_loop['mutant'] != 'V4-55')].copy()
+p_dwell = p_dwell[(p_dwell['n_muts'] == 1) & (p_dwell['mutant'] != 'V4-55')].copy()
 
 for m in points_cut['mutant'].unique():
         seq = vdj.io.mutation_parser(m)
@@ -76,6 +92,10 @@ for m in points_cut['mutant'].unique():
         points_cut.loc[points_cut['mutant']==m, 'pos'] = loc
         points_cut.loc[points_cut['mutant']==m, 'base'] = mut
         _d = points_cut[points_cut['mutant']==m]
+
+# Create offset for p_values if multiple significant changes found at same position
+p_val_offset = 0.1
+
 
 #%%
 # zshift in stickplots allow plot colors to show up more prominently
