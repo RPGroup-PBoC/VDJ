@@ -230,15 +230,15 @@ for j, p in enumerate([points, points_dwell, points_cut]):
 x_offset = {'A':-0.15, 'C':-0.05, 'G':0.05, 'T':0.15}
 for g,d in sig_loop.groupby('mutant'):
         base = d['base'].values[0]
-        ax_loop.text(d['pos']+0.8+0.5*d['x_offset'], 0.57, '*', fontsize=16,
+        ax_loop.text(d['pos']+0.82+0.5*d['x_offset'], 0.57, '*', fontsize=16,
                         color=colors[base])
 for g,d in sig_dwell.groupby('mutant'):
         base = d['base'].values[0]
-        ax_dwell.text(d['pos']+0.8+0.5*d['x_offset'], 8.05, '*', fontsize=16,
+        ax_dwell.text(d['pos']+0.82+0.5*d['x_offset'], 8.05, '*', fontsize=16,
                         color=colors[base])
 for g,d in sig_cuts.groupby('mutant'):
         base = d['base'].values[0]
-        ax_cut[0].text(d['pos']+0.8+0.5*d['x_offset'], 0.88, '*', fontsize=16,
+        ax_cut[0].text(d['pos']+0.82+0.5*d['x_offset'], 0.88, '*', fontsize=16,
                         color=colors[base])
 
 wt_x = np.linspace(0, 30, 1000)
