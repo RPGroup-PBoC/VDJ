@@ -17,11 +17,14 @@ bs_loops = pd.read_csv('../../data/compiled_loop_freq_bs.csv')
 counts = bs_loops[(bs_loops['salt']=='Mg') & (bs_loops['hmgb1']==80) & (bs_loops['mutant']!='12CodC6A') & (bs_loops['percentile']==95.0)]
 
 # Load the significance testing for p_values less than 0.05
-p_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
-p_loop = p_loop[(p_loop['p_value'] < 0.05) & (p_loop['mutant']!='CodC6A')]
+sig_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
+sig_loop = sig_loop[(sig_loop['p_value'] < 0.05) & (sig_loop['mutant']!='CodC6A')]
 
-p_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
-p_dwell = p_dwell[(p_dwell['p_value'] < 0.05) & (p_dwell['mutant']!='CodC6A')]
+sig_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
+sig_dwell = sig_dwell[(sig_dwell['p_value'] < 0.05) & (sig_dwell['mutant']!='CodC6A')]
+
+sig_cuts = pd.read_csv('../../data/cutting_probability_p_values.csv', comment='#')
+sig_cuts = sig_cuts[(sig_cuts['p_value'] < 0.05) & (sig_cuts['mutant']!='CodC6A')]
 
 #%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
@@ -34,8 +37,8 @@ dwell_quartiles['quartile_low'] = dwell_25['dwell_time_min']
 dwell_quartiles['quartile_high'] = dwell_75['dwell_time_min']
 
 cuts.rename(columns={'mode':'mean_p_cut'}, inplace=True)
-dfs = [counts, dwell, cuts, p_loop, p_dwell]
-valid_dfs = [[], [], [], [], []]
+dfs = [counts, dwell, cuts, sig_loop, sig_dwell, sig_cuts]
+valid_dfs = [[], [], [], [], [], []]
 for i, d in enumerate(dfs):
     d = d.copy()
     for g, _d in d.groupby(['mutant']):
@@ -47,6 +50,7 @@ endo_dwell = pd.concat(valid_dfs[1])
 endo_cuts = pd.concat(valid_dfs[2])
 endo_ploop = pd.concat(valid_dfs[3])
 endo_pdwell = pd.concat(valid_dfs[4])
+endo_pcuts = pd.concat(valid_dfs[5])
 #%%
 # Set up the figure canvas
 fig, ax = plt.subplots(3, 1, figsize=(3.42, 5), sharex=True)
@@ -119,15 +123,9 @@ for g, d in endo_counts.groupby('mutant'):
     ax[0].plot(map[g], d['loops_per_bead'], marker='o', markeredgecolor='dodgerblue', 
                 markerfacecolor=face, ms=5)
 
-
-"""# Boxplot
-dwell_endog = pd.DataFrame()
-for g, d in endo_dwell.groupby('mutant'):
-        bp = ax[1].boxplot(d['dwell_time_min'],positions=[map[g]],
-                        patch_artist=True)
-        for patch in bp['boxes']:
-                patch.set_facecolor('tomato')
-                patch.set_alpha(0.5)"""
+    
+    if g in endo_ploop['mutant'].unique():
+            ax[0].text(map[g]-0.2, 0.61, '*', fontsize=14, color='dodgerblue')
 
 # Median dwell time
 for g, d in endo_dwell.groupby('mutant'):
@@ -145,17 +143,22 @@ for g, d in endo_dwell.groupby('mutant'):
         ax[1].vlines(map[g], quartiles[1], quartiles[2],
                         color='tomato', lw=1)
 
+        if g in endo_pdwell['mutant'].unique():
+                ax[1].text(map[g]-0.2, 17, '*', fontsize=14, color='tomato')
+
 # Cutting probability
 for g, d in endo_cuts.groupby('mutant'):
-    if g == 'WT12rss':
-            face = 'rebeccapurple' 
-    else:
-            face = 'w'
+        if g == 'WT12rss':
+                face = 'rebeccapurple' 
+        else:
+                face = 'w'
  
-    ax[2].vlines(map[g], d['mean_p_cut']-d['std'], d['mean_p_cut']+d['std'], color='rebeccapurple', lw=1)
-    ax[2].plot(map[g], d['mean_p_cut'], marker='o', markeredgecolor='rebeccapurple', 
-                markerfacecolor=face, ms=5)
+        ax[2].vlines(map[g], d['mean_p_cut']-d['std'], d['mean_p_cut']+d['std'], color='rebeccapurple', lw=1)
+        ax[2].plot(map[g], d['mean_p_cut'], marker='o', markeredgecolor='rebeccapurple', 
+                        markerfacecolor=face, ms=5)
 
+        if g in endo_pcuts['mutant'].unique():
+                ax[2].text(map[g]-0.2, 0.94, '*', fontsize=14, color='rebeccapurple')
 
 plt.savefig('./FigX_endogenous_properties.pdf', facecolor='white', bbox_inches='tight')
 #%%
