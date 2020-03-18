@@ -102,7 +102,7 @@ for a in ax:
 ax[0].set_yticks([0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
 ax[2].set_yticks([0, 0.2,  0.4, 0.6, 0.8, 1])
 ax[1].set_yticks([0, 4, 8, 12, 16, 20])
-ax[0].set_ylim([0, 0.65])
+ax[0].set_ylim([0, 0.68])
 ax[1].set_ylim([0, 18])
 ax[2].set_ylim([0, 1])
 
@@ -125,7 +125,7 @@ for g, d in endo_counts.groupby('mutant'):
 
     
     if g in endo_ploop['mutant'].unique():
-            ax[0].text(map[g]-0.2, 0.61, '*', fontsize=14, color='dodgerblue')
+            ax[0].text(map[g]-0.2, 0.575, '*', fontsize=14, color='dodgerblue')
 
 # Median dwell time
 for g, d in endo_dwell.groupby('mutant'):
@@ -144,7 +144,7 @@ for g, d in endo_dwell.groupby('mutant'):
                         color='tomato', lw=1)
 
         if g in endo_pdwell['mutant'].unique():
-                ax[1].text(map[g]-0.2, 17, '*', fontsize=14, color='tomato')
+                ax[1].text(map[g]-0.2, 15.2, '*', fontsize=14, color='tomato')
 
 # Cutting probability
 for g, d in endo_cuts.groupby('mutant'):
@@ -158,7 +158,7 @@ for g, d in endo_cuts.groupby('mutant'):
                         markerfacecolor=face, ms=5)
 
         if g in endo_pcuts['mutant'].unique():
-                ax[2].text(map[g]-0.2, 0.94, '*', fontsize=14, color='rebeccapurple')
+                ax[2].text(map[g]-0.2, 0.835, '*', fontsize=14, color='rebeccapurple')
 
 plt.savefig('./FigX_endogenous_properties.pdf', facecolor='white', bbox_inches='tight')
 #%%

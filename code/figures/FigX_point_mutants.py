@@ -31,12 +31,14 @@ cut_posts = pd.read_csv('../../data/pooled_cutting_probability_posteriors.csv',
 cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg') & (cut_posts['mutant']!='12CodC6A')]
 
 # Load the significance testing for p_values less than 0.05
-p_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
-p_loop = p_loop[(p_loop['p_value'] < 0.05) & (p_loop['mutant']!='CodC6A')]
+sig_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
+sig_loop = sig_loop[(sig_loop['p_value'] < 0.05) & (sig_loop['mutant']!='CodC6A')]
 
-p_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
-p_dwell = p_dwell[(p_dwell['p_value'] < 0.05) & (p_dwell['mutant']!='CodC6A')]
+sig_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
+sig_dwell = sig_dwell[(sig_dwell['p_value'] < 0.05) & (sig_dwell['mutant']!='CodC6A')]
 
+sig_cuts = pd.read_csv('../../data/cutting_probability_p_values.csv', comment='#')
+sig_cuts = sig_cuts[(sig_cuts['p_value'] < 0.05) & (sig_cuts['mutant']!='CodC6A')]
 # Get the reference seq
 ref = vdj.io.endogenous_seqs()['WT12rss']
 ref_seq = ref[0]
@@ -59,8 +61,9 @@ for m in counts['mutant'].unique():
     counts.loc[counts['mutant']==m, 'n_muts'] = seq['n_muts']
     cut_data.loc[cut_data['mutant']==m, 'n_muts'] = seq['n_muts']
     median_dwell.loc[median_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
-    p_loop.loc[p_loop['mutant']==m, 'n_muts'] = seq['n_muts']
-    p_dwell.loc[p_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
+    sig_loop.loc[sig_loop['mutant']==m, 'n_muts'] = seq['n_muts']
+    sig_dwell.loc[sig_dwell['mutant']==m, 'n_muts'] = seq['n_muts']
+    sig_cuts.loc[sig_cuts['mutant']==m, 'n_muts'] = seq['n_muts']
 
     if m in median_dwell['mutant'].unique():
         median_dwell.loc[median_dwell['mutant']==m, 'dwell_25'] = dwell_25[dwell_25['mutant']==m]['dwell_time_min'].values[0]
@@ -73,17 +76,20 @@ for m in counts['mutant'].unique():
     counts.loc[counts['mutant']==m, 'base'] = mut
     median_dwell.loc[median_dwell['mutant']==m, 'pos'] = loc
     median_dwell.loc[median_dwell['mutant']==m, 'base'] = mut
-    p_loop.loc[p_loop['mutant']==m, 'pos'] = loc
-    p_loop.loc[p_loop['mutant']==m, 'base'] = mut
-    p_dwell.loc[p_dwell['mutant']==m, 'pos'] = loc
-    p_dwell.loc[p_dwell['mutant']==m, 'base'] = mut
+    sig_loop.loc[sig_loop['mutant']==m, 'pos'] = loc
+    sig_loop.loc[sig_loop['mutant']==m, 'base'] = mut
+    sig_dwell.loc[sig_dwell['mutant']==m, 'pos'] = loc
+    sig_dwell.loc[sig_dwell['mutant']==m, 'base'] = mut
+    sig_cuts.loc[sig_cuts['mutant']==m, 'pos'] = loc
+    sig_cuts.loc[sig_cuts['mutant']==m, 'base'] = mut
 
 # Keep the single point mutants
 points = counts[(counts['n_muts'] == 1) & (counts['mutant'] != 'V4-55')].copy()
 points_cut = cut_data[(cut_data['n_muts'] == 1) & (cut_data['mutant'] != 'V4-55')].copy()
 points_dwell = median_dwell[(median_dwell['n_muts']==1) & (median_dwell['mutant'] != 'V4-55')].copy()
-p_loop = p_loop[(p_loop['n_muts'] == 1) & (p_loop['mutant'] != 'V4-55')].copy()
-p_dwell = p_dwell[(p_dwell['n_muts'] == 1) & (p_dwell['mutant'] != 'V4-55')].copy()
+sig_loop = sig_loop[(sig_loop['n_muts'] == 1) & (sig_loop['mutant'] != 'V4-55')].copy()
+sig_dwell = sig_dwell[(sig_dwell['n_muts'] == 1) & (sig_dwell['mutant'] != 'V4-55')].copy()
+sig_cuts = sig_cuts[(sig_cuts['n_muts'] == 1) & (sig_cuts['mutant'] != 'V4-55')].copy()
 
 for m in points_cut['mutant'].unique():
         seq = vdj.io.mutation_parser(m)
@@ -93,9 +99,16 @@ for m in points_cut['mutant'].unique():
         points_cut.loc[points_cut['mutant']==m, 'base'] = mut
         _d = points_cut[points_cut['mutant']==m]
 
-# Create offset for p_values if multiple significant changes found at same position
-p_val_offset = 0.1
-
+# Set offsets for p_value significance
+for j, sig in enumerate([sig_loop, sig_dwell, sig_cuts]):
+        for p,d in sig.groupby('pos'):
+                if len(d) == 1:
+                        sig.loc[sig['pos']==p,'x_offset'] = 0
+                else:
+                        offset = -0.5
+                        for base, d_pos in d.groupby('base'):
+                                sig.loc[(sig['pos']==p) & (sig['base']==base), 'x_offset'] = offset
+                                offset+=1
 
 #%%
 # zshift in stickplots allow plot colors to show up more prominently
@@ -149,7 +162,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                 vshift = 0.25
         else:
                 a = ax_cut[0]
-                v = 'mean'
+                v = 'mode'
                 vshift = 0.03
 
         for g, d in p.groupby('pos'):
@@ -175,7 +188,7 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                         a.vlines(g + 1 + hshift[base], d['dwell_25'], d['dwell_75'], alpha=0.7,
                                 zorder=zshift, color=colors[base], lw=1.5, label='__nolegend__')
                 elif j==2:
-                        a.vlines(g + 1 + hshift[base], d['mean']-d['std'], d['mean']+d['std'],
+                        a.vlines(g + 1 + hshift[base], d[v]-d['std'], d[v]+d['std'],
                                 alpha=0.7, zorder=zshift, color=colors[base], lw=1.5, 
                                 label='__nolegend__')
 #                else:
@@ -201,9 +214,6 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                             a.vlines(g + 1 + hshift[base], _d[v] - _d['std'], _d[v]+_d['std'],
                                      color=colors[base], lw=1.5, label='__nolegend__',
                                      zorder=zorder+zshift, alpha=0.7)
-#                    else:
-#                            a.vlines(g + 1, 0, _d[v], color=colors[base], lw=1.5, 
-#                                label='__nolegend__', zorder=zorder)
                     if (base == 'T') | (base == 'A'):
                         shift = 0.05
                     else:
@@ -216,6 +226,21 @@ for j, p in enumerate([points, points_dwell, points_cut]):
                            size=9,  label='__nolegend__', zorder=zorder+zshift, clip_on=False)
 
                     zorder -= 1
+
+x_offset = {'A':-0.15, 'C':-0.05, 'G':0.05, 'T':0.15}
+for g,d in sig_loop.groupby('mutant'):
+        base = d['base'].values[0]
+        ax_loop.text(d['pos']+0.8+0.5*d['x_offset'], 0.57, '*', fontsize=16,
+                        color=colors[base])
+for g,d in sig_dwell.groupby('mutant'):
+        base = d['base'].values[0]
+        ax_dwell.text(d['pos']+0.8+0.5*d['x_offset'], 8.05, '*', fontsize=16,
+                        color=colors[base])
+for g,d in sig_cuts.groupby('mutant'):
+        base = d['base'].values[0]
+        ax_cut[0].text(d['pos']+0.8+0.5*d['x_offset'], 0.88, '*', fontsize=16,
+                        color=colors[base])
+
 wt_x = np.linspace(0, 30, 1000)
 ax_loop.fill_between(wt_x, wt_loop_low, wt_loop_high, facecolor='grey', 
                         zorder=zshift, alpha=0.4)
@@ -229,18 +254,18 @@ line_loop1 = lines.Line2D([7.5, 7.5], [-0.12, -0.02], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 line_loop2 = lines.Line2D([19.5, 19.5], [-0.12, -0.02], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line_loop3 = lines.Line2D([7.5, 7.5], [0.62, 0.7], clip_on=False, alpha=1,
+line_loop3 = lines.Line2D([7.5, 7.5], [0.67, 0.75], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line_loop4 = lines.Line2D([19.5, 19.5], [0.62, 0.7], clip_on=False, alpha=1,
+line_loop4 = lines.Line2D([19.5, 19.5], [0.67, 0.75], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
 line_dwell1 = lines.Line2D([7.5, 7.5], [-0.2, -1.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 line_dwell2 = lines.Line2D([19.5, 19.5], [-0.2, -1.4], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line_dwell3 = lines.Line2D([7.5, 7.5], [8.2, 9.2], clip_on=False, alpha=1,
+line_dwell3 = lines.Line2D([7.5, 7.5], [9.2, 10.2], clip_on=False, alpha=1,
                     linewidth=1, color='k')
-line_dwell4 = lines.Line2D([19.5, 19.5], [8.2, 9.2], clip_on=False, alpha=1,
+line_dwell4 = lines.Line2D([19.5, 19.5], [9.2, 10.2], clip_on=False, alpha=1,
                     linewidth=1, color='k')
 
 line_cut1 = lines.Line2D([7.5, 7.5], [-0.03, -0.15], clip_on=False, alpha=1,
@@ -295,7 +320,7 @@ ax_cut[0].text(-0.05, -0.10, 'ref:', ha='center', va='center', fontsize=10)
 
 # ax[0].legend(fontsize=8, ncol=5)
 ax_loop.set_xlabel(None)
-ax_loop.set_ylim([-0.01, 0.6])
+ax_loop.set_ylim([-0.01, 0.65])
 ax_loop.set_xlim([0.7, 28.5])
 ax_loop.set_ylabel('loop frequency', fontsize=12)
 ax_loop.set_title('Heptamer', loc='left')
@@ -304,7 +329,7 @@ ax_loop.set_title('Nonamer', loc='right')
 
 ax_loop.spines['left'].set_visible(False)
 
-ax_dwell.set_ylim([0, 8])
+ax_dwell.set_ylim([0, 9])
 ax_dwell.set_xlim([0.7, 28.5])
 ax_dwell.set_ylabel('dwell time [min]', fontsize=12)
 ax_dwell.set_title('Heptamer', loc='left')
