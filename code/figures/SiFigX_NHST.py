@@ -75,7 +75,7 @@ for g, d in nhst.groupby(['mutant']):
     ax[2].plot(d['pcut_p'], d['position'], 'o',
           markerfacecolor='white', color=d['pcut_color'].values[0])
 
-plt.savefig('../../figures/SiFigX_NHST.pdf', bbox_inches='tight')
+plt.savefig('./SiFigX_NHST.pdf', bbox_inches='tight')
 
 
 
