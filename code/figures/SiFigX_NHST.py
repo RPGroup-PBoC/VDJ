@@ -33,6 +33,9 @@ for g, d in nhst.groupby(['mutant']):
     elif 'Cod' not in g:
         muts.append(g)
 nhst = nhst[nhst['mutant'].isin(muts)]
+
+nhst = nhst.replace({'DFL161':"DFL16.1-5'", 'DFL1613':"DFL16.1-3'",
+                'WT12rss':'V4-57-1 (ref)'})
 #%%
 
 # Add positional labels to the mutants
@@ -49,9 +52,9 @@ nhst.loc[nhst['pcut_p'] > 0.05, 'pcut_color'] = '#3c3c3c'
 fig, ax = plt.subplots(1, 3, figsize=(6, 8.5), sharey=True)
 for p in nhst['position'].values:
     if p%2 != 0:
-        ax[0].hlines(p, -9E-6, 1.1, color='white', lw=10, alpha=0.5, zorder=1)
-        ax[1].hlines(p, -9E-6, 1.1, color='white', lw=10, alpha=0.5, zorder=1)
-        ax[2].hlines(p, -9E-6, 1.1, color='white', lw=10, alpha=0.5, zorder=1)
+        ax[0].hlines(p, -9E-6, 1.1, color='white', lw=8.5, alpha=0.5, zorder=1)
+        ax[1].hlines(p, -9E-6, 1.1, color='white', lw=8.5, alpha=0.5, zorder=1)
+        ax[2].hlines(p, -9E-6, 1.1, color='white', lw=8.5, alpha=0.5, zorder=1)
 
 for a in ax:
     a.set_xscale('symlog', linthreshx=1E-4)
@@ -59,7 +62,7 @@ for a in ax:
     a.set_yticklabels(nhst['mutant'])
     a.yaxis.set_tick_params(labelsize=6)
     a.xaxis.set_tick_params(labelsize=6)
-    a.set_ylim([-0.5, len(nhst) + 0.25])
+    a.set_ylim([-0.5, len(nhst)])
     a.set_xlabel('$p$-value')
     a.set_xlim([-9E-6 ,1.2])
 
