@@ -1,5 +1,5 @@
-path = '/Users/soichihirokawa/Documents/vdj_recombination/analysis';
-specific_path = '/Analyzed Data/new_analysis/coding_flank/';
+path = '/Users/soichihirokawa/Desktop';
+specific_path = 'tpm_data';
 
 all_mutations = dir(fullfile(path,specific_path));
 

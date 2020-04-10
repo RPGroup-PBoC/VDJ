@@ -5,8 +5,8 @@ states as well as times spent in each state.
 %}
 clear all
 f=275;
-path = '/Users/soichihirokawa/Documents/vdj_recombination/analysis';
-specific_path = '/Analyzed Data/new_analysis/coding_flank/';
+path = '/Users/soichihirokawa/Desktop/';
+specific_path = 'tpm_data';
 
 all_mutations = dir(fullfile(path,specific_path));
 
@@ -160,7 +160,7 @@ for nn=1:length(all_mutations)
             end
 
 
-%{
+%
              figure(1)
              subplot(2,1,2);
              plot(segmented,'k--')
