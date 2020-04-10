@@ -29,14 +29,3 @@ pooled['std'] = np.sqrt((pooled['n_cuts'].values * (pooled['n_beads'] -\
 for m, seq in mut_info.items():
     pooled.loc[pooled['mutant']==m, 'n_muts'] = seq['n_muts']
 pooled.to_csv('../../data/pooled_bead_cutting_probability.csv', index=False)
-
-# Compute the hierarchical stats
-hier = pooled.copy()
-hier['mode'] = hier['n_cuts'].values / hier['n_beads']
-hier['std'] = (hier['n_cuts'].values * (hier['n_beads'] -\
-             hier['n_cuts'].values)) / hier['n_beads']**3
-for m, seq in mut_info.items():
-    hier.loc[hier['mutant']==m, 'n_muts'] = seq['n_muts']
-hier.to_csv('../../data/independent_bead_cutting_probability.csv', index=False)
-
-
