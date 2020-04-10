@@ -32,13 +32,13 @@ cut_posts = cut_posts[(cut_posts['hmgb1']==80) & (cut_posts['salt']=='Mg') & (cu
 
 # Load the significance testing for p_values less than 0.05
 sig_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
-sig_loop = sig_loop[(sig_loop['p_value'] < 0.05) & (sig_loop['mutant']!='CodC6A')]
+sig_loop = sig_loop[(sig_loop['p_value'] <= 0.05) & (sig_loop['mutant']!='CodC6A')]
 
 sig_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
-sig_dwell = sig_dwell[(sig_dwell['p_value'] < 0.05) & (sig_dwell['mutant']!='CodC6A')]
+sig_dwell = sig_dwell[(sig_dwell['p_value'] <= 0.05) & (sig_dwell['mutant']!='CodC6A')]
 
 sig_cuts = pd.read_csv('../../data/cutting_probability_p_values.csv', comment='#')
-sig_cuts = sig_cuts[(sig_cuts['p_value'] < 0.05) & (sig_cuts['mutant']!='CodC6A')]
+sig_cuts = sig_cuts[(sig_cuts['p_value'] <= 0.05) & (sig_cuts['mutant']!='CodC6A')]
 # Get the reference seq
 ref = vdj.io.endogenous_seqs()['WT12rss']
 ref_seq = ref[0]

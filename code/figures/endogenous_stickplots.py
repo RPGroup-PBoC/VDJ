@@ -18,13 +18,13 @@ counts = bs_loops[(bs_loops['salt']=='Mg') & (bs_loops['hmgb1']==80) & (bs_loops
 
 # Load the significance testing for p_values less than 0.05
 sig_loop = pd.read_csv('../../data/looping_frequency_p_values.csv', comment='#')
-sig_loop = sig_loop[(sig_loop['p_value'] < 0.05) & (sig_loop['mutant']!='CodC6A')]
+sig_loop = sig_loop[(sig_loop['p_value'] <= 0.05) & (sig_loop['mutant']!='CodC6A')]
 
 sig_dwell = pd.read_csv('../../data/dwell_time_p_values.csv', comment='#')
-sig_dwell = sig_dwell[(sig_dwell['p_value'] < 0.05) & (sig_dwell['mutant']!='CodC6A')]
+sig_dwell = sig_dwell[(sig_dwell['p_value'] <= 0.05) & (sig_dwell['mutant']!='CodC6A')]
 
 sig_cuts = pd.read_csv('../../data/cutting_probability_p_values.csv', comment='#')
-sig_cuts = sig_cuts[(sig_cuts['p_value'] < 0.05) & (sig_cuts['mutant']!='CodC6A')]
+sig_cuts = sig_cuts[(sig_cuts['p_value'] <= 0.05) & (sig_cuts['mutant']!='CodC6A')]
 
 #%% Compute the quartiles of dwell time and loops per bead
 median_dwell = dwell.groupby('mutant')['dwell_time_min'].median().reset_index()
