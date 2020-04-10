@@ -10,6 +10,21 @@ import vdj.viz
 import vdj.io
 vdj.viz.plotting_style()
 
+def mutation_value(mutant):
+        base_val = {'Hept':0, 'Spac':30, 'Non':80}
+        endog_val = {'DFL1613':1, 'DFL161':2, 'V1-135':3, 'V9-120':4,
+                        'V10-96':5, 'V19-93':6, 'WT12rss':7, 'V4-55':8,
+                        'V5-43':9, 'V8-18':10, 'V6-17':11, 'V6-15':12}
+        nuc_val = {'A':0, 'C':1, 'G':2, 'T':3}
+        if mutant[:2]!='12':
+                # random large number for endogenous RSSs
+                num = 200 + endog_val[mutant]
+        elif 'Non' in mutant:
+                num = base_val[mutant[2:5]] + 4*int(mutant[6:-1]) + nuc_val[mutant[-1]]
+        else:
+                num = base_val[mutant[2:6]] + 4*int(mutant[7:-1]) + nuc_val[mutant[-1]]
+        return num
+#%%
 # Load the data with long-form looping events and restrict to relevant sets.
 data = pd.read_csv('../../data/compiled_loop_freq_bs.csv',       
                    comment='#')
@@ -47,6 +62,12 @@ for g, d in df.groupby(['mutant']):
         muts.append(g)
 df = df[df['mutant'].isin(muts)]
 df = df[df['n_muts']!=2.0]
+
+df['ordering'] = 0
+for mut in df['mutant']:
+        df.loc[(df['mutant']==mut), 'ordering'] = mutation_value(mut)
+
+df = df.sort_values('ordering', ignore_index=True)
 df = df.replace({'DFL161':"DFL16.1-5'", 'DFL1613':"DFL16.1-3'",
                 'WT12rss':'V4-57-1 (ref)'})
 wt = df[df['mutant']=='V4-57-1 (ref)']

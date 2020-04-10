@@ -6,6 +6,21 @@ import vdj.viz
 import vdj.io
 vdj.viz.plotting_style()
 
+
+def mutation_value(mutant):
+        base_val = {'Hept':0, 'Spac':30, 'Non':80}
+        endog_val = {'DFL1613':1, 'DFL161':2, 'V1-135':3, 'V9-120':4,
+                        'V10-96':5, 'V19-93':6, 'WT12rss':7, 'V4-55':8,
+                        'V5-43':9, 'V8-18':10, 'V6-17':11, 'V6-15':12}
+        nuc_val = {'A':0, 'C':1, 'G':2, 'T':3}
+        if mutant[:2]!='12':
+                # random large number for endogenous RSSs
+                num = 200 + endog_val[mutant]
+        elif 'Non' in mutant:
+                num = base_val[mutant[2:5]] + 4*int(mutant[6:-1]) + nuc_val[mutant[-1]]
+        else:
+                num = base_val[mutant[2:6]] + 4*int(mutant[7:-1]) + nuc_val[mutant[-1]]
+        return num
 # %%
 # Looping Frequency NHST
 floop_nhst = pd.read_csv('../../data/looping_frequency_p_values.csv')
@@ -34,6 +49,11 @@ for g, d in nhst.groupby(['mutant']):
         muts.append(g)
 nhst = nhst[nhst['mutant'].isin(muts)]
 
+nhst['ordering'] = 0
+for mut in nhst['mutant']:
+        nhst.loc[(nhst['mutant']==mut), 'ordering'] = mutation_value(mut)
+
+nhst = nhst.sort_values('ordering', ascending=False, ignore_index=True)
 nhst = nhst.replace({'DFL161':"DFL16.1-5'", 'DFL1613':"DFL16.1-3'",
                 'WT12rss':'V4-57-1 (ref)'})
 #%%
