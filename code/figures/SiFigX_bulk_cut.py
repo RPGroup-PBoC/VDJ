@@ -87,10 +87,10 @@ xlabel = ['loops per bead', 'cutting probability', 'bead cut fraction']
 for n in range(len(ax)):
         ax[n].set_xticks(mutants['position'])
         ax[n].set_xticklabels(mutants['mutant'])
-        ax[n].yaxis.set_tick_params(labelsize=6)
-        ax[n].xaxis.set_tick_params(labelsize=6, rotation=90)
+        ax[n].yaxis.set_tick_params(labelsize=10)
+        ax[n].xaxis.set_tick_params(labelsize=10, rotation=90)
         ax[n].set_xlim([-0.5, len(mutants)-0.5])
-        ax[n].set_ylabel('%s' %xlabel[n])
+        ax[n].set_ylabel('%s' %xlabel[n], fontsize=16)
 ax[0].set_ylim([0,0.65])
 ax[1].set_ylim([0,1.0])
 ax[2].set_ylim([0,0.3])
