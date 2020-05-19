@@ -1,21 +1,5 @@
-"""
-Calcuation of the PC cleavage probability
---------------------------------------------------------------------------------
-Author: Griffin Chure
-Last Modified: September 25, 2019
-License: MIT
-
-Description
---------------------------------------------------------------------------------
-This script comptues the probability of cleavage for each sequence studied
-and numerically evaluates the posterior distribution over a range of cleavage
-probabilities.
-
-Notes
---------------------------------------------------------------------------------
-This script is designed to be executed in the `code/analysis` directory and
-loads the relevant data files via a relative path.
-"""
+# -*- coding: utf-8 -*-
+#%% 
 import numpy as np
 import pandas as pd
 from scipy.special import gammaln, logsumexp
@@ -28,7 +12,7 @@ def log_posterior(N, n, p):
     return binom_coeff  + bernoulli
 
 # Load the fates
-data = pd.read_csv('../../data/compiled_bead_fates.csv', comment='#')
+data = pd.read_csv('../../data/compiled_bead_fates.csv')
 
 # Get the mutant info
 mut_info = {m:vdj.io.mutation_parser(m) for m in data['mutant'].unique()}
@@ -36,13 +20,23 @@ mut_info = {m:vdj.io.mutation_parser(m) for m in data['mutant'].unique()}
 # Compute the pooled statistics
 pooled = data.groupby(['mutant', 'salt', 'hmgb1']).agg(('sum')).reset_index()
 pooled = pooled[['mutant', 'salt', 'hmgb1', 'n_beads', 'n_cuts']]
-pooled['mean'] = pooled['n_cuts'].values / pooled['n_beads']
+pooled['mode'] = pooled['n_cuts'].values / pooled['n_beads']
 pooled['std'] = np.sqrt((pooled['n_cuts'].values * (pooled['n_beads'] -\
                  pooled['n_cuts'])) / pooled['n_beads'].values**3)
 for m, seq in mut_info.items():
     pooled.loc[pooled['mutant']==m, 'n_muts'] = seq['n_muts']
 pooled.to_csv('../../data/pooled_cutting_probability.csv', index=False)
 
+# Compute the hierarchical stats
+hier = data.copy()
+hier['mode'] = hier['n_cuts'].values / hier['n_beads']
+hier['std'] = (hier['n_cuts'].values * (hier['n_beads'] -\
+             hier['n_cuts'].values)) / hier['n_beads']**3
+for m, seq in mut_info.items():
+    hier.loc[hier['mutant']==m, 'n_muts'] = seq['n_muts']
+hier.to_csv('../../data/independent_cutting_probability.csv', index=False)
+
+#%%
 # Compute the posteriors for the pooled statistics
 prob_range = np.linspace(1E-5, 1 - 1E-5, 200)
 posts = []
@@ -68,3 +62,12 @@ for g, d in pooled.groupby(['mutant', 'salt', 'hmgb1']):
 pooled_posts = pd.concat(posts).reset_index()
 pooled_posts.to_csv('../../data/pooled_cutting_probability_posteriors.csv', 
                    index=False)
+
+
+
+_post
+
+#%%
+
+
+#%%
