@@ -1,42 +1,4 @@
-# ##############################################################################
-# 
-# ORIGIN:
-#   This study
-# 
-# NOTES:
-#   This file contains the numerically computed posterior distributions for the
-#   cleavage probability of each mutant. This file is used for display purposes
-#   only. The reported values for the cleavage probability are analytically
-#   calculated.
-#
-# COLUMN DESCRIPTIONS:
-#   mutant: (string)
-#       The name of the mutant. Endogenous sequences are denoted by either a
-#       "V", "DFL", or "WT" at the beginning of the name. Point mutants are prefixed with a
-#       "12"  and followed by an abbreviated region of the mutant, "Hept" for
-#       heptamer, "Spac" for spacer, or "Non" for nonamer. The mutations are given as
-#       the original nucleotide at that position, the index of that nucleotide from the
-#       beginning of the sequence region, and the identity of the mutation. For example,
-#       A mutation in the 4th position of the spacer region from a cytosine to thymine
-#       would be denoted as "12SpacC4T".
-#   salt: (string)
-#       The identity of the bivalent cation used to stabilize the RAG-DNA
-#       interaction in the reaction buffer. Mg corresponds to magnesium 2+ and Ca to
-#       calcium 2+. Cleavage is not possible when Ca 2+ is included.
-#   hmgb1: (float)
-#       Concentration of HMGB1 in the reaction buffer in nM.
-#   n_loops: (integer)
-#       The total number of observed PC complexes.
-#   n_cuts: (integer)
-#       The total number of observed loops that lead to cleavage.
-#   mean: (float)
-#       The computed mean of the gaussian approximation of the posterior. This 
-#       is the most-likely probability of cleavage
-#   n_muts: (float, treated as integer)
-#       The number of mutations the corresponding mutant is away from the
-#       reference sequence V4-57-1
-# ##############################################################################
-mutant,salt,hmgb1,n_loops,n_cuts,mean,std,n_muts
+mutant,salt,hmgb1,n_beads,n_cuts,mode,std,n_muts
 12CodC6A,Mg,80,19,10,0.5263157894736842,0.11454888159631764,1.0
 12HeptA4T,Ca,80,85,0,0.0,0.0,1.0
 12HeptA4T,Mg,80,134,52,0.3880597014925373,0.04209702453147293,1.0
