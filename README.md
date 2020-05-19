@@ -1,5 +1,5 @@
 
-# Probing the Sequence-Dependent Dynamics of Endogenous and Synthetic RSSs in V(D)J Recombination 
+#  
 
 
 [![DOI](https://zenodo.org/badge/187516995.svg)](https://zenodo.org/badge/latestdoi/187516995)
